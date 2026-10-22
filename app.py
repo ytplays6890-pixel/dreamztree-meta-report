@@ -185,174 +185,98 @@ def read_mapping_file(upload):
         return pd.DataFrame(DEFAULT_MAPPINGS, columns=["Campaign", "Staff", "Course", "Branch"])
 
 def infer_campaign(name, mappings):
-    """Infer staff, course and branch from campaign names using shared rules for all staff.
+    """Resolve a campaign using exact mappings first, then safe staff/course/branch fallbacks."""
+    original_name = str(name or "")
+    key = normalize(original_name)
+    tokens = set(key.split())
 
-    Exact campaign mappings take priority. Otherwise, staff names and known course names
-    are matched as whole words, explicit branch names take priority, and a staff member's
-    single known/home branch is used when the mapping history is unambiguous.
-    """
-    raw_name = str(name)
-    key = normalize(raw_name)
-
-    # Staff-specific rule: direct roster assignment, without requiring an exact
-    # campaign mapping. This applies to every staff member listed in STAFF_ORDER.
-    # Explicit branch names in a campaign are handled below and take priority.
-    roster_staff = {
-        str(staff).strip().casefold(): (str(staff).strip(), branch)
-        for branch, staff_names in STAFF_ORDER.items()
-        for staff in staff_names
-    }
-    roster_hits = [
-        (display, branch) for normalized_staff, (display, branch) in roster_staff.items()
-        if re.search(r"(?<![a-z0-9])" + re.escape(normalize(normalized_staff)) + r"(?![a-z0-9])", key)
-    ]
-    if re.search(r"(?<![a-z0-9])anupama(?![a-z0-9])", key):
-        staff = "Anupama"
-        default_branch = "Kerala"
-    else:
-        staff = ""
-        default_branch = ""
-        # A staff member listed in more than one branch is ambiguous unless the
-        # campaign contains an explicit branch or an exact mapping.
-        unique_roster_hits = { (display.casefold(), branch) for display, branch in roster_hits }
-        if unique_roster_hits:
-            staff_names_found = {display.casefold() for display, _ in unique_roster_hits}
-            if len(staff_names_found) == 1:
-                branches_for_staff = {branch for _, branch in unique_roster_hits}
-                if len(branches_for_staff) == 1:
-                    staff = next(display for display, _ in unique_roster_hits)
-                    default_branch = next(iter(branches_for_staff))
-
+    # 1) Exact campaign match is preferred, but blank fields are filled by fallback rules.
     exact = mappings[mappings["Campaign"].astype(str).map(normalize) == key]
-    exact_staff = exact_course = exact_branch = ""
+    staff = course = branch = ""
+    status = "Needs review"
     if not exact.empty:
         r = exact.iloc[0]
-        exact_staff = str(r.get("Staff", "")).strip()
-        exact_course = str(r.get("Course", "")).strip()
-        exact_branch = str(r.get("Branch", "")).strip()
-        # Only stop at an exact mapping when all required fields are populated.
-        # Incomplete exact rows should still benefit from the shared fallback rules.
-        if exact_staff and exact_course and exact_branch:
-            return exact_staff, exact_course, exact_branch, "Exact mapping"
+        staff = str(r.get("Staff", "") or "").strip()
+        course = str(r.get("Course", "") or "").strip()
+        branch = str(r.get("Branch", "") or "").strip()
+        status = "Exact mapping" if staff and course and branch else "Completed by fallback"
 
-    tokens = set(key.split())
-    # Detect all known staff, even if a staff member has no exact row in this upload.
-    known_staff = {str(x).strip() for x in mappings["Staff"] if str(x).strip()}
-    for names in STAFF_ORDER.values():
-        known_staff.update(names)
-    staff_values = sorted(known_staff, key=lambda s: len(normalize(s)), reverse=True)
-    # Ignore generic words accidentally entered as course labels; they can block
-    # detection of a meaningful course such as "Caregiving Course".
-    generic_course_labels = {"course", "campaign", "ad", "ads", "video", "new"}
-    course_values = sorted(
-        {str(x).strip() for x in mappings["Course"]
-         if str(x).strip() and normalize(x) not in generic_course_labels},
-        key=lambda c: len(normalize(c)), reverse=True
+    # Build unique known staff names, longest first. Match whole words to avoid false hits.
+    staff_values = sorted(
+        {str(x).strip() for x in mappings["Staff"] if str(x).strip()},
+        key=lambda x: len(normalize(x)), reverse=True
     )
+    staff_hits = [
+        s for s in staff_values
+        if re.search(r"\b" + re.escape(normalize(s)).replace(r"\ ", r"\s+") + r"\b", key)
+    ]
+    if not staff and len(staff_hits) == 1:
+        staff = staff_hits[0]
 
-    # Match staff names as whole words, avoiding accidental substring matches.
-    staff_hits = []
-    for staff_name in staff_values:
-        staff_norm = normalize(staff_name)
-        if staff_norm and re.search(r"(?<![a-z0-9])" + re.escape(staff_norm) + r"(?![a-z0-9])", key):
-            staff_hits.append(staff_name)
-    # Keep the longest match when one staff name is contained in another.
-    if staff_hits:
-        longest = max(len(normalize(s)) for s in staff_hits)
-        staff_hits = [s for s in staff_hits if len(normalize(s)) == longest]
-
-    # Match the most specific known course, using whole-token matching.
+    # Course inference: match known course labels by whole normalized tokens, longest first.
+    course_values = sorted(
+        {str(x).strip() for x in mappings["Course"] if str(x).strip()},
+        key=lambda x: len(normalize(x)), reverse=True
+    )
     course_hits = [
         c for c in course_values
         if normalize(c) and set(normalize(c).split()).issubset(tokens)
     ]
-    course = sorted(course_hits, key=lambda c: len(normalize(c)), reverse=True)[0] if course_hits else ""
+    if not course and course_hits:
+        course = course_hits[0]
 
-    # Recognize common course labels even when the exact phrase is new.
-    # These keyword rules work for all staff and prevent a generic label from
-    # blocking detection of the real course name.
-    course_aliases = [
-        (r"\bcaregiv(?:er|ing)\b", "Caregiving"),
-        (r"\bhealthcare\b|\bhealth care\b", "Healthcare"),
-        (r"\bprometric\b", "Prometric"), (r"\bgerman\b", "German"),
-        (r"\bielts\b", "IELTS"), (r"\boet\b", "OET"),
-        (r"\bcomputer\b|\bms office\b", "Computer"),
-        (r"\bautocad\b", "Autocad"), (r"\brevit\b", "Revit"),
-        (r"\btuition\b", "Tuition"), (r"\bphonics\b", "Phonics"),
-        (r"\bcg\b", "CG"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
-        (r"\bnursing\b", "Nursing"), (r"\bhospital administration\b|\bhospital admin\b", "Hospital Admin"),
-        (r"\bteacher training\b|\bttc\b", "Teacher Training"),
-        (r"\bdigital marketing\b", "Digital Marketing"),
-        (r"\blogistics\b", "Logistics"), (r"\bsafety\b", "Safety Course"),
-        (r"\bspa\b", "Spa"), (r"\bphilip[iy]\b", "Philipi"),
-    ]
-    for pattern, label in course_aliases:
-        if re.search(pattern, key):
-            course = label
-            break
+    # Explicit special course aliases from campaign wording.
+    if not course:
+        aliases = [
+            ("caregiving", "Caregiving"),
+            ("practical video", "Practical Video"),
+            ("j&v video", "J&V Video"),
+            ("digital marketing", "Digital Marketing"),
+            ("healthcare", "Healthcare"),
+            ("german", "German"),
+            ("computer", "Computer"),
+            ("tuition", "Tuition"),
+            ("ielts", "IELTS"),
+            ("prometric", "Prometric"),
+            ("dca", "DCA"),
+            ("gda", "GDA"),
+            ("gna", "GNA"),
+            ("cg", "CG"),
+        ]
+        for phrase, label in aliases:
+            if set(normalize(phrase).split()).issubset(tokens):
+                course = label
+                break
 
+    # Branch: explicit branch in campaign text wins; otherwise infer from staff's known branch.
     explicit_branch = next(
-        (b for b in ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
-         if re.search(r"(?<![a-z0-9])" + re.escape(normalize(b)) + r"(?![a-z0-9])", key)),
-        None
+        (b for b in ["Mangaf", "Salmiya", "Bahrain", "Kerala"] if set(normalize(b).split()).issubset(tokens)),
+        ""
     )
+    if not branch and explicit_branch:
+        branch = explicit_branch
 
-    if len(staff_hits) == 1 or staff:
-        if len(staff_hits) == 1:
-            staff = staff_hits[0]
-        staff = exact_staff or staff
-        course = exact_course or course
+    if staff and not branch:
         staff_rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
-        known_branches = [str(x).strip() for x in staff_rows["Branch"] if str(x).strip()]
-        branches = sorted(set(known_branches))
-        # Use the established staff-to-branch roster when there is exactly one home branch.
-        # A campaign's explicit branch always overrides the roster. Staff listed in multiple
-        # branches (for example Aswathy) still need a branch marker or exact mapping.
-        roster_branches = [b for b, names in STAFF_ORDER.items() if staff.casefold() in {n.casefold() for n in names}]
-        if explicit_branch:
-            branch = explicit_branch
-            branch_status = "explicit branch"
-        elif default_branch:
-            branch = default_branch
-            branch_status = "staff roster rule"
-        elif len(roster_branches) == 1:
-            branch = roster_branches[0]
-            branch_status = "staff roster"
-        elif len(branches) == 1:
-            branch = branches[0]
-            branch_status = "staff branch"
-        else:
-            # If this campaign omits the branch but the mapping history has the same
-            # staff + course + date, reuse that known branch (e.g. Aswathy CG 16/10/2026
-            # can match the saved Aswathy CG Kerala 16/10/2026 mapping).
-            date_match = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", raw_name)
-            same_staff = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
-            if course:
-                same_staff = same_staff[same_staff["Course"].astype(str).map(normalize) == normalize(course)]
-            if date_match:
-                date_bits = tuple(date_match.groups())
-                def has_same_date(value):
-                    m = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", str(value))
-                    return bool(m and tuple(m.groups()) == date_bits)
-                same_staff = same_staff[same_staff["Campaign"].map(has_same_date)]
-            candidate_branches = sorted({str(x).strip() for x in same_staff["Branch"] if str(x).strip()})
-            if len(candidate_branches) == 1:
-                branch = candidate_branches[0]
-                branch_status = "matched staff/course/date"
-            else:
-                branch = ""
-                branch_status = "uncertain branch"
+        known_branches = sorted({str(x).strip() for x in staff_rows["Branch"] if str(x).strip()})
+        if len(known_branches) == 1:
+            branch = known_branches[0]
+        elif course:
+            associated_rows = staff_rows[staff_rows["Course"].astype(str).map(normalize) == normalize(course)]
+            associated_branches = sorted({str(x).strip() for x in associated_rows["Branch"] if str(x).strip()})
+            if len(associated_branches) == 1:
+                branch = associated_branches[0]
 
-        # For names such as 'Anupama : Caregiving Course 3/3/26', recognize the staff
-        # and caregiving course, then use Anupama's known Kerala branch from mappings.
-        branch = branch or exact_branch
-        course = course or exact_course
-        if staff and course and branch:
-            status = "Exact mapping completed by fallback" if (exact_staff or exact_course or exact_branch) else ("Inferred from name" if explicit_branch else "Inferred from staff/course")
-            return staff, course, branch, status
-        return staff, course, branch, "Needs review"
+    # If a known staff member appears and the course wording is caregiving, standardize the label.
+    # This handles names such as: Anupama : "Caregiving Course" 3/3/26.
+    if "caregiving" in key.split():
+        course = "Caregiving"
 
-    return exact_staff or "", exact_course or course, explicit_branch or exact_branch or "", "Needs review"
+    if staff and course and branch:
+        if status != "Exact mapping":
+            status = "Inferred from campaign/staff"
+        return staff, course, branch, status
+    return staff, course, branch, "Needs review"
 
 def main():
     st.title("🌴 Dreamztree Meta Leads Report")
@@ -398,12 +322,6 @@ def main():
             staff, course, branch, status = infer_campaign(r["Campaign"], mappings)
             assignments.append({"Campaign": r["Campaign"], "Results": int(r["Results"]), "Spent": float(r["Spent"]), "Staff": staff, "Course": course, "Branch": branch, "Status": status})
         assigned = pd.DataFrame(assignments)
-        unresolved_preview = assigned[(assigned["Staff"].astype(str).str.strip() == "") | (assigned["Course"].astype(str).str.strip() == "") | (assigned["Branch"].astype(str).str.strip() == "")]
-        if not unresolved_preview.empty:
-            st.error(f"⚠️ {len(unresolved_preview)} campaign(s) need review. The rows below are highlighted; complete their Staff, Course and Branch fields before generating the report.")
-            def highlight_review_rows(row):
-                return ["background-color: #5b1f24; color: #ffffff; font-weight: 600;"] * len(row)
-            st.dataframe(unresolved_preview.style.apply(highlight_review_rows, axis=1), use_container_width=True, hide_index=True)
         edited = st.data_editor(
             assigned,
             use_container_width=True,
