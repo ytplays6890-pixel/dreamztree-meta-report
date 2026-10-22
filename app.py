@@ -200,10 +200,11 @@ def infer_campaign(name, mappings):
         return str(r["Staff"]), str(r["Course"]), str(r["Branch"]), "Exact mapping"
 
     tokens = set(key.split())
-    staff_values = sorted(
-        {str(x).strip() for x in mappings["Staff"] if str(x).strip()},
-        key=lambda s: len(normalize(s)), reverse=True
-    )
+    # Detect all known staff, even if a staff member has no exact row in this upload.
+    known_staff = {str(x).strip() for x in mappings["Staff"] if str(x).strip()}
+    for names in STAFF_ORDER.values():
+        known_staff.update(names)
+    staff_values = sorted(known_staff, key=lambda s: len(normalize(s)), reverse=True)
     course_values = sorted(
         {str(x).strip() for x in mappings["Course"] if str(x).strip()},
         key=lambda c: len(normalize(c)), reverse=True
@@ -259,18 +260,41 @@ def infer_campaign(name, mappings):
         staff = staff_hits[0]
         staff_rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
         known_branches = [str(x).strip() for x in staff_rows["Branch"] if str(x).strip()]
-        # Use the configured staff/branch order as the default home branch only when
-        # the staff member appears under exactly one branch in the mapping history.
         branches = sorted(set(known_branches))
+        # Use the established staff-to-branch roster when there is exactly one home branch.
+        # A campaign's explicit branch always overrides the roster. Staff listed in multiple
+        # branches (for example Aswathy) still need a branch marker or exact mapping.
+        roster_branches = [b for b, names in STAFF_ORDER.items() if staff.casefold() in {n.casefold() for n in names}]
         if explicit_branch:
             branch = explicit_branch
             branch_status = "explicit branch"
+        elif len(roster_branches) == 1:
+            branch = roster_branches[0]
+            branch_status = "staff roster"
         elif len(branches) == 1:
             branch = branches[0]
             branch_status = "staff branch"
         else:
-            branch = ""
-            branch_status = "uncertain branch"
+            # If this campaign omits the branch but the mapping history has the same
+            # staff + course + date, reuse that known branch (e.g. Aswathy CG 16/10/2026
+            # can match the saved Aswathy CG Kerala 16/10/2026 mapping).
+            date_match = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", raw_name)
+            same_staff = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
+            if course:
+                same_staff = same_staff[same_staff["Course"].astype(str).map(normalize) == normalize(course)]
+            if date_match:
+                date_bits = tuple(date_match.groups())
+                def has_same_date(value):
+                    m = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b", str(value))
+                    return bool(m and tuple(m.groups()) == date_bits)
+                same_staff = same_staff[same_staff["Campaign"].map(has_same_date)]
+            candidate_branches = sorted({str(x).strip() for x in same_staff["Branch"] if str(x).strip()})
+            if len(candidate_branches) == 1:
+                branch = candidate_branches[0]
+                branch_status = "matched staff/course/date"
+            else:
+                branch = ""
+                branch_status = "uncertain branch"
 
         # For names such as 'Anupama : Caregiving Course 3/3/26', recognize the staff
         # and caregiving course, then use Anupama's known Kerala branch from mappings.
@@ -325,6 +349,12 @@ def main():
             staff, course, branch, status = infer_campaign(r["Campaign"], mappings)
             assignments.append({"Campaign": r["Campaign"], "Results": int(r["Results"]), "Spent": float(r["Spent"]), "Staff": staff, "Course": course, "Branch": branch, "Status": status})
         assigned = pd.DataFrame(assignments)
+        unresolved_preview = assigned[(assigned["Staff"].astype(str).str.strip() == "") | (assigned["Course"].astype(str).str.strip() == "") | (assigned["Branch"].astype(str).str.strip() == "")]
+        if not unresolved_preview.empty:
+            st.error(f"⚠️ {len(unresolved_preview)} campaign(s) need review. The rows below are highlighted; complete their Staff, Course and Branch fields before generating the report.")
+            def highlight_review_rows(row):
+                return ["background-color: #5b1f24; color: #ffffff; font-weight: 600;"] * len(row)
+            st.dataframe(unresolved_preview.style.apply(highlight_review_rows, axis=1), use_container_width=True, hide_index=True)
         edited = st.data_editor(
             assigned,
             use_container_width=True,
