@@ -194,10 +194,46 @@ def infer_campaign(name, mappings):
     raw_name = str(name)
     key = normalize(raw_name)
 
+    # Staff-specific rule: direct roster assignment, without requiring an exact
+    # campaign mapping. This applies to every staff member listed in STAFF_ORDER.
+    # Explicit branch names in a campaign are handled below and take priority.
+    roster_staff = {
+        str(staff).strip().casefold(): (str(staff).strip(), branch)
+        for branch, staff_names in STAFF_ORDER.items()
+        for staff in staff_names
+    }
+    roster_hits = [
+        (display, branch) for normalized_staff, (display, branch) in roster_staff.items()
+        if re.search(r"(?<![a-z0-9])" + re.escape(normalize(normalized_staff)) + r"(?![a-z0-9])", key)
+    ]
+    if re.search(r"(?<![a-z0-9])anupama(?![a-z0-9])", key):
+        staff = "Anupama"
+        default_branch = "Kerala"
+    else:
+        staff = ""
+        default_branch = ""
+        # A staff member listed in more than one branch is ambiguous unless the
+        # campaign contains an explicit branch or an exact mapping.
+        unique_roster_hits = { (display.casefold(), branch) for display, branch in roster_hits }
+        if unique_roster_hits:
+            staff_names_found = {display.casefold() for display, _ in unique_roster_hits}
+            if len(staff_names_found) == 1:
+                branches_for_staff = {branch for _, branch in unique_roster_hits}
+                if len(branches_for_staff) == 1:
+                    staff = next(display for display, _ in unique_roster_hits)
+                    default_branch = next(iter(branches_for_staff))
+
     exact = mappings[mappings["Campaign"].astype(str).map(normalize) == key]
+    exact_staff = exact_course = exact_branch = ""
     if not exact.empty:
         r = exact.iloc[0]
-        return str(r["Staff"]), str(r["Course"]), str(r["Branch"]), "Exact mapping"
+        exact_staff = str(r.get("Staff", "")).strip()
+        exact_course = str(r.get("Course", "")).strip()
+        exact_branch = str(r.get("Branch", "")).strip()
+        # Only stop at an exact mapping when all required fields are populated.
+        # Incomplete exact rows should still benefit from the shared fallback rules.
+        if exact_staff and exact_course and exact_branch:
+            return exact_staff, exact_course, exact_branch, "Exact mapping"
 
     tokens = set(key.split())
     # Detect all known staff, even if a staff member has no exact row in this upload.
@@ -261,8 +297,11 @@ def infer_campaign(name, mappings):
         None
     )
 
-    if len(staff_hits) == 1:
-        staff = staff_hits[0]
+    if len(staff_hits) == 1 or staff:
+        if len(staff_hits) == 1:
+            staff = staff_hits[0]
+        staff = exact_staff or staff
+        course = exact_course or course
         staff_rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
         known_branches = [str(x).strip() for x in staff_rows["Branch"] if str(x).strip()]
         branches = sorted(set(known_branches))
@@ -273,6 +312,9 @@ def infer_campaign(name, mappings):
         if explicit_branch:
             branch = explicit_branch
             branch_status = "explicit branch"
+        elif default_branch:
+            branch = default_branch
+            branch_status = "staff roster rule"
         elif len(roster_branches) == 1:
             branch = roster_branches[0]
             branch_status = "staff roster"
@@ -303,12 +345,14 @@ def infer_campaign(name, mappings):
 
         # For names such as 'Anupama : Caregiving Course 3/3/26', recognize the staff
         # and caregiving course, then use Anupama's known Kerala branch from mappings.
+        branch = branch or exact_branch
+        course = course or exact_course
         if staff and course and branch:
-            status = "Inferred from name" if explicit_branch else "Inferred from staff/course"
+            status = "Exact mapping completed by fallback" if (exact_staff or exact_course or exact_branch) else ("Inferred from name" if explicit_branch else "Inferred from staff/course")
             return staff, course, branch, status
         return staff, course, branch, "Needs review"
 
-    return "", course, explicit_branch or "", "Needs review"
+    return exact_staff or "", exact_course or course, explicit_branch or exact_branch or "", "Needs review"
 
 def main():
     st.title("🌴 Dreamztree Meta Leads Report")
@@ -412,4 +456,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
