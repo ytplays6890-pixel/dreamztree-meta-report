@@ -205,8 +205,12 @@ def infer_campaign(name, mappings):
     for names in STAFF_ORDER.values():
         known_staff.update(names)
     staff_values = sorted(known_staff, key=lambda s: len(normalize(s)), reverse=True)
+    # Ignore generic words accidentally entered as course labels; they can block
+    # detection of a meaningful course such as "Caregiving Course".
+    generic_course_labels = {"course", "campaign", "ad", "ads", "video", "new"}
     course_values = sorted(
-        {str(x).strip() for x in mappings["Course"] if str(x).strip()},
+        {str(x).strip() for x in mappings["Course"]
+         if str(x).strip() and normalize(x) not in generic_course_labels},
         key=lambda c: len(normalize(c)), reverse=True
     )
 
@@ -229,26 +233,27 @@ def infer_campaign(name, mappings):
     course = sorted(course_hits, key=lambda c: len(normalize(c)), reverse=True)[0] if course_hits else ""
 
     # Recognize common course labels even when the exact phrase is new.
-    if not course:
-        course_aliases = [
-            (r"\bcaregiv(?:er|ing)\b", "Caregiving"),
-            (r"\bhealthcare\b|\bhealth care\b", "Healthcare"),
-            (r"\bprometric\b", "Prometric"), (r"\bgerman\b", "German"),
-            (r"\bielts\b", "IELTS"), (r"\boet\b", "OET"),
-            (r"\bcomputer\b|\bms office\b", "Computer"),
-            (r"\bautocad\b", "Autocad"), (r"\brevit\b", "Revit"),
-            (r"\btuition\b", "Tuition"), (r"\bphonics\b", "Phonics"),
-            (r"\bcg\b", "CG"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
-            (r"\bnursing\b", "Nursing"), (r"\bhospital administration\b|\bhospital admin\b", "Hospital Admin"),
-            (r"\bteacher training\b|\bttc\b", "Teacher Training"),
-            (r"\bdigital marketing\b", "Digital Marketing"),
-            (r"\blogistics\b", "Logistics"), (r"\bsafety\b", "Safety Course"),
-            (r"\bspa\b", "Spa"), (r"\bphilip[iy]\b", "Philipi"),
-        ]
-        for pattern, label in course_aliases:
-            if re.search(pattern, key):
-                course = label
-                break
+    # These keyword rules work for all staff and prevent a generic label from
+    # blocking detection of the real course name.
+    course_aliases = [
+        (r"\bcaregiv(?:er|ing)\b", "Caregiving"),
+        (r"\bhealthcare\b|\bhealth care\b", "Healthcare"),
+        (r"\bprometric\b", "Prometric"), (r"\bgerman\b", "German"),
+        (r"\bielts\b", "IELTS"), (r"\boet\b", "OET"),
+        (r"\bcomputer\b|\bms office\b", "Computer"),
+        (r"\bautocad\b", "Autocad"), (r"\brevit\b", "Revit"),
+        (r"\btuition\b", "Tuition"), (r"\bphonics\b", "Phonics"),
+        (r"\bcg\b", "CG"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
+        (r"\bnursing\b", "Nursing"), (r"\bhospital administration\b|\bhospital admin\b", "Hospital Admin"),
+        (r"\bteacher training\b|\bttc\b", "Teacher Training"),
+        (r"\bdigital marketing\b", "Digital Marketing"),
+        (r"\blogistics\b", "Logistics"), (r"\bsafety\b", "Safety Course"),
+        (r"\bspa\b", "Spa"), (r"\bphilip[iy]\b", "Philipi"),
+    ]
+    for pattern, label in course_aliases:
+        if re.search(pattern, key):
+            course = label
+            break
 
     explicit_branch = next(
         (b for b in ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
@@ -407,3 +412,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
