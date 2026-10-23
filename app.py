@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+import plotly.express as px
 import requests
 import streamlit as st
 
@@ -497,8 +498,39 @@ def main():
         df["Campaign"] = df["Campaign"].fillna("").astype(str)
         df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
         df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
+
+        # Preserve zero-result campaigns for spend visibility, while keeping them out of the lead report.
+        no_result_df = df[df["Results"] <= 0].copy().reset_index(drop=True)
+        no_result_count = len(no_result_df)
+        no_result_spend_usd = float(no_result_df["Spent"].sum())
         df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
+
         st.success(f"Loaded {len(df)} campaigns with {int(df['Results'].sum())} total results.")
+        st.subheader("Campaigns with no results")
+        nr1, nr2, nr3 = st.columns(3)
+        nr1.metric("No-result campaigns", f"{no_result_count:,}")
+        nr2.metric("Spend · USD", f"${no_result_spend_usd:,.2f}")
+        nr3.metric("Spend · KWD", f"{no_result_spend_usd * factor:,.3f}")
+        if no_result_count:
+            st.warning("These campaigns spent money but recorded zero results. They are excluded from lead totals, but their spend is shown separately.")
+            no_result_display = no_result_df[["Campaign", "Results", "Spent"]].copy()
+            no_result_display["Cost (KWD)"] = no_result_display["Spent"] * factor
+            no_result_display = no_result_display.rename(
+                columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
+            )
+            no_result_display["Spend (USD)"] = no_result_display["Spend (USD)"].map(lambda v: f"${v:,.2f}")
+            no_result_display["Cost (KWD)"] = no_result_display["Cost (KWD)"].map(lambda v: f"{v:,.3f} KD")
+            st.dataframe(no_result_display, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Download no-result campaign list (CSV)",
+                no_result_df.assign(**{"Cost_KWD": no_result_df["Spent"] * factor})[
+                    ["Campaign", "Results", "Spent", "Cost_KWD"]
+                ].to_csv(index=False).encode("utf-8-sig"),
+                f"dreamztree_no_result_campaigns_{date_value.strftime('%Y%m%d')}.csv",
+                "text/csv",
+            )
+        else:
+            st.success("No campaigns with zero results were found in this export.")
         st.subheader("2. Review campaign assignments")
         assignments = []
         for _, r in df.iterrows():
@@ -567,15 +599,56 @@ def main():
             branch_chart = valid.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
             branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
             course_chart = valid.assign(Course=valid["Course"].astype(str).str.strip().replace("", "Unclassified course")).groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
-            chart_left, chart_right = st.columns(2)
+            chart_left, chart_right = st.columns(2, gap="large")
             with chart_left:
                 st.markdown("#### Leads by branch")
-                st.bar_chart(branch_chart.set_index("Branch")["Leads"], color="#3dd6b3")
+                branch_leads_plot = branch_chart.sort_values("Leads", ascending=True)
+                fig_leads = px.bar(
+                    branch_leads_plot, x="Leads", y="Branch", orientation="h",
+                    text="Leads", color_discrete_sequence=["#3dd6b3"],
+                    template="plotly_dark",
+                )
+                fig_leads.update_layout(
+                    height=300, margin=dict(l=12, r=20, t=12, b=12),
+                    showlegend=False, xaxis_title="Leads", yaxis_title="",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#E8EEF7", size=12),
+                )
+                fig_leads.update_traces(textposition="outside", cliponaxis=False)
+                st.plotly_chart(fig_leads, use_container_width=True, config={"displayModeBar": False, "responsive": True})
             with chart_right:
                 st.markdown("#### Cost by branch · KWD")
-                st.bar_chart(branch_chart.set_index("Branch")["Spend_KWD"], color="#6ea8fe")
+                branch_cost_plot = branch_chart.sort_values("Spend_KWD", ascending=True)
+                fig_cost = px.bar(
+                    branch_cost_plot, x="Spend_KWD", y="Branch", orientation="h",
+                    text=branch_cost_plot["Spend_KWD"].map(lambda x: f"{x:.3f}"),
+                    color_discrete_sequence=["#6ea8fe"], template="plotly_dark",
+                )
+                fig_cost.update_layout(
+                    height=300, margin=dict(l=12, r=28, t=12, b=12),
+                    showlegend=False, xaxis_title="Cost (KWD)", yaxis_title="",
+                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#E8EEF7", size=12),
+                )
+                fig_cost.update_traces(textposition="outside", cliponaxis=False)
+                st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False, "responsive": True})
             st.markdown("#### Top courses by leads")
-            st.bar_chart(course_chart.set_index("Course")["Results"], color="#f7bd60")
+            course_plot = course_chart.sort_values("Results", ascending=True)
+            fig_courses = px.bar(
+                course_plot, x="Results", y="Course", orientation="h",
+                text="Results", color_discrete_sequence=["#f7bd60"],
+                template="plotly_dark",
+            )
+            fig_courses.update_layout(
+                height=max(360, 36 * len(course_plot) + 70),
+                margin=dict(l=18, r=28, t=12, b=24),
+                showlegend=False, xaxis_title="Leads", yaxis_title="",
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#E8EEF7", size=12),
+                yaxis=dict(automargin=True, tickfont=dict(size=12)),
+            )
+            fig_courses.update_traces(textposition="outside", cliponaxis=False)
+            st.plotly_chart(fig_courses, use_container_width=True, config={"displayModeBar": False, "responsive": True})
             st.caption(f"{len(unresolved)} campaign(s) require review if left incomplete.")
             st.caption(f"Exchange rate used: 1 USD = {factor:.6f} KWD · {rate_source_label} · Rate date: {rate_date_label}.")
 
@@ -603,68 +676,100 @@ def main():
                         lead_pct = (lead_delta / yesterday_leads * 100) if yesterday_leads else None
                         cost_pct = (cost_delta / yesterday_cost * 100) if yesterday_cost else None
 
-                        cmp1, cmp2, cmp3 = st.columns(3)
-                        cmp1.metric(
+                        st.markdown(
+                            "### Exact daily totals",
+                        )
+                        st.caption("These are the actual totals for each uploaded day, not just the difference.")
+                        day1, day2, day3, day4 = st.columns(4, gap="medium")
+                        day1.metric("Yesterday · Leads", f"{yesterday_leads:,}")
+                        day2.metric("Today · Leads", f"{today_leads:,}", f"{lead_delta:+,} leads")
+                        day3.metric("Yesterday · Cost", f"{yesterday_cost:,.3f} KD")
+                        day4.metric("Today · Cost", f"{today_cost:,.3f} KD", f"{cost_delta:+.3f} KD")
+
+                        change1, change2 = st.columns(2, gap="medium")
+                        change1.metric(
                             "Lead change",
-                            f"{lead_delta:+,}",
-                            f"{lead_pct:+.1f}% vs yesterday" if lead_pct is not None else "No yesterday lead baseline",
+                            f"{lead_delta:+,} leads",
+                            f"{lead_pct:+.1f}% vs yesterday" if lead_pct is not None else "Yesterday total is zero",
                             delta_color="normal",
                         )
-                        cmp2.metric(
-                            "Cost change · KWD",
-                            f"{cost_delta:+.3f}",
-                            f"{cost_pct:+.1f}% vs yesterday" if cost_pct is not None else "No yesterday cost baseline",
+                        change2.metric(
+                            "Cost change",
+                            f"{cost_delta:+.3f} KD",
+                            f"{cost_pct:+.1f}% vs yesterday" if cost_pct is not None else "Yesterday cost is zero",
                             delta_color="inverse",
                         )
-                        cmp3.metric(
-                            "Yesterday leads",
-                            f"{yesterday_leads:,}",
-                            f"Today: {today_leads:,}",
-                        )
 
-                        top_left, top_right = st.columns(2)
+                        if lead_delta > 0 and cost_delta < 0:
+                            st.success("Good result: you generated more leads while spending less.")
+                        elif lead_delta > 0 and cost_delta > 0:
+                            st.info("Lead volume increased, but ad spend also increased. Check whether the extra leads justify the extra cost.")
+                        elif lead_delta < 0 and cost_delta < 0:
+                            st.warning("Both leads and spend decreased. Check whether the lower spend explains the lead drop.")
+                        elif lead_delta < 0 and cost_delta > 0:
+                            st.error("Attention: leads decreased while spend increased. Review campaign targeting, creative, and budgets.")
+                        else:
+                            st.info("Lead volume and spend are broadly unchanged. Review the campaign-level table below.")
+
+                        top_left, top_right = st.columns(2, gap="large")
                         with top_left:
-                            st.markdown("#### Top campaign yesterday")
+                            st.markdown("#### 🏆 Best campaign yesterday")
                             st.write(f"**{yesterday_top['Campaign']}**")
                             st.caption(
                                 f"{int(yesterday_top['Results']):,} leads · "
-                                f"{float(yesterday_top['Cost_KWD']):.3f} KWD · "
+                                f"{float(yesterday_top['Cost_KWD']):.3f} KD spend · "
                                 f"{yesterday_top['Branch']} · {yesterday_top['Staff']}"
                             )
                         with top_right:
-                            st.markdown("#### Top campaign today")
+                            st.markdown("#### 🏆 Best campaign today")
                             if today_top is not None:
                                 st.write(f"**{today_top['Campaign']}**")
                                 st.caption(
                                     f"{int(today_top['Results']):,} leads · "
-                                    f"{float(today_top['Cost_KWD']):.3f} KWD · "
+                                    f"{float(today_top['Cost_KWD']):.3f} KD spend · "
                                     f"{today_top['Branch']} · {today_top['Staff']}"
                                 )
                             else:
-                                st.write("No today's campaigns with a resolved staff and branch.")
+                                st.write("No campaigns today have both Staff and Branch assigned.")
 
-                        # Compare the top campaigns by lead count and campaign spend in a compact table.
-                        compare_rows = []
-                        for period, summary in [
-                            ("Yesterday", yesterday_valid),
-                            ("Today", today_valid),
-                        ]:
+                        # Side-by-side campaign comparison makes day-over-day movement explicit.
+                        def campaign_rollup(summary, prefix):
                             if summary.empty:
-                                continue
-                            campaign_summary = summary.groupby("Campaign", as_index=False).agg(
-                                Leads=("Results", "sum"), Cost_KWD=("Cost_KWD", "sum")
+                                return pd.DataFrame(columns=["Campaign", f"{prefix} leads", f"{prefix} cost (KD)"])
+                            return summary.groupby("Campaign", as_index=False).agg(
+                                **{
+                                    f"{prefix} leads": ("Results", "sum"),
+                                    f"{prefix} cost (KD)": ("Cost_KWD", "sum"),
+                                }
                             )
-                            campaign_summary["Period"] = period
-                            compare_rows.append(campaign_summary)
-                        if compare_rows:
-                            campaign_compare = pd.concat(compare_rows, ignore_index=True)
-                            st.markdown("#### Campaign performance comparison")
+
+                        yesterday_rollup = campaign_rollup(yesterday_valid, "Yesterday")
+                        today_rollup = campaign_rollup(today_valid, "Today")
+                        campaign_compare = yesterday_rollup.merge(today_rollup, on="Campaign", how="outer").fillna(0)
+                        if not campaign_compare.empty:
+                            campaign_compare["Lead change"] = (
+                                campaign_compare["Today leads"] - campaign_compare["Yesterday leads"]
+                            ).astype(int)
+                            campaign_compare["Cost change (KD)"] = (
+                                campaign_compare["Today cost (KD)"] - campaign_compare["Yesterday cost (KD)"]
+                            ).round(3)
+                            campaign_compare = campaign_compare.sort_values(
+                                ["Today leads", "Yesterday leads"], ascending=False
+                            )
+                            st.markdown("#### Exact leads and cost by campaign — yesterday vs today")
+                            st.caption("Positive lead change means more leads today. Negative cost change means less money spent today.")
                             st.dataframe(
-                                campaign_compare.sort_values(
-                                    ["Period", "Leads"], ascending=[True, False]
-                                ),
+                                campaign_compare,
                                 use_container_width=True,
                                 hide_index=True,
+                                column_config={
+                                    "Yesterday leads": st.column_config.NumberColumn(format="%d"),
+                                    "Today leads": st.column_config.NumberColumn(format="%d"),
+                                    "Lead change": st.column_config.NumberColumn(format="%+d"),
+                                    "Yesterday cost (KD)": st.column_config.NumberColumn(format="%.3f KD"),
+                                    "Today cost (KD)": st.column_config.NumberColumn(format="%.3f KD"),
+                                    "Cost change (KD)": st.column_config.NumberColumn(format="%+.3f KD"),
+                                },
                             )
                             st.download_button(
                                 "Download comparison CSV",
@@ -673,8 +778,9 @@ def main():
                                 "text/csv",
                             )
                         st.caption(
-                            "Comparison uses campaigns with resolved Staff and Branch, excludes zero-result "
-                            "and over-10,000-result rows, and applies the exchange rate shown above to both days."
+                            "For a fair comparison, both uploads should cover one full day each. "
+                            "Campaigns are included only when Staff and Branch are identified. "
+                            "Zero-result campaigns are shown in the separate no-result section."
                         )
                 except Exception as compare_exc:
                     st.error(f"Could not compare yesterday's report: {compare_exc}")
