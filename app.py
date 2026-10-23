@@ -185,102 +185,133 @@ def read_mapping_file(upload):
         return pd.DataFrame(DEFAULT_MAPPINGS, columns=["Campaign", "Staff", "Course", "Branch"])
 
 def infer_campaign(name, mappings):
-    """Resolve exact mappings first, then apply the Dreamztree staff/course fallback rules."""
+    """Resolve campaign using exact/partial mappings, staff aliases, course clues and branch rules."""
     original_name = str(name or "")
     key = normalize(original_name)
     tokens = set(key.split())
 
-    # Exact mapping, if present.
-    exact = mappings[mappings["Campaign"].astype(str).map(normalize) == key]
-    staff = course = branch = ""
-    status = "Needs review"
-    if not exact.empty:
-        row = exact.iloc[0]
-        staff = str(row.get("Staff", "") or "").strip()
-        course = str(row.get("Course", "") or "").strip()
-        branch = str(row.get("Branch", "") or "").strip()
-        if staff and course and branch:
-            return staff, course, branch, "Exact mapping"
-
-    # Canonical staff roster from the user's report format. This works even when
-    # the campaign has never appeared in the mapping table.
+    # Canonical staff-to-branch rules. Aswathy's branch depends on the course.
     staff_branch_rules = {
         "Jincy": "Mangaf", "Sethu": "Mangaf", "Nissi": "Mangaf", "Sushma": "Mangaf",
         "Arya": "Salmiya", "Ligin": "Salmiya",
         "Hishana": "Bahrain", "Anakha": "Bahrain", "Seetha": "Bahrain", "Shabna": "Bahrain",
         "Anupama": "Kerala", "Vedhika": "Kerala", "Vipin": "Kerala", "Roshni": "Kerala",
         "Shelbin": "Kerala", "Ajay": "Kerala", "Dani": "Kerala", "Renjith": "Kerala",
-        "Anju": "Kerala", "Biju": "Kerala", "Aswathy": "", 
+        "Anju": "Kerala", "Biju": "Kerala", "Aswathy": "",
     }
-    staff_candidates = sorted(staff_branch_rules, key=lambda x: len(normalize(x)), reverse=True)
-    staff_hits = [
-        person for person in staff_candidates
-        if re.search(r"\b" + re.escape(normalize(person)) + r"\b", key)
-    ]
-    if not staff and len(staff_hits) == 1:
-        staff = staff_hits[0]
+    staff_aliases = {
+        "Aswathy": ["aswathy", "awsathy", "aswathi"],
+        "Hishana": ["hishana", "hishna"],
+        "Shabna": ["shabna", "shabana"],
+        "Vipin": ["vipin", "vipin"],
+        "Anupama": ["anupama"],
+    }
 
-    # Infer course using campaign wording. Longer phrases are tested before shorter ones.
+    # Start with any exact mapping, but keep filling missing fields rather than returning early.
+    staff = course = branch = ""
+    exact = mappings[mappings["Campaign"].astype(str).map(normalize) == key]
+    if not exact.empty:
+        row = exact.iloc[0]
+        staff = str(row.get("Staff", "") or "").strip()
+        course = str(row.get("Course", "") or "").strip()
+        branch = str(row.get("Branch", "") or "").strip()
+
+    # Staff can appear anywhere in the campaign, including known spelling variants.
+    hits = []
+    for canonical in staff_branch_rules:
+        aliases = staff_aliases.get(canonical, [canonical.lower()])
+        if any(re.search(r"\b" + re.escape(normalize(alias)) + r"\b", key) for alias in aliases):
+            hits.append(canonical)
+    hits = list(dict.fromkeys(hits))
+    if not staff and len(hits) == 1:
+        staff = hits[0]
+
+    # Identify a course from the whole campaign string. Longer/more-specific terms first.
     course_aliases = [
-        ("caregiving", "Caregiving"), ("practical video", "Practical Video"),
-        ("j v video", "J&V Video"), ("j&v", "J&V Video"), ("testimonial healthcare", "Healthcare"),
-        ("nursing tutor", "Nursing Tutor"), ("hospital administration", "Hospital Admin"),
-        ("hospital admin", "Hospital Admin"), ("teacher training", "Teacher Training"),
-        ("language training", "Language Training"), ("digital marketing", "Digital Marketing"),
-        ("safety course", "Safety Course"), ("healthcare", "Healthcare"),
-        ("german", "German"), ("computer", "Computer"), ("tuition", "Tuition"),
-        ("ielts", "IELTS"), ("prometric", "Prometric"), ("montessori", "Montessori"),
-        ("phonics", "Phonics"), ("autocad", "Autocad"), ("logistics", "Logistics"),
-        ("caregiver", "Caregiving"), ("nanny course", "Nanny Course"),
-        ("house keeping", "House Keeping"), ("summer camp", "Summer Camp"),
-        ("medical hiring", "Medical Hiring"), ("coordinator hiring", "Coordinator Hiring"),
-        ("hiring", "Hiring"), ("commerce", "Commerce"), ("spa", "Spa"),
-        ("gda", "GDA"), ("gna", "GNA"), ("cg", "CG"), ("dca", "DCA"),
-        ("pte", "PTE"), ("ham", "HAM"), ("hr", "HR"), ("phili", "Philipi"),
+        (r"\bcaregiving\b|\bcaregiver\b", "Caregiving"),
+        (r"\bpractical\s+video\b", "Practical Video"),
+        (r"\bj\s*&\s*v\b|\bj\s+and\s+v\s+video\b|\bj\s+v\s+video\b", "J&V Video"),
+        (r"\btestimonial\s+healthcare\b", "Healthcare"),
+        (r"\bnursing\s+tutor\b", "Nursing Tutor"),
+        (r"\bhospital\s+administration\b|\bhospital\s+admin\b", "Hospital Admin"),
+        (r"\bteacher\s+training\b", "Teacher Training"),
+        (r"\blanguage\s+training\b", "Language Training"),
+        (r"\bdigital\s+marketing\b|\bdm\b", "Digital Marketing"),
+        (r"\bsafety\s+course\b|\bsafety\b", "Safety Course"),
+        (r"\bhealthcare\b|\bhealth\s+care\b", "Healthcare"),
+        (r"\bcomputer\b", "Computer"), (r"\bgerman\b", "German"),
+        (r"\btuition\b|\btution\b", "Tuition"), (r"\bielts\b", "IELTS"),
+        (r"\bprometric\b", "Prometric"), (r"\bmontessori\b", "Montessori"),
+        (r"\bphonics\b", "Phonics"), (r"\bautocad\b", "Autocad"),
+        (r"\blogistics\b", "Logistics"), (r"\bnanny\s+course\b", "Nanny Course"),
+        (r"\bhouse\s+keeping\b", "House Keeping"), (r"\bsummer\s+camp\b", "Summer Camp"),
+        (r"\bmedical\s+hiring\b", "Medical Hiring"), (r"\bcoordinator\s+hiring\b", "Coordinator Hiring"),
+        (r"\bhiring\b", "Hiring"), (r"\bcommerce\b", "Commerce"),
+        (r"\bspa\b", "Spa"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
+        (r"\bcg\b", "CG"), (r"\bdca\b", "DCA"), (r"\bpte\b", "PTE"),
+        (r"\bham\b", "HAM"), (r"\bhr\b", "HR"), (r"\bphili(?:pi)?\b", "Philipi"),
+        (r"\bboost\s+video\b", "Boost Video"), (r"\bcomputer\s+course\b", "Computer"),
     ]
     if not course:
-        for phrase, label in course_aliases:
-            phrase_tokens = set(normalize(phrase).split())
-            if phrase_tokens and phrase_tokens.issubset(tokens):
+        for pattern, label in course_aliases:
+            if re.search(pattern, key):
                 course = label
                 break
 
-    # Explicit branch in campaign name wins unless Aswathy's course-specific rule applies.
-    explicit_branch = next(
-        (b for b in BRANCH_ORDER if set(normalize(b).split()).issubset(tokens)), ""
-    )
-    if explicit_branch:
+    # Recognize an explicit branch in the campaign.
+    explicit_branch = next((b for b in BRANCH_ORDER if re.search(r"\b" + re.escape(normalize(b)) + r"\b", key)), "")
+    if not branch and explicit_branch:
         branch = explicit_branch
 
-    # Aswathy is assigned by course, per the user's rules. A campaign that explicitly
-    # says Kuwait for computer/tuition is Mangaf; German is Salmiya; Healthcare/CG is Kerala.
-    if staff.casefold() == "aswathy":
-        course_norm = normalize(course)
-        if any(word in course_norm.split() for word in ["computer", "tuition"]):
-            branch = "Mangaf"
-        elif "german" in course_norm.split():
-            branch = "Salmiya"
-        elif any(word in course_norm.split() for word in ["healthcare", "cg"]):
-            branch = "Kerala"
-        elif not branch:
-            # If course is unknown, use mapping rows only if they agree on one branch.
-            rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == "aswathy"]
-            known = {str(v).strip() for v in rows["Branch"] if str(v).strip()}
-            if len(known) == 1:
-                branch = next(iter(known))
+    # Use mapping evidence to infer missing fields from any two known fields when unique.
+    m = mappings.copy().fillna("")
+    for col in ["Staff", "Course", "Branch"]:
+        m[col] = m[col].astype(str).str.strip()
+    if staff and course and not branch:
+        rows = m[(m.Staff.map(normalize) == normalize(staff)) & (m.Course.map(normalize) == normalize(course))]
+        options = set(rows.Branch[rows.Branch != ""])
+        if len(options) == 1:
+            branch = next(iter(options))
+    if staff and branch and not course:
+        rows = m[(m.Staff.map(normalize) == normalize(staff)) & (m.Branch.map(normalize) == normalize(branch))]
+        # Only infer a course if the campaign wording or historical match identifies one uniquely.
+        campaign_rows = rows[rows.Campaign.astype(str).map(normalize).map(lambda x: any(t in key.split() for t in x.split() if len(t) > 3))]
+        options = set(campaign_rows.Course[campaign_rows.Course != ""])
+        if len(options) == 1:
+            course = next(iter(options))
+    if course and branch and not staff:
+        rows = m[(m.Course.map(normalize) == normalize(course)) & (m.Branch.map(normalize) == normalize(branch))]
+        options = set(rows.Staff[rows.Staff != ""])
+        if len(options) == 1:
+            staff = next(iter(options))
+
+    # Staff-to-branch rules fill the branch after staff/course detection.
+    if staff == "Aswathy":
+        c = normalize(course)
+        if "computer" in c or "tuition" in c or "boost video" in c:
+            branch = branch or "Mangaf"
+        elif "german" in c:
+            branch = branch or "Salmiya"
+        elif any(word in c.split() for word in ["healthcare", "cg"]):
+            branch = branch or "Kerala"
+        elif explicit_branch:
+            branch = explicit_branch
     elif staff and not branch:
         branch = staff_branch_rules.get(staff, "")
 
-    # If the course is still unknown, try a known mapping for the same staff and a
-    # recognizable course phrase; never invent a course label.
+    # Staff branch rules are authoritative for staff with one fixed branch.
+    if staff in staff_branch_rules and staff != "Aswathy":
+        branch = staff_branch_rules[staff]
+
+    # Last chance: exact historical mapping by campaign similarity/known course+staff.
     if staff and course and not branch:
-        rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
-        branches = {str(v).strip() for v in rows[rows["Course"].astype(str).map(normalize) == normalize(course)]["Branch"] if str(v).strip()}
-        if len(branches) == 1:
-            branch = next(iter(branches))
+        rows = m[(m.Staff.map(normalize) == normalize(staff)) & (m.Course.map(normalize) == normalize(course))]
+        options = set(rows.Branch[rows.Branch != ""])
+        if len(options) == 1:
+            branch = next(iter(options))
 
     if staff and course and branch:
-        return staff, course, branch, "Inferred from campaign/staff"
+        return staff, course, branch, ("Exact mapping" if not exact.empty else "Auto-inferred")
     return staff, course, branch, "Needs review"
 
 def main():
