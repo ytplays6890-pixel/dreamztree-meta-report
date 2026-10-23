@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
@@ -779,9 +780,113 @@ def require_login():
     st.stop()
 
 
+def render_games_page():
+    st.markdown("""
+    <style>
+    .games-hero{padding:24px 28px;border-radius:22px;background:linear-gradient(120deg,#6425d0,#e83e8c 52%,#ff9f43);color:white;margin:8px 0 20px;box-shadow:0 12px 35px #8b5cf633}
+    .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
+    </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
+    """, unsafe_allow_html=True)
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    if game == "🧠 Brain Test":
+        st.markdown("### 🧠 Brain Test · Quick Challenge")
+        questions = [
+            ("What has keys but cannot open locks?", ["A door", "A piano", "A map", "A clock"], 1, "A piano has keys, but no locks."),
+            ("What comes next: 2, 4, 8, 16, __?", ["18", "24", "30", "32"], 3, "Each number doubles, so the answer is 32."),
+            ("You overtake the person in second place. What place are you in?", ["First", "Second", "Third", "Last"], 1, "You take their place: second."),
+            ("Which month has 28 days?", ["February only", "April", "All months", "June"], 2, "Every month has at least 28 days."),
+        ]
+        if "brain_test_q" not in st.session_state: st.session_state.brain_test_q = 0
+        if "brain_test_score" not in st.session_state: st.session_state.brain_test_score = 0
+        if "brain_test_answered" not in st.session_state: st.session_state.brain_test_answered = False
+        qn=st.session_state.brain_test_q
+        if qn < len(questions):
+            q,opts,correct,explain=questions[qn]
+            st.progress(qn/len(questions), text=f"Question {qn+1} of {len(questions)} · Score {st.session_state.brain_test_score}")
+            st.markdown(f"#### {q}")
+            ans=st.radio("Choose your answer",opts,key=f"brain_answer_{qn}",label_visibility="collapsed")
+            if st.button("Check answer",type="primary",key=f"brain_check_{qn}"):
+                if not st.session_state.brain_test_answered:
+                    if opts.index(ans)==correct: st.session_state.brain_test_score+=1; st.success("Correct! ✨")
+                    else: st.error(f"Not quite. {explain}")
+                    st.session_state.brain_test_answered=True
+            if st.session_state.brain_test_answered and st.button("Next question ➜",key=f"brain_next_{qn}"):
+                st.session_state.brain_test_q+=1; st.session_state.brain_test_answered=False; st.rerun()
+        else:
+            st.balloons(); st.success(f"Challenge complete! You scored {st.session_state.brain_test_score}/{len(questions)}.")
+            if st.button("Play again",key="brain_restart"):
+                for k in ["brain_test_q","brain_test_score","brain_test_answered"]: st.session_state.pop(k,None)
+                st.rerun()
+    elif game == "🔢 Mini Sudoku":
+        st.markdown("### 🔢 Mini Sudoku · Classic 9×9")
+        st.caption("Fill each row, column, and 3×3 box with digits 1–9. Fixed clues cannot be changed.")
+        solution = [
+            [5,3,4,6,7,8,9,1,2], [6,7,2,1,9,5,3,4,8], [1,9,8,3,4,2,5,6,7],
+            [8,5,9,7,6,1,4,2,3], [4,2,6,8,5,3,7,9,1], [7,1,3,9,2,4,8,5,6],
+            [9,6,1,5,3,7,2,8,4], [2,8,7,4,1,9,6,3,5], [3,4,5,2,8,6,1,7,9]
+        ]
+        puzzle = [
+            [5,3,0,0,7,0,0,0,0], [6,0,0,1,9,5,0,0,0], [0,9,8,0,0,0,0,6,0],
+            [8,0,0,0,6,0,0,0,3], [4,0,0,8,0,3,0,0,1], [7,0,0,0,2,0,0,0,6],
+            [0,6,0,0,0,0,2,8,0], [0,0,0,4,1,9,0,0,5], [0,0,0,0,8,0,0,7,9]
+        ]
+        if "sudoku9_board" not in st.session_state: st.session_state.sudoku9_board=[r[:] for r in puzzle]
+        board=st.session_state.sudoku9_board
+        for r in range(9):
+            cols=st.columns(9, gap="small")
+            for c in range(9):
+                with cols[c]:
+                    if puzzle[r][c]: st.markdown(f"<div style='text-align:center;padding:8px 0;font-weight:800;background:#dbeafe;color:#1d4ed8;border-radius:5px;border:1px solid #93c5fd'>{puzzle[r][c]}</div>",unsafe_allow_html=True)
+                    else:
+                        val=st.selectbox(f"r{r+1}c{c+1}",[0,1,2,3,4,5,6,7,8,9],index=board[r][c],key=f"sudoku9_{r}_{c}",format_func=lambda x:"·" if x==0 else str(x),label_visibility="collapsed")
+                        board[r][c]=val
+        a,b=st.columns(2)
+        with a:
+            if st.button("Check Sudoku",type="primary",use_container_width=True,key="sudoku9_check"):
+                if board==solution: st.success("Perfect! Every row, column, and 3×3 box is correct. 🏆")
+                else:
+                    errors=[]
+                    for r in range(9):
+                        for c in range(9):
+                            if board[r][c] and board[r][c]!=solution[r][c]: errors.append((r+1,c+1))
+                    if errors: st.warning(f"There are {len(errors)} incorrect filled cell(s). Check the highlighted-by-position cells: "+", ".join(f"R{r}C{c}" for r,c in errors[:12]))
+                    else: st.info("No incorrect filled digits so far. Keep filling the empty cells!")
+        with b:
+            if st.button("Reset puzzle",use_container_width=True,key="sudoku9_reset"):
+                st.session_state.sudoku9_board=[r[:] for r in puzzle]
+                for r in range(9):
+                    for c in range(9): st.session_state.pop(f"sudoku9_{r}_{c}",None)
+                st.rerun()
+    else:
+        st.markdown("### 🦖 Dino Runner · Dreamztree Edition")
+        st.caption("Jump over cacti, duck under birds, and collect glowing Dreamztree stars for a temporary shield. Space/↑ to jump · ↓ to duck.")
+        components.html(r"""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+        *{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#10172a;color:white}.wrap{padding:12px;border-radius:18px;background:linear-gradient(135deg,#141e46,#4b1c80 60%,#c02f86);border:1px solid #ffffff30;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.pill{background:#ffffff20;border:1px solid #ffffff30;padding:7px 12px;border-radius:999px;font-weight:800}.stage{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;background:#7dd3fc}.stage canvas{display:block;width:100%;height:auto;touch-action:manipulation}.actions{display:flex;gap:10px;margin-top:10px}.actions button{flex:1;border:0;border-radius:12px;padding:12px;font-size:16px;font-weight:900;color:#25113f;background:linear-gradient(135deg,#fde047,#fb923c);box-shadow:0 4px 0 #b45309}.actions button:last-child{background:linear-gradient(135deg,#67e8f9,#818cf8);box-shadow:0 4px 0 #4338ca}.hint{text-align:center;font-size:12px;opacity:.9;margin-top:10px}
+        </style></head><body><div class="wrap"><div class="top"><strong>🌈 DREAMZTREE RUNNER</strong><span class="pill">⭐ Stars: <span id="stars">0</span></span><span class="pill">🏁 Score: <span id="score">0</span></span><span class="pill">🏆 Best: <span id="best">0</span></span></div><div class="stage"><canvas id="game" width="900" height="300" aria-label="Dino runner game"></canvas></div><div class="actions"><button id="jump">⬆ JUMP</button><button id="duck">⬇ DUCK</button><button id="restart">↻ RESTART</button></div><div class="hint">Collect ⭐ for a short shield · Avoid 🌵 and flying 🐦 · Works with keyboard and touch</div></div>
+        <script>
+        const cv=document.getElementById('game'),ctx=cv.getContext('2d');let W=cv.width,H=cv.height,ground=244,player,obs,stars,score,starCount,speed,frame,over,shield,night,best=+(localStorage.getItem('dtDinoBest')||0),keys={};document.getElementById('best').textContent=best;
+        function reset(){player={x:90,y:ground-48,w:42,h:48,vy:0,duck:false};obs=[];stars=[];score=0;starCount=0;speed=5;frame=0;over=false;shield=0;night=false;}
+        function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}function circle(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+        function drawDino(){let p=player;let h=p.duck?27:48,y=p.duck?ground-h:p.y; // colorful pixel-inspired dinosaur
+          rect(p.x+5,y+13,27,h-13,'#16a34a');rect(p.x+22,y+2,24,22,'#22c55e');rect(p.x+35,y+9,15,9,'#4ade80');rect(p.x+35,y+10,5,5,'#fff');rect(p.x+37,y+11,2,3,'#172554');rect(p.x+20,y+22,17,8,'#15803d');rect(p.x+8,y+h-8,10,8,'#14532d');rect(p.x+27,y+h-8,10,8,'#14532d');rect(p.x+2,y+18,9,7,'#86efac');if(shield>0){ctx.strokeStyle='#fef08a';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(p.x+25,y+h/2,35,h/2+14,0,0,Math.PI*2);ctx.stroke();circle(p.x+45,y-5,4,'#fff7ae')}}
+        function spawn(){if(frame%Math.max(38,Math.floor(92-speed*4))===0){let bird=Math.random()<.28&&score>80;obs.push({x:W+10,w:bird?42:24,h:bird?22:35,y:bird?ground-65:ground-(bird?65:35),bird,passed:false})}if(frame%150===0)stars.push({x:W+5,y:ground-70-Math.random()*55,r:11})}
+        function drawBackground(){let isNight=Math.floor(score/180)%2===1;let g=ctx.createLinearGradient(0,0,0,H);if(isNight){g.addColorStop(0,'#172554');g.addColorStop(1,'#7c3aed')}else{g.addColorStop(0,'#38bdf8');g.addColorStop(1,'#d9f99d')}ctx.fillStyle=g;ctx.fillRect(0,0,W,H);if(isNight){for(let i=0;i<35;i++)circle((i*83+frame*.15)%W,(i*37)%150,1.5,'#fff7ad');circle(760,52,21,'#fef3c7')}else{circle(760,50,25,'#fde047');circle(140,55,18,'#fff');circle(160,55,23,'#fff');circle(181,58,15,'#fff');circle(420,80,15,'#fff');circle(440,77,20,'#fff');circle(461,82,13,'#fff')}ctx.fillStyle=isNight?'#312e81':'#86efac';ctx.beginPath();ctx.moveTo(0,ground);for(let x=0;x<=W;x+=80)ctx.lineTo(x,ground-35-Math.sin((x+frame*1.2)/90)*17);ctx.lineTo(W,ground);ctx.fill();rect(0,ground,W,H-ground,isNight?'#166534':'#22c55e');rect(0,ground,W,4,'#facc15');for(let x=-(frame*speed%50);x<W;x+=50)rect(x,ground+24,20,3,'#bbf7d0')}
+        function drawObstacle(o){if(o.bird){let flap=Math.sin(frame*.3)*5;rect(o.x+9,o.y+6,26,12,'#7c3aed');rect(o.x+18,o.y+3,18,10,'#a78bfa');rect(o.x+2,o.y+8,12,5,'#f0abfc');rect(o.x+30,o.y+5,4,4,'#fff');rect(o.x+33,o.y+6,2,2,'#111827');rect(o.x+7,o.y+5+flap,14,5,'#c4b5fd')}else{rect(o.x+6,o.y+8,14,o.h-8,'#f97316');rect(o.x,o.y+19,9,10,'#fb923c');rect(o.x+14,o.y+2,10,o.h-2,'#ea580c');rect(o.x+4,o.y+15,3,3,'#ffedd5')}}
+        function drawStar(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(frame*.04);ctx.fillStyle='#fde047';ctx.strokeStyle='#fff7ae';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5-Math.PI/2,r=i%2?5:12;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+        function loop(){drawBackground();if(!over){frame++;score+=.12;speed=Math.min(11,5+score/110);if(shield>0)shield--;spawn();player.duck=!!keys.ArrowDown||!!keys.KeyS;player.y+=player.vy;player.vy+=.72;if(player.y>ground-player.h){player.y=ground-player.h;player.vy=0}obs.forEach(o=>o.x-=speed);stars.forEach(s=>s.x-=speed);obs=obs.filter(o=>o.x>-60);stars=stars.filter(s=>s.x>-30);for(let o of obs){let ph=player.duck?27:48,py=player.duck?ground-ph:player.y;if(player.x+player.w-8>o.x+3&&player.x+7<o.x+o.w&&py+ph-5>o.y+3&&py+5<o.y+o.h){if(shield>0){o.x=-100;shield=0}else{over=true;best=Math.max(best,Math.floor(score));localStorage.setItem('dtDinoBest',best);document.getElementById('best').textContent=best}}}for(let s of stars){if(!s.got&&Math.abs((player.x+25)-s.x)<32&&Math.abs((player.y+20)-s.y)<35){s.got=true;starCount++;shield=420;score+=25}}stars=stars.filter(s=>!s.got);}
+        obs.forEach(drawObstacle);stars.forEach(drawStar);drawDino();document.getElementById('score').textContent=Math.floor(score);document.getElementById('stars').textContent=starCount;if(shield>0){ctx.fillStyle='#fef08a';ctx.font='bold 15px system-ui';ctx.fillText('STAR SHIELD ✨',20,25)}if(over){ctx.fillStyle='#111827bb';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 34px system-ui';ctx.fillText('GAME OVER!',W/2,H/2-8);ctx.font='bold 17px system-ui';ctx.fillText('Tap RESTART to run again',W/2,H/2+25);ctx.textAlign='left'}requestAnimationFrame(loop)}
+        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>keys[e.code]=false);cv.addEventListener('pointerdown',jump);reset();loop();
+        </script></body></html>""", height=465, scrolling=False)
+
+
 def main():
     require_login()
     inject_premium_theme()
+    page = st.sidebar.radio("Navigation", ["📊 Meta Leads Dashboard", "🎮 Game Zone"], key="main_navigation")
+    if page == "🎮 Game Zone":
+        render_games_page()
+        return
+    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     header_left, header_right = st.columns([5, 1])
     with header_right:
         if st.button("Sign out", use_container_width=True):
@@ -796,78 +901,6 @@ def main():
             st.session_state.pop("authenticated_user", None)
             st.session_state.pop("auth_method", None)
             st.rerun()
-    # Separate page navigation keeps games completely away from the reporting workspace.
-    page = st.radio("Main navigation", ["📊 Marketing Dashboard", "🎮 Mini Games"], horizontal=True, label_visibility="collapsed", key="main_page_navigation")
-    if page == "🎮 Mini Games":
-        st.markdown("""<div style="padding:2rem;border-radius:24px;background:linear-gradient(120deg,#4c1d95,#1d4ed8,#0f766e);background-size:250% 250%;animation:dt-gradient-drift 5s ease infinite"><p style="letter-spacing:.2em;font-weight:900;color:#99f6e4">DREAMZTREE BREAK ROOM</p><h1 style="color:white">🎮 Play. Think. Recharge.</h1><p style="color:#e0f2fe">Three colourful games. Your reports stay on their own page.</p></div>""", unsafe_allow_html=True)
-        game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Classic Sudoku", "🦖 Dino Run"], horizontal=True, key="separate_game_choice")
-        if game == "🧠 Brain Test":
-            st.header("🧠 Brain Test")
-            qs = [("What comes next? 2, 6, 12, 20, 30, __", ["36","40","42","44"],"42","The differences are +4, +6, +8, +10, then +12."),("A bat and a ball cost ₹110. The bat costs ₹100 more than the ball. How much is the ball?",["₹5","₹10","₹15","₹1"],"₹5","The ball is ₹5 and the bat ₹105."),("Which does not belong?",["Hexagon","Triangle","Circle","Cube"],"Cube","The first three are 2D shapes; a cube is 3D."),("You overtake the person in second place. What place are you in?",["First","Second","Third","Last"],"Second","You take the position of the person you passed."),("What comes next? 1, 1, 2, 3, 5, 8, __",["11","12","13","15"],"13","Each number is the sum of the previous two.")]
-            if "brain3_i" not in st.session_state: st.session_state.brain3_i=0; st.session_state.brain3_score=0; st.session_state.brain3_done=False
-            i=st.session_state.brain3_i
-            if i < len(qs):
-                q, opts, ans, why=qs[i]
-                st.progress(i/len(qs), text=f"Question {i+1}/{len(qs)} · Score {st.session_state.brain3_score}")
-                st.markdown(f"<div style='padding:1.2rem;border-radius:18px;background:linear-gradient(120deg,#6d28d9,#0369a1,#be185d);color:white'><h3>{q}</h3></div>",unsafe_allow_html=True)
-                choice=st.radio("Answer",opts,key=f"brain3_choice_{i}",label_visibility="collapsed")
-                if st.button("✨ Submit answer",key=f"brain3_submit_{i}",type="primary",disabled=st.session_state.brain3_done):
-                    st.session_state.brain3_done=True; st.session_state.brain3_correct=(choice==ans); st.session_state.brain3_why=why; st.session_state.brain3_ans=ans
-                    if choice==ans: st.session_state.brain3_score+=1
-                    st.rerun()
-                if st.session_state.brain3_done:
-                    st.success("Correct! 🥳" if st.session_state.brain3_correct else f"Correct answer: {st.session_state.brain3_ans}")
-                    st.info(st.session_state.brain3_why)
-                    if st.button("Next question →",key=f"brain3_next_{i}"):
-                        st.session_state.brain3_i+=1; st.session_state.brain3_done=False; st.rerun()
-            else:
-                st.balloons(); st.success(f"Finished! Score: {st.session_state.brain3_score}/{len(qs)}")
-                if st.button("Play again",key="brain3_again"):
-                    st.session_state.brain3_i=0; st.session_state.brain3_score=0; st.session_state.brain3_done=False; st.rerun()
-        elif game == "🔢 Classic Sudoku":
-            st.header("🔢 Classic Sudoku · 9×9")
-            st.write("Fill each row, column and 3×3 box with digits 1–9 exactly once. Fixed clues cannot be changed.")
-            puzzle=[[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]]
-            sol=[[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]]
-            if "sudoku9_board" not in st.session_state: st.session_state.sudoku9_board=[r[:] for r in puzzle]
-            for r in range(9):
-                cols=st.columns(9,gap="small")
-                for c in range(9):
-                    with cols[c]:
-                        if puzzle[r][c]: st.markdown(f"<div style='text-align:center;padding:9px 0;border-radius:5px;background:linear-gradient(135deg,#312e81,#1d4ed8);font-weight:900;color:white'>{puzzle[r][c]}</div>",unsafe_allow_html=True)
-                        else:
-                            v=st.selectbox(f"R{r+1}C{c+1}",range(10),index=st.session_state.sudoku9_board[r][c],key=f"sudoku9_{r}_{c}",format_func=lambda x:"·" if x==0 else str(x),label_visibility="collapsed")
-                            st.session_state.sudoku9_board[r][c]=v
-            a,b,c=st.columns(3)
-            if a.button("✅ Check solution",type="primary",use_container_width=True,key="sudoku9_check"):
-                board=st.session_state.sudoku9_board; valid=all(sorted(row)==list(range(1,10)) for row in board) and all(sorted([board[r][j] for r in range(9)])==list(range(1,10)) for j in range(9)) and all(sorted([board[r][j] for r in range(br,br+3) for j in range(bc,bc+3)])==list(range(1,10)) for br in (0,3,6) for bc in (0,3,6))
-                if valid and board==sol: st.balloons(); st.success("Perfect! Every row, column and 3×3 box is correct. 🏆")
-                elif any(0 in row for row in board): st.warning("Fill every empty cell first.")
-                elif not valid: st.error("Rule conflict: each row, column and 3×3 box must contain 1–9 once each.")
-                else: st.warning("No duplicates, but some values are incorrect.")
-            if b.button("💡 Hint",use_container_width=True,key="sudoku9_hint"):
-                board=st.session_state.sudoku9_board; cells=[(r,j) for r in range(9) for j in range(9) if puzzle[r][j]==0 and board[r][j]!=sol[r][j]]
-                if cells:
-                    r,j=cells[0]; board[r][j]=sol[r][j]; st.session_state.sudoku9_board=board
-                    for rr in range(9):
-                        for cc in range(9):
-                            if puzzle[rr][cc]==0: st.session_state.pop(f"sudoku9_{rr}_{cc}",None)
-                    st.rerun()
-                else: st.info("No hint needed for the current entries.")
-            if c.button("↻ Reset",use_container_width=True,key="sudoku9_reset"):
-                st.session_state.sudoku9_board=[r[:] for r in puzzle]
-                for rr in range(9):
-                    for cc in range(9):
-                        if puzzle[rr][cc]==0: st.session_state.pop(f"sudoku9_{rr}_{cc}",None)
-                st.rerun()
-        else:
-            st.header("🦖 Dino Run · Neon Jungle")
-            st.caption("Press SPACE or ↑ to jump. On phones, tap JUMP. Avoid obstacles and beat your best score!")
-            import streamlit.components.v1 as components
-            components.html("""<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'><style>body{margin:0;font-family:system-ui;color:white}.box{padding:14px;border-radius:22px;background:linear-gradient(130deg,#4c1d95,#075985,#065f46);box-shadow:0 0 28px #a78bfa88}.hud{display:flex;justify-content:space-between;font-weight:900;padding:8px}.score{color:#5eead4}canvas{width:100%;background:linear-gradient(#312e81,#0f766e);border-radius:14px;touch-action:manipulation}.btn{border:0;border-radius:12px;padding:12px 20px;margin:10px 5px 0 0;font-weight:900;background:linear-gradient(90deg,#f0abfc,#93c5fd,#6ee7b7);cursor:pointer}</style></head><body><div class='box'><div class='hud'><span>🦖 NEON JUNGLE RUN</span><span>SCORE <b class='score' id='s'>0</b> · BEST <b id='b'>0</b></span></div><canvas id='c' width='900' height='270'></canvas><button class='btn' id='j'>⬆ JUMP / TAP</button><button class='btn' id='r'>↻ RESTART</button><p id='m'>Jump over neon obstacles!</p></div><script>let c=document.getElementById('c'),x=c.getContext('2d'),s=document.getElementById('s'),b=document.getElementById('b'),m=document.getElementById('m'),d,o,score,best=0,frame,speed,over;function reset(){d={x:80,y:190,vy:0};o=[];score=0;frame=0;speed=5;over=false;m.textContent='Jump over neon obstacles!';draw()}function jump(){if(over){reset();return}if(d.y>=190)d.vy=-13}document.getElementById('j').onclick=jump;document.getElementById('r').onclick=reset;c.onpointerdown=jump;window.onkeydown=e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}};function draw(){x.clearRect(0,0,900,270);let g=x.createLinearGradient(0,0,0,270);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f766e');x.fillStyle=g;x.fillRect(0,0,900,270);for(let i=0;i<40;i++){x.fillStyle=i%2?'#ffffff77':'#67e8f977';x.fillRect((i*131-frame*.3)%900,15+(i*29)%140,3,3)}x.fillStyle='#2dd4bf';x.fillRect(0,232,900,5);d.vy+=.65;d.y+=d.vy;if(d.y>190){d.y=190;d.vy=0}x.fillStyle='#a7f3d0';x.fillRect(d.x,d.y,34,40);x.fillRect(d.x+22,d.y-12,19,20);x.fillStyle='#0f172a';x.fillRect(d.x+34,d.y-5,4,4);frame++;if(frame%75===0)o.push({x:920,w:22,h:25+Math.random()*30});o.forEach(z=>{z.x-=speed;x.shadowColor='#fb7185';x.shadowBlur=14;x.fillStyle='#fb7185';x.beginPath();x.moveTo(z.x,232);x.lineTo(z.x+z.w/2,232-z.h);x.lineTo(z.x+z.w,232);x.fill();x.shadowBlur=0;if(d.x+30>z.x&&d.x<z.x+z.w&&d.y+40>232-z.h)over=true});o=o.filter(z=>z.x+z.w>0);if(!over){score+=.12;speed=5+Math.min(7,score/20)}else m.textContent='Game over! Tap RESTART or JUMP to play again.';s.textContent=Math.floor(score);best=Math.max(best,Math.floor(score));b.textContent=best;if(!over)requestAnimationFrame(draw);else{x.fillStyle='white';x.textAlign='center';x.font='bold 38px system-ui';x.fillText('GAME OVER',450,120)}}reset();</script></body></html>""",height=420,scrolling=False)
-        st.stop()
-
-    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
