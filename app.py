@@ -185,97 +185,102 @@ def read_mapping_file(upload):
         return pd.DataFrame(DEFAULT_MAPPINGS, columns=["Campaign", "Staff", "Course", "Branch"])
 
 def infer_campaign(name, mappings):
-    """Resolve a campaign using exact mappings first, then safe staff/course/branch fallbacks."""
+    """Resolve exact mappings first, then apply the Dreamztree staff/course fallback rules."""
     original_name = str(name or "")
     key = normalize(original_name)
     tokens = set(key.split())
 
-    # 1) Exact campaign match is preferred, but blank fields are filled by fallback rules.
+    # Exact mapping, if present.
     exact = mappings[mappings["Campaign"].astype(str).map(normalize) == key]
     staff = course = branch = ""
     status = "Needs review"
     if not exact.empty:
-        r = exact.iloc[0]
-        staff = str(r.get("Staff", "") or "").strip()
-        course = str(r.get("Course", "") or "").strip()
-        branch = str(r.get("Branch", "") or "").strip()
-        status = "Exact mapping" if staff and course and branch else "Completed by fallback"
+        row = exact.iloc[0]
+        staff = str(row.get("Staff", "") or "").strip()
+        course = str(row.get("Course", "") or "").strip()
+        branch = str(row.get("Branch", "") or "").strip()
+        if staff and course and branch:
+            return staff, course, branch, "Exact mapping"
 
-    # Build unique known staff names, longest first. Match whole words to avoid false hits.
-    staff_values = sorted(
-        {str(x).strip() for x in mappings["Staff"] if str(x).strip()},
-        key=lambda x: len(normalize(x)), reverse=True
-    )
+    # Canonical staff roster from the user's report format. This works even when
+    # the campaign has never appeared in the mapping table.
+    staff_branch_rules = {
+        "Jincy": "Mangaf", "Sethu": "Mangaf", "Nissi": "Mangaf", "Sushma": "Mangaf",
+        "Arya": "Salmiya", "Ligin": "Salmiya",
+        "Hishana": "Bahrain", "Anakha": "Bahrain", "Seetha": "Bahrain", "Shabna": "Bahrain",
+        "Anupama": "Kerala", "Vedhika": "Kerala", "Vipin": "Kerala", "Roshni": "Kerala",
+        "Shelbin": "Kerala", "Ajay": "Kerala", "Dani": "Kerala", "Renjith": "Kerala",
+        "Anju": "Kerala", "Biju": "Kerala", "Aswathy": "", 
+    }
+    staff_candidates = sorted(staff_branch_rules, key=lambda x: len(normalize(x)), reverse=True)
     staff_hits = [
-        s for s in staff_values
-        if re.search(r"\b" + re.escape(normalize(s)).replace(r"\ ", r"\s+") + r"\b", key)
+        person for person in staff_candidates
+        if re.search(r"\b" + re.escape(normalize(person)) + r"\b", key)
     ]
     if not staff and len(staff_hits) == 1:
         staff = staff_hits[0]
 
-    # Course inference: match known course labels by whole normalized tokens, longest first.
-    course_values = sorted(
-        {str(x).strip() for x in mappings["Course"] if str(x).strip()},
-        key=lambda x: len(normalize(x)), reverse=True
-    )
-    course_hits = [
-        c for c in course_values
-        if normalize(c) and set(normalize(c).split()).issubset(tokens)
+    # Infer course using campaign wording. Longer phrases are tested before shorter ones.
+    course_aliases = [
+        ("caregiving", "Caregiving"), ("practical video", "Practical Video"),
+        ("j v video", "J&V Video"), ("j&v", "J&V Video"), ("testimonial healthcare", "Healthcare"),
+        ("nursing tutor", "Nursing Tutor"), ("hospital administration", "Hospital Admin"),
+        ("hospital admin", "Hospital Admin"), ("teacher training", "Teacher Training"),
+        ("language training", "Language Training"), ("digital marketing", "Digital Marketing"),
+        ("safety course", "Safety Course"), ("healthcare", "Healthcare"),
+        ("german", "German"), ("computer", "Computer"), ("tuition", "Tuition"),
+        ("ielts", "IELTS"), ("prometric", "Prometric"), ("montessori", "Montessori"),
+        ("phonics", "Phonics"), ("autocad", "Autocad"), ("logistics", "Logistics"),
+        ("caregiver", "Caregiving"), ("nanny course", "Nanny Course"),
+        ("house keeping", "House Keeping"), ("summer camp", "Summer Camp"),
+        ("medical hiring", "Medical Hiring"), ("coordinator hiring", "Coordinator Hiring"),
+        ("hiring", "Hiring"), ("commerce", "Commerce"), ("spa", "Spa"),
+        ("gda", "GDA"), ("gna", "GNA"), ("cg", "CG"), ("dca", "DCA"),
+        ("pte", "PTE"), ("ham", "HAM"), ("hr", "HR"), ("phili", "Philipi"),
     ]
-    if not course and course_hits:
-        course = course_hits[0]
-
-    # Explicit special course aliases from campaign wording.
     if not course:
-        aliases = [
-            ("caregiving", "Caregiving"),
-            ("practical video", "Practical Video"),
-            ("j&v video", "J&V Video"),
-            ("digital marketing", "Digital Marketing"),
-            ("healthcare", "Healthcare"),
-            ("german", "German"),
-            ("computer", "Computer"),
-            ("tuition", "Tuition"),
-            ("ielts", "IELTS"),
-            ("prometric", "Prometric"),
-            ("dca", "DCA"),
-            ("gda", "GDA"),
-            ("gna", "GNA"),
-            ("cg", "CG"),
-        ]
-        for phrase, label in aliases:
-            if set(normalize(phrase).split()).issubset(tokens):
+        for phrase, label in course_aliases:
+            phrase_tokens = set(normalize(phrase).split())
+            if phrase_tokens and phrase_tokens.issubset(tokens):
                 course = label
                 break
 
-    # Branch: explicit branch in campaign text wins; otherwise infer from staff's known branch.
+    # Explicit branch in campaign name wins unless Aswathy's course-specific rule applies.
     explicit_branch = next(
-        (b for b in ["Mangaf", "Salmiya", "Bahrain", "Kerala"] if set(normalize(b).split()).issubset(tokens)),
-        ""
+        (b for b in BRANCH_ORDER if set(normalize(b).split()).issubset(tokens)), ""
     )
-    if not branch and explicit_branch:
+    if explicit_branch:
         branch = explicit_branch
 
-    if staff and not branch:
-        staff_rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
-        known_branches = sorted({str(x).strip() for x in staff_rows["Branch"] if str(x).strip()})
-        if len(known_branches) == 1:
-            branch = known_branches[0]
-        elif course:
-            associated_rows = staff_rows[staff_rows["Course"].astype(str).map(normalize) == normalize(course)]
-            associated_branches = sorted({str(x).strip() for x in associated_rows["Branch"] if str(x).strip()})
-            if len(associated_branches) == 1:
-                branch = associated_branches[0]
+    # Aswathy is assigned by course, per the user's rules. A campaign that explicitly
+    # says Kuwait for computer/tuition is Mangaf; German is Salmiya; Healthcare/CG is Kerala.
+    if staff.casefold() == "aswathy":
+        course_norm = normalize(course)
+        if any(word in course_norm.split() for word in ["computer", "tuition"]):
+            branch = "Mangaf"
+        elif "german" in course_norm.split():
+            branch = "Salmiya"
+        elif any(word in course_norm.split() for word in ["healthcare", "cg"]):
+            branch = "Kerala"
+        elif not branch:
+            # If course is unknown, use mapping rows only if they agree on one branch.
+            rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == "aswathy"]
+            known = {str(v).strip() for v in rows["Branch"] if str(v).strip()}
+            if len(known) == 1:
+                branch = next(iter(known))
+    elif staff and not branch:
+        branch = staff_branch_rules.get(staff, "")
 
-    # If a known staff member appears and the course wording is caregiving, standardize the label.
-    # This handles names such as: Anupama : "Caregiving Course" 3/3/26.
-    if "caregiving" in key.split():
-        course = "Caregiving"
+    # If the course is still unknown, try a known mapping for the same staff and a
+    # recognizable course phrase; never invent a course label.
+    if staff and course and not branch:
+        rows = mappings[mappings["Staff"].astype(str).str.strip().str.casefold() == staff.casefold()]
+        branches = {str(v).strip() for v in rows[rows["Course"].astype(str).map(normalize) == normalize(course)]["Branch"] if str(v).strip()}
+        if len(branches) == 1:
+            branch = next(iter(branches))
 
     if staff and course and branch:
-        if status != "Exact mapping":
-            status = "Inferred from campaign/staff"
-        return staff, course, branch, status
+        return staff, course, branch, "Inferred from campaign/staff"
     return staff, course, branch, "Needs review"
 
 def main():
@@ -314,7 +319,7 @@ def main():
         df["Campaign"] = df["Campaign"].fillna("").astype(str)
         df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
         df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
-        df = df[(df["Results"] > 0) & (df["Results"] < 10000)].reset_index(drop=True)
+        df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
         st.success(f"Loaded {len(df)} campaigns with {int(df['Results'].sum())} total results.")
         st.subheader("2. Review campaign assignments")
         assignments = []
@@ -322,6 +327,10 @@ def main():
             staff, course, branch, status = infer_campaign(r["Campaign"], mappings)
             assignments.append({"Campaign": r["Campaign"], "Results": int(r["Results"]), "Spent": float(r["Spent"]), "Staff": staff, "Course": course, "Branch": branch, "Status": status})
         assigned = pd.DataFrame(assignments)
+        initial_unresolved = assigned[(assigned["Staff"].astype(str).str.strip() == "") | (assigned["Course"].astype(str).str.strip() == "") | (assigned["Branch"].astype(str).str.strip() == "")]
+        if not initial_unresolved.empty:
+            st.warning(f"{len(initial_unresolved)} campaign(s) need review. These are highlighted below and are excluded until all required fields are filled.")
+            st.dataframe(initial_unresolved, use_container_width=True, hide_index=True)
         edited = st.data_editor(
             assigned,
             use_container_width=True,
