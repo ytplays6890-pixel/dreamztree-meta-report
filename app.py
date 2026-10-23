@@ -1,6 +1,7 @@
 import re
 import hmac
 import hashlib
+import os
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -339,25 +340,83 @@ def infer_campaign(name, mappings):
     return staff, course, branch, "Needs review"
 
 def inject_premium_theme():
+    """Apply Dreamztree's brighter, colorful premium dashboard theme."""
     st.markdown("""
     <style>
-    .stApp{background:radial-gradient(ellipse at 12% 0%,#172635 0%,#0b0f14 45%);color:#edf2f8}
-    [data-testid="stHeader"]{background:rgba(11,15,20,.9)}
-    [data-testid="stSidebar"]{background:linear-gradient(180deg,#111a25,#0b1017);border-right:1px solid #29384a}
-    [data-testid="stSidebar"] *{color:#edf2f8}
-    .block-container{max-width:1480px;padding-top:1.6rem;padding-bottom:3rem}
-    h1,h2,h3{letter-spacing:-.035em}
-    [data-testid="stMetric"]{background:linear-gradient(145deg,#17212d,#111821);border:1px solid #2a394c;padding:18px 20px;border-radius:16px;box-shadow:0 8px 24px #0002}
-    [data-testid="stMetricLabel"]{color:#9babc0}[data-testid="stMetricValue"]{color:#f3f7fc;font-weight:750}
-    .hero{background:linear-gradient(115deg,#20394acc,#121923eb 70%);border:1px solid #304256;border-radius:20px;padding:24px 28px;margin-bottom:20px}
-    .eyebrow{color:#69e2c8;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.15em}
-    .hero-title{font-size:2rem;line-height:1.12;font-weight:800;margin:.35rem 0 .55rem}
-    .hero-copy,.section-note{color:#aab9ca;font-size:.94rem}
-    div[data-testid="stTabs"] button{border-radius:10px;padding:10px 15px}
-    div[data-testid="stTabs"] button[aria-selected="true"]{background:#1d2c3c;color:#77e6d0}
-    [data-testid="stDataFrame"]{border:1px solid #263244;border-radius:12px;overflow:hidden}
-    .stButton button[kind="primary"]{background:linear-gradient(90deg,#24b89a,#48d6b4);color:#071411;border:0;font-weight:800;border-radius:10px}
-    hr{border-color:#263244}
+    :root {
+      --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
+      --dt-purple: #a78bfa; --dt-blue: #60a5fa; --dt-cyan: #5eead4;
+      --dt-orange: #ffbd69; --dt-green: #6ee7a8;
+    }
+    .stApp {
+      background:
+        radial-gradient(ellipse at 8% 2%, rgba(99,102,241,.28), transparent 32%),
+        radial-gradient(ellipse at 92% 8%, rgba(236,72,153,.19), transparent 29%),
+        radial-gradient(ellipse at 70% 88%, rgba(20,184,166,.13), transparent 32%),
+        linear-gradient(135deg, #0b1020 0%, #11152b 48%, #101827 100%);
+      color: var(--dt-ink);
+    }
+    [data-testid="stHeader"] {background: rgba(11,16,32,.72); backdrop-filter: blur(14px);}
+    [data-testid="stSidebar"] {
+      background: linear-gradient(180deg, #171632 0%, #121a30 48%, #0d1c2c 100%);
+      border-right: 1px solid rgba(167,139,250,.3);
+    }
+    [data-testid="stSidebar"] * {color: var(--dt-ink);}
+    .block-container {max-width: 1480px; padding-top: 1.6rem; padding-bottom: 3rem;}
+    h1,h2,h3 {letter-spacing: -.035em; color: #fff;}
+    h2 {text-shadow: 0 2px 24px rgba(96,165,250,.14);}
+    p, label, [data-testid="stMarkdownContainer"] {color: var(--dt-ink);}
+    [data-testid="stMetric"] {
+      background: linear-gradient(135deg, rgba(99,102,241,.23), rgba(30,41,72,.84) 55%, rgba(14,165,233,.13));
+      border: 1px solid rgba(129,140,248,.42); padding: 18px 20px; border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.06);
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    [data-testid="stMetric"]:hover {transform: translateY(-2px); border-color: rgba(94,234,212,.7);}
+    [data-testid="stMetricLabel"] {color: #c6d2ea !important;}
+    [data-testid="stMetricValue"] {color: #fff !important; font-weight: 800;}
+    [data-testid="stMetricDelta"] {font-weight: 700;}
+    .hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(112deg, rgba(124,58,237,.38), rgba(37,99,235,.24) 48%, rgba(13,148,136,.25));
+      border: 1px solid rgba(167,139,250,.48); border-radius: 24px; padding: 28px 30px; margin-bottom: 22px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.08);
+    }
+    .hero:after {content: ""; position: absolute; width: 220px; height: 220px; right: -70px; top: -105px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(255,107,168,.35), transparent 70%); pointer-events: none;}
+    .eyebrow {color: #77f3df; font-size: .76rem; font-weight: 900; text-transform: uppercase; letter-spacing: .16em;}
+    .hero-title {font-size: clamp(1.7rem, 3vw, 2.45rem); line-height: 1.12; font-weight: 850; margin: .45rem 0 .6rem; color: #fff;}
+    .hero-copy,.section-note {color: #d2def2; font-size: .96rem;}
+    div[data-testid="stTabs"] {border-radius: 14px;}
+    div[data-testid="stTabs"] button {border-radius: 11px; padding: 10px 15px; color: #d6def0;}
+    div[data-testid="stTabs"] button[aria-selected="true"] {background: linear-gradient(90deg, rgba(124,58,237,.34), rgba(37,99,235,.27)); color: #8cf5e4;}
+    div[data-testid="stTabs"] button[aria-selected="true"] p {color: #8cf5e4 !important; font-weight: 800;}
+    [data-testid="stDataFrame"], [data-testid="stTable"] {border: 1px solid rgba(129,140,248,.3); border-radius: 14px; overflow: hidden;}
+    [data-testid="stFileUploader"] {background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(20,184,166,.08)); border: 1px dashed rgba(129,140,248,.6); border-radius: 16px; padding: 8px;}
+    [data-testid="stExpander"] {background: rgba(26,34,61,.62); border: 1px solid rgba(129,140,248,.28); border-radius: 14px;}
+    .stButton button, [data-testid="stDownloadButton"] button {
+      border: 1px solid rgba(167,139,250,.48); border-radius: 11px; font-weight: 750;
+      transition: transform .15s ease, filter .15s ease; color: #fff;
+      background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2);
+    }
+    .stButton button:hover, [data-testid="stDownloadButton"] button:hover {transform: translateY(-1px); filter: brightness(1.12); border-color: #5eead4; color: #fff;}
+    .stButton button[kind="primary"], button[kind="primary"] {
+      background: linear-gradient(100deg, #ec4899, #8b5cf6 52%, #3b82f6); color: #fff; border: 0;
+      box-shadow: 0 8px 22px rgba(139,92,246,.24); font-weight: 850;
+    }
+    [data-testid="stAlert"] {border-radius: 13px; border: 1px solid rgba(255,255,255,.13);}
+    [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input, [data-testid="stDateInput"] input,
+    [data-testid="stSelectbox"] div[data-baseweb="select"], [data-testid="stMultiSelect"] div[data-baseweb="select"] {
+      border-radius: 10px;
+    }
+    hr {border-color: rgba(167,139,250,.25);}
+    a {color: #7dd3fc !important;}
+    ::selection {background: rgba(236,72,153,.45); color: #fff;}
+    @media (max-width: 700px) {
+      .block-container {padding-top: 1rem;}
+      .hero {padding: 22px 20px; border-radius: 18px;}
+      [data-testid="stMetric"] {padding: 14px;}
+    }
     </style>""", unsafe_allow_html=True)
 
 
@@ -428,12 +487,16 @@ def get_supabase_client():
     if "supabase_client" in st.session_state:
         return st.session_state["supabase_client"]
 
-    try:
-        config = st.secrets["supabase"]
-        supabase_url = str(config["url"]).strip()
-        publishable_key = str(config["publishable_key"]).strip()
-    except Exception:
-        return None
+    # Render uses environment variables; Streamlit Cloud can still use secrets.toml.
+    supabase_url = str(os.environ.get("SUPABASE_URL", "")).strip()
+    publishable_key = str(os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")).strip()
+    if not supabase_url or not publishable_key:
+        try:
+            config = st.secrets["supabase"]
+            supabase_url = supabase_url or str(config["url"]).strip()
+            publishable_key = publishable_key or str(config["publishable_key"]).strip()
+        except Exception:
+            pass
 
     if not supabase_url or not publishable_key:
         return None
@@ -451,14 +514,20 @@ def _show_login_header():
     st.markdown(
         """
         <style>
-        [data-testid="stAppViewContainer"] {background: radial-gradient(circle at top left, #17283a, #090d13 58%);}
+        [data-testid="stAppViewContainer"] {
+          background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
+            radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
+            linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
+        }
         [data-testid="stHeader"] {background: transparent;}
-        .login-panel {max-width: 720px; margin: 4vh auto 1rem auto; padding: 2rem;
-          border: 1px solid #2b3b50; border-radius: 22px;
-          background: linear-gradient(145deg, #151f2c, #0e141d);
-          box-shadow: 0 20px 55px rgba(0,0,0,.25);}
-        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #65e5c6;
-          font-size: .75rem; font-weight: 800;}
+        .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
+          border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
+          background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
+          box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
+        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
+          font-size: .75rem; font-weight: 900;}
+        .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
+        .login-panel p {color: #d6def0;}
         </style>
         <div class="login-panel">
           <div class="login-kicker">Dreamztree · Marketing Intelligence</div>
@@ -484,9 +553,8 @@ def require_login():
         st.title("Dreamztree Meta Report")
         st.error("Supabase authentication is not configured yet.")
         st.markdown(
-            "In **Streamlit Cloud → Manage app → Settings → Secrets**, add the "
-            "Supabase project URL and Publishable key. See the setup instructions "
-            "provided with this updated app."
+            "Set the `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` environment variables "
+            "in your hosting provider's settings, or configure `[supabase]` in Streamlit Secrets."
         )
         if st.session_state.get("supabase_setup_error"):
             st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
@@ -513,6 +581,11 @@ def require_login():
                     legacy_users = dict(st.secrets["auth"]["users"])
                 except Exception:
                     legacy_users = {}
+                # Optional single admin login for hosts that use environment variables.
+                env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
+                env_admin_password = os.environ.get("ADMIN_PASSWORD", "")
+                if env_admin_user and env_admin_password:
+                    legacy_users.setdefault(env_admin_user, env_admin_password)
 
                 legacy_password = legacy_users.get(login_id)
                 if legacy_password is not None and hmac.compare_digest(
