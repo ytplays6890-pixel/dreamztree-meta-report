@@ -770,12 +770,10 @@ def require_login():
                             "Registration received. Check your email for a verification "
                             "link, then return here and sign in."
                         )
-                except Exception:
-                    st.error(
-                        "Account creation failed. The email may already be registered, "
-                        "or Supabase may require email verification. Check the Supabase "
-                        "Authentication settings and try again."
-                    )
+                
+                except Exception as e:
+                    st.error(f"Account creation failed: {e}")
+
 
     st.stop()
 
