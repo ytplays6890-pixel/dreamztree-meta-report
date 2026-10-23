@@ -356,6 +356,68 @@ def inject_premium_theme():
     hr{border-color:#263244}
     </style>""", unsafe_allow_html=True)
 
+
+def load_campaign_report(upload, mappings):
+    """Load and classify a Meta export using the same rules as the main report."""
+    raw = pd.read_excel(upload)
+    if raw.empty or len(raw.columns) < 3:
+        raise ValueError("The Excel report is empty or does not contain the expected columns.")
+
+    original_cols = list(raw.columns)
+    normalized_cols = [normalize(c) for c in original_cols]
+
+    def find_col(predicate, fallback):
+        for i, c in enumerate(normalized_cols):
+            if predicate(c):
+                return original_cols[i]
+        if fallback >= len(original_cols):
+            raise ValueError("Could not identify Campaign, Results and Amount Spent columns.")
+        return original_cols[fallback]
+
+    campaign_col = find_col(lambda c: "campaign" in c, 0)
+    result_col = find_col(lambda c: "result" in c and "initial" not in c, 1)
+    spent_col = find_col(lambda c: "spent" in c or "amount" in c, 2)
+    df = raw[[campaign_col, result_col, spent_col]].copy()
+    df.columns = ["Campaign", "Results", "Spent"]
+    df["Campaign"] = df["Campaign"].fillna("").astype(str)
+    df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
+    df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
+    # Match the main report's inclusion rule: exclude zero and awareness/reach-scale results.
+    df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
+
+    assignments = []
+    for _, row in df.iterrows():
+        staff, course, branch, status = infer_campaign(row["Campaign"], mappings)
+        assignments.append({
+            "Campaign": row["Campaign"],
+            "Results": int(row["Results"]),
+            "Spent": float(row["Spent"]),
+            "Staff": staff,
+            "Course": course,
+            "Branch": branch,
+            "Status": status,
+        })
+    return pd.DataFrame(assignments)
+
+
+def summarize_campaign_performance(frame, exchange_rate):
+    """Summaries include only campaigns with identifiable staff and branch."""
+    if frame.empty:
+        empty = pd.DataFrame(columns=["Campaign", "Results", "Spent", "Staff", "Course", "Branch", "Cost_KWD"])
+        return empty, 0, 0.0, None
+
+    valid = frame[
+        frame["Staff"].astype(str).str.strip().ne("")
+        & frame["Branch"].astype(str).str.strip().ne("")
+    ].copy()
+    valid["Course"] = valid["Course"].astype(str).str.strip().replace("", "Unclassified course")
+    valid["Cost_KWD"] = valid["Spent"].astype(float) * exchange_rate
+    if valid.empty:
+        return valid, 0, 0.0, None
+    top = valid.sort_values(["Results", "Spent"], ascending=[False, True]).iloc[0]
+    return valid, int(valid["Results"].sum()), float(valid["Spent"].sum() * exchange_rate), top
+
+
 def main():
     inject_premium_theme()
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
@@ -401,10 +463,19 @@ def main():
         mapping_upload = st.file_uploader("Optional campaign mapping file", type=["xlsx", "xls", "csv"])
         st.caption("Mapping columns: Campaign, Staff, Course, Branch.")
     mappings = read_mapping_file(mapping_upload)
-    st.subheader("1. Upload Meta Ads report")
-    uploaded = st.file_uploader("Choose Excel file", type=["xlsx", "xls"], key="meta_excel")
+    st.subheader("1. Upload Meta Ads reports")
+    upload_today_col, upload_yesterday_col = st.columns(2)
+    with upload_today_col:
+        uploaded = st.file_uploader("Today's Meta Ads Excel report", type=["xlsx", "xls"], key="meta_excel")
+    with upload_yesterday_col:
+        yesterday_uploaded = st.file_uploader(
+            "Yesterday's Meta Ads Excel report (optional)",
+            type=["xlsx", "xls"],
+            key="yesterday_meta_excel",
+            help="Upload yesterday's export to compare leads, spend, and top-performing campaigns.",
+        )
     if uploaded is None:
-        st.info("Upload your Meta Ads Excel export to begin.")
+        st.info("Upload today's Meta Ads Excel export to begin. Add yesterday's report for a day-over-day comparison.")
         st.subheader("Campaign mapping preview")
         st.dataframe(mappings, use_container_width=True, hide_index=True)
         st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
@@ -507,6 +578,107 @@ def main():
             st.bar_chart(course_chart.set_index("Course")["Results"], color="#f7bd60")
             st.caption(f"{len(unresolved)} campaign(s) require review if left incomplete.")
             st.caption(f"Exchange rate used: 1 USD = {factor:.6f} KWD · {rate_source_label} · Rate date: {rate_date_label}.")
+
+            # Optional day-over-day comparison. Yesterday is processed with the same campaign
+            # filters and mapping rules; today's figures use the reviewed assignments above.
+            st.divider()
+            st.subheader("Yesterday vs today")
+            if yesterday_uploaded is None:
+                st.info("Upload yesterday's Meta Ads Excel report above to compare lead volume, cost, and the highest-lead campaign.")
+            else:
+                try:
+                    yesterday_assigned = load_campaign_report(yesterday_uploaded, mappings)
+                    yesterday_valid, yesterday_leads, yesterday_cost, yesterday_top = summarize_campaign_performance(
+                        yesterday_assigned, factor
+                    )
+                    today_valid, today_leads, today_cost, today_top = summarize_campaign_performance(
+                        edited, factor
+                    )
+
+                    if yesterday_valid.empty:
+                        st.warning("Yesterday's file did not contain campaigns with both Staff and Branch identified. Review its mapping before comparing.")
+                    else:
+                        lead_delta = today_leads - yesterday_leads
+                        cost_delta = today_cost - yesterday_cost
+                        lead_pct = (lead_delta / yesterday_leads * 100) if yesterday_leads else None
+                        cost_pct = (cost_delta / yesterday_cost * 100) if yesterday_cost else None
+
+                        cmp1, cmp2, cmp3 = st.columns(3)
+                        cmp1.metric(
+                            "Lead change",
+                            f"{lead_delta:+,}",
+                            f"{lead_pct:+.1f}% vs yesterday" if lead_pct is not None else "No yesterday lead baseline",
+                            delta_color="normal",
+                        )
+                        cmp2.metric(
+                            "Cost change · KWD",
+                            f"{cost_delta:+.3f}",
+                            f"{cost_pct:+.1f}% vs yesterday" if cost_pct is not None else "No yesterday cost baseline",
+                            delta_color="inverse",
+                        )
+                        cmp3.metric(
+                            "Yesterday leads",
+                            f"{yesterday_leads:,}",
+                            f"Today: {today_leads:,}",
+                        )
+
+                        top_left, top_right = st.columns(2)
+                        with top_left:
+                            st.markdown("#### Top campaign yesterday")
+                            st.write(f"**{yesterday_top['Campaign']}**")
+                            st.caption(
+                                f"{int(yesterday_top['Results']):,} leads · "
+                                f"{float(yesterday_top['Cost_KWD']):.3f} KWD · "
+                                f"{yesterday_top['Branch']} · {yesterday_top['Staff']}"
+                            )
+                        with top_right:
+                            st.markdown("#### Top campaign today")
+                            if today_top is not None:
+                                st.write(f"**{today_top['Campaign']}**")
+                                st.caption(
+                                    f"{int(today_top['Results']):,} leads · "
+                                    f"{float(today_top['Cost_KWD']):.3f} KWD · "
+                                    f"{today_top['Branch']} · {today_top['Staff']}"
+                                )
+                            else:
+                                st.write("No today's campaigns with a resolved staff and branch.")
+
+                        # Compare the top campaigns by lead count and campaign spend in a compact table.
+                        compare_rows = []
+                        for period, summary in [
+                            ("Yesterday", yesterday_valid),
+                            ("Today", today_valid),
+                        ]:
+                            if summary.empty:
+                                continue
+                            campaign_summary = summary.groupby("Campaign", as_index=False).agg(
+                                Leads=("Results", "sum"), Cost_KWD=("Cost_KWD", "sum")
+                            )
+                            campaign_summary["Period"] = period
+                            compare_rows.append(campaign_summary)
+                        if compare_rows:
+                            campaign_compare = pd.concat(compare_rows, ignore_index=True)
+                            st.markdown("#### Campaign performance comparison")
+                            st.dataframe(
+                                campaign_compare.sort_values(
+                                    ["Period", "Leads"], ascending=[True, False]
+                                ),
+                                use_container_width=True,
+                                hide_index=True,
+                            )
+                            st.download_button(
+                                "Download comparison CSV",
+                                campaign_compare.to_csv(index=False).encode("utf-8-sig"),
+                                f"dreamztree_campaign_comparison_{date_value.strftime('%Y%m%d')}.csv",
+                                "text/csv",
+                            )
+                        st.caption(
+                            "Comparison uses campaigns with resolved Staff and Branch, excludes zero-result "
+                            "and over-10,000-result rows, and applies the exchange rate shown above to both days."
+                        )
+                except Exception as compare_exc:
+                    st.error(f"Could not compare yesterday's report: {compare_exc}")
+                    st.caption("Check that both files use the same Meta Ads export format and that the mapping is reviewed.")
     except Exception as e:
         st.error(f"Could not process this Excel file: {e}")
         st.exception(e)
