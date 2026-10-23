@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
 
@@ -422,42 +423,37 @@ def summarize_campaign_performance(frame, exchange_rate):
 
 
 
-def require_login():
-    """Require credentials configured privately in Streamlit Cloud Secrets."""
+def get_supabase_client():
+    """Create one Supabase client per Streamlit browser session."""
+    if "supabase_client" in st.session_state:
+        return st.session_state["supabase_client"]
+
     try:
-        users = dict(st.secrets["auth"]["users"])
+        config = st.secrets["supabase"]
+        supabase_url = str(config["url"]).strip()
+        publishable_key = str(config["publishable_key"]).strip()
     except Exception:
-        st.title("Dreamztree Meta Report")
-        st.error("Login is not configured yet.")
-        st.markdown(
-            "To protect your report, add credentials in **Streamlit Cloud → App settings → Secrets**. "
-            "Use the setup instructions in README.txt supplied with this app."
-        )
-        st.stop()
+        return None
 
-    current_user = st.session_state.get("authenticated_user", "")
-    expected_password = str(users.get(current_user, ""))
-    current_fingerprint = hashlib.sha256(
-        (current_user + "\\0" + expected_password).encode("utf-8")
-    ).hexdigest()
-    if (
-        st.session_state.get("authenticated")
-        and current_user in users
-        and hmac.compare_digest(
-            st.session_state.get("login_fingerprint", ""),
-            current_fingerprint,
-        )
-    ):
-        return
-    st.session_state["authenticated"] = False
-    st.session_state.pop("login_fingerprint", None)
+    if not supabase_url or not publishable_key:
+        return None
 
+    try:
+        client = create_client(supabase_url, publishable_key)
+        st.session_state["supabase_client"] = client
+        return client
+    except Exception as exc:
+        st.session_state["supabase_setup_error"] = str(exc)
+        return None
+
+
+def _show_login_header():
     st.markdown(
         """
         <style>
         [data-testid="stAppViewContainer"] {background: radial-gradient(circle at top left, #17283a, #090d13 58%);}
         [data-testid="stHeader"] {background: transparent;}
-        .login-panel {max-width: 560px; margin: 5vh auto 0 auto; padding: 2rem;
+        .login-panel {max-width: 720px; margin: 4vh auto 1rem auto; padding: 2rem;
           border: 1px solid #2b3b50; border-radius: 22px;
           background: linear-gradient(145deg, #151f2c, #0e141d);
           box-shadow: 0 20px 55px rgba(0,0,0,.25);}
@@ -467,26 +463,152 @@ def require_login():
         <div class="login-panel">
           <div class="login-kicker">Dreamztree · Marketing Intelligence</div>
           <h1>Meta Leads Command Center</h1>
-          <p>Sign in to access campaign performance and lead reports.</p>
+          <p>Sign in or create an account to access campaign performance and lead reports.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    with st.form("login_form", clear_on_submit=False):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
-    if submitted:
-        expected = users.get(username.strip())
-        if expected is not None and hmac.compare_digest(password, str(expected)):
-            st.session_state["authenticated"] = True
-            st.session_state["authenticated_user"] = username.strip()
-            st.session_state["login_fingerprint"] = hashlib.sha256(
-                (username.strip() + "\\0" + str(expected)).encode("utf-8")
-            ).hexdigest()
-            st.rerun()
-        else:
-            st.error("Incorrect username or password.")
+
+
+def require_login():
+    """Use Supabase Auth for colleague registration and sign-in.
+
+    Optional legacy admin credentials in [auth.users] remain supported so the
+    existing administrator can still sign in during the transition.
+    """
+    if st.session_state.get("authenticated"):
+        return
+
+    client = get_supabase_client()
+    if client is None:
+        st.title("Dreamztree Meta Report")
+        st.error("Supabase authentication is not configured yet.")
+        st.markdown(
+            "In **Streamlit Cloud → Manage app → Settings → Secrets**, add the "
+            "Supabase project URL and Publishable key. See the setup instructions "
+            "provided with this updated app."
+        )
+        if st.session_state.get("supabase_setup_error"):
+            st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
+        st.stop()
+
+    _show_login_header()
+    sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
+
+    with sign_in_tab:
+        with st.form("supabase_signin_form", clear_on_submit=False):
+            email_or_admin = st.text_input("Email address or admin username")
+            password = st.text_input("Password", type="password")
+            signin_clicked = st.form_submit_button(
+                "Sign in", type="primary", use_container_width=True
+            )
+
+        if signin_clicked:
+            login_id = email_or_admin.strip()
+            if not login_id or not password:
+                st.error("Enter your email/username and password.")
+            else:
+                # Keep the existing private admin login working during migration.
+                try:
+                    legacy_users = dict(st.secrets["auth"]["users"])
+                except Exception:
+                    legacy_users = {}
+
+                legacy_password = legacy_users.get(login_id)
+                if legacy_password is not None and hmac.compare_digest(
+                    password, str(legacy_password)
+                ):
+                    st.session_state["authenticated"] = True
+                    st.session_state["authenticated_user"] = login_id
+                    st.session_state["auth_method"] = "legacy"
+                    st.rerun()
+                elif "@" in login_id:
+                    try:
+                        response = client.auth.sign_in_with_password(
+                            {"email": login_id, "password": password}
+                        )
+                        if response and response.user:
+                            st.session_state["authenticated"] = True
+                            st.session_state["authenticated_user"] = (
+                                response.user.email or login_id
+                            )
+                            st.session_state["auth_method"] = "supabase"
+                            st.rerun()
+                        else:
+                            st.error("Sign-in failed. Check your email and password.")
+                    except Exception:
+                        st.error(
+                            "Could not sign in. Check your email and password, and "
+                            "confirm your email address if verification is enabled."
+                        )
+                else:
+                    st.error("Incorrect username or password.")
+
+    with create_tab:
+        st.caption("Create a personal account using your work email address.")
+        with st.form("supabase_signup_form", clear_on_submit=True):
+            new_email = st.text_input("Work email address", key="signup_email")
+            new_username = st.text_input("Your name", key="signup_name")
+            new_password = st.text_input(
+                "Create password", type="password", key="signup_password"
+            )
+            confirm_password = st.text_input(
+                "Confirm password", type="password", key="signup_confirm_password"
+            )
+            signup_clicked = st.form_submit_button(
+                "Create account", type="primary", use_container_width=True
+            )
+
+        if signup_clicked:
+            new_email = new_email.strip().lower()
+            new_username = new_username.strip()
+            if not new_email or "@" not in new_email:
+                st.error("Enter a valid email address.")
+            elif not new_username:
+                st.error("Enter your name.")
+            elif len(new_password) < 8:
+                st.error("Use a password with at least 8 characters.")
+            elif new_password != confirm_password:
+                st.error("The passwords do not match.")
+            else:
+                try:
+                    response = client.auth.sign_up(
+                        {
+                            "email": new_email,
+                            "password": new_password,
+                            "options": {"data": {"username": new_username}},
+                        }
+                    )
+                    if response and response.session and response.user:
+                        st.session_state["authenticated"] = True
+                        st.session_state["authenticated_user"] = (
+                            response.user.email or new_email
+                        )
+                        st.session_state["auth_method"] = "supabase"
+                        # Profile details are optional; Auth remains the source of truth.
+                        try:
+                            client.table("profiles").upsert(
+                                {
+                                    "id": response.user.id,
+                                    "username": new_username,
+                                }
+                            ).execute()
+                        except Exception:
+                            pass
+                        st.success("Account created. Signing you in…")
+                        st.rerun()
+                    else:
+                        st.success(
+                            "Registration received. Check your email for a verification "
+                            "link, then return here and sign in."
+                        )
+                except Exception:
+                    st.error(
+                        "Account creation failed. The email may already be registered, "
+                        "or Supabase may require email verification. Check the Supabase "
+                        "Authentication settings and try again."
+                    )
+
     st.stop()
 
 
@@ -497,9 +619,16 @@ def main():
     header_left, header_right = st.columns([5, 1])
     with header_right:
         if st.button("Sign out", use_container_width=True):
+            if st.session_state.get("auth_method") == "supabase":
+                try:
+                    client = get_supabase_client()
+                    if client is not None:
+                        client.auth.sign_out()
+                except Exception:
+                    pass
             st.session_state["authenticated"] = False
             st.session_state.pop("authenticated_user", None)
-            st.session_state.pop("login_fingerprint", None)
+            st.session_state.pop("auth_method", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
