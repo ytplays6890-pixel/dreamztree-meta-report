@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+import requests
 import streamlit as st
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
@@ -164,7 +165,26 @@ STAFF_ORDER = {
     "Bahrain": ["Hishana", "Anakha", "Seetha", "Shabna"],
     "Kerala": ["Anupama", "Vedhika", "Vipin", "Aswathy", "Roshni", "Shelbin", "Ajay", "Dani", "Renjith", "Anju", "Biju"],
 }
-KWD_FACTOR = 0.308
+MANUAL_FALLBACK_KWD_FACTOR = 0.308  # Previous organization setting; used only if API fails or manual mode is selected.
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def fetch_usd_kwd_rate():
+    """Fetch the latest published USD->KWD reference rate; cache for 24 hours.
+
+    Frankfurter's ECB-based feed does not cover every currency, including KWD,
+    so use the free open.er-api.com latest-rates endpoint instead.
+    """
+    url = "https://open.er-api.com/v6/latest/USD"
+    response = requests.get(url, timeout=8)
+    response.raise_for_status()
+    payload = response.json()
+    if payload.get("result") != "success":
+        raise ValueError("The exchange-rate provider did not return success.")
+    rate = float(payload["rates"]["KWD"])
+    rate_date = str(payload.get("time_last_update_utc", "")).strip()
+    if rate <= 0 or not rate_date:
+        raise ValueError("The API returned an invalid rate or missing update date.")
+    return rate, rate_date
 
 def normalize(s):
     return re.sub(r"[^a-z0-9]+", " ", str(s).lower()).strip()
@@ -314,14 +334,70 @@ def infer_campaign(name, mappings):
         return staff, course, branch, ("Exact mapping" if not exact.empty else "Auto-inferred")
     return staff, course, branch, "Needs review"
 
+def inject_premium_theme():
+    st.markdown("""
+    <style>
+    .stApp{background:radial-gradient(ellipse at 12% 0%,#172635 0%,#0b0f14 45%);color:#edf2f8}
+    [data-testid="stHeader"]{background:rgba(11,15,20,.9)}
+    [data-testid="stSidebar"]{background:linear-gradient(180deg,#111a25,#0b1017);border-right:1px solid #29384a}
+    [data-testid="stSidebar"] *{color:#edf2f8}
+    .block-container{max-width:1480px;padding-top:1.6rem;padding-bottom:3rem}
+    h1,h2,h3{letter-spacing:-.035em}
+    [data-testid="stMetric"]{background:linear-gradient(145deg,#17212d,#111821);border:1px solid #2a394c;padding:18px 20px;border-radius:16px;box-shadow:0 8px 24px #0002}
+    [data-testid="stMetricLabel"]{color:#9babc0}[data-testid="stMetricValue"]{color:#f3f7fc;font-weight:750}
+    .hero{background:linear-gradient(115deg,#20394acc,#121923eb 70%);border:1px solid #304256;border-radius:20px;padding:24px 28px;margin-bottom:20px}
+    .eyebrow{color:#69e2c8;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.15em}
+    .hero-title{font-size:2rem;line-height:1.12;font-weight:800;margin:.35rem 0 .55rem}
+    .hero-copy,.section-note{color:#aab9ca;font-size:.94rem}
+    div[data-testid="stTabs"] button{border-radius:10px;padding:10px 15px}
+    div[data-testid="stTabs"] button[aria-selected="true"]{background:#1d2c3c;color:#77e6d0}
+    [data-testid="stDataFrame"]{border:1px solid #263244;border-radius:12px;overflow:hidden}
+    .stButton button[kind="primary"]{background:linear-gradient(90deg,#24b89a,#48d6b4);color:#071411;border:0;font-weight:800;border-radius:10px}
+    hr{border-color:#263244}
+    </style>""", unsafe_allow_html=True)
+
 def main():
-    st.title("🌴 Dreamztree Meta Leads Report")
+    inject_premium_theme()
+    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
     with st.sidebar:
         st.header("Settings")
         date_value = st.date_input("Report date", value=datetime.today().date())
-        factor = st.number_input("USD to KD conversion factor", min_value=0.0, value=KWD_FACTOR, step=0.001, format="%.3f")
-        st.caption("Verify the conversion factor used by your organization before relying on cost totals.")
+
+        st.subheader("USD → KWD exchange rate")
+        use_manual_rate = st.checkbox(
+            "Use manual fallback rate instead",
+            value=False,
+            help="Enable this only if you need to use your company's rate or the automatic reference rate is unavailable.",
+        )
+        manual_factor = st.number_input(
+            "Manual fallback rate (1 USD = KWD)",
+            min_value=0.000001,
+            value=MANUAL_FALLBACK_KWD_FACTOR,
+            step=0.001,
+            format="%.6f",
+            disabled=not use_manual_rate,
+        )
+        if use_manual_rate:
+            factor = float(manual_factor)
+            st.warning(f"Manual fallback rate in use: 1 USD = {factor:.6f} KWD. This is not a live rate.")
+            rate_source_label = "Manual fallback"
+            rate_date_label = "Manually entered"
+        else:
+            try:
+                with st.spinner("Fetching latest published USD → KWD reference rate…"):
+                    factor, rate_date_label = fetch_usd_kwd_rate()
+                rate_source_label = "Open ER API reference rate"
+                st.success(f"1 USD = {factor:.6f} KWD")
+                st.caption(f"Rate date: {rate_date_label} · Source: open.er-api.com · Cached for up to 24 hours.")
+            except Exception as exc:
+                factor = float(manual_factor)
+                rate_source_label = "Manual fallback (API unavailable)"
+                rate_date_label = "Manually entered"
+                st.error("Could not fetch the exchange rate. The app is using the clearly labelled manual fallback below.")
+                st.warning(f"Fallback in use: 1 USD = {factor:.6f} KWD. Check your connection and verify this rate before using cost totals.")
+                st.caption(f"Technical detail: {type(exc).__name__}: {exc}")
+
         mapping_upload = st.file_uploader("Optional campaign mapping file", type=["xlsx", "xls", "csv"])
         st.caption("Mapping columns: Campaign, Staff, Course, Branch.")
     mappings = read_mapping_file(mapping_upload)
@@ -412,9 +488,25 @@ def main():
             st.code(report, language=None)
             st.download_button("Download report (.txt)", report.encode("utf-8"), f"dreamztree_leads_{date_value.strftime('%Y%m%d')}.txt", "text/plain")
             st.download_button("Download reviewed mappings (.csv)", edited[["Campaign", "Staff", "Course", "Branch"]].to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping_updated.csv", "text/csv")
-            st.metric("Total leads included", f"{grand_leads:,}")
-            st.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total leads included", f"{grand_leads:,}")
+            m2.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
+            m3.metric("Campaigns included", f"{len(valid):,}")
+            st.subheader("Performance analytics")
+            branch_chart = valid.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
+            branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
+            course_chart = valid.assign(Course=valid["Course"].astype(str).str.strip().replace("", "Unclassified course")).groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
+            chart_left, chart_right = st.columns(2)
+            with chart_left:
+                st.markdown("#### Leads by branch")
+                st.bar_chart(branch_chart.set_index("Branch")["Leads"], color="#3dd6b3")
+            with chart_right:
+                st.markdown("#### Cost by branch · KWD")
+                st.bar_chart(branch_chart.set_index("Branch")["Spend_KWD"], color="#6ea8fe")
+            st.markdown("#### Top courses by leads")
+            st.bar_chart(course_chart.set_index("Course")["Results"], color="#f7bd60")
             st.caption(f"{len(unresolved)} campaign(s) require review if left incomplete.")
+            st.caption(f"Exchange rate used: 1 USD = {factor:.6f} KWD · {rate_source_label} · Rate date: {rate_date_label}.")
     except Exception as e:
         st.error(f"Could not process this Excel file: {e}")
         st.exception(e)
