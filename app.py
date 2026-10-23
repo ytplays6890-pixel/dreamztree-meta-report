@@ -355,11 +355,11 @@ def inject_premium_theme():
       0%, 100% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 0 rgba(139,92,246,0); }
       50% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 28px rgba(139,92,246,.16); }
     }
-    @keyframes dt-float {0%,100% {transform:translate3d(0,0,0)} 50% {transform:translate3d(0,-10px,0)}}
+    @keyframes dt-float {0%,100% {transform:translate3d(0,0,0) scale(1)} 50% {transform:translate3d(0,-28px,0) scale(1.08)}}
     @keyframes dt-border-flow {0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%}}
     @keyframes dt-shimmer {0% {background-position:-200% center} 100% {background-position:200% center}}
     @keyframes dt-orbit {from {transform:rotate(0deg) translateX(18px) rotate(0deg)} to {transform:rotate(360deg) translateX(18px) rotate(-360deg)}}
-    @keyframes dt-pulse {0%,100% {opacity:.48; transform:scale(1)} 50% {opacity:.9; transform:scale(1.08)}}
+    @keyframes dt-pulse {0%,100% {opacity:.28; transform:scale(.88)} 50% {opacity:1; transform:scale(1.22)}}
     @keyframes dt-chart-rise {from {opacity:0; transform:translateY(22px) scale(.985)} to {opacity:1; transform:translateY(0) scale(1)}}
     :root {
       --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
@@ -373,7 +373,7 @@ def inject_premium_theme():
         radial-gradient(ellipse at 70% 88%, rgba(20,184,166,.13), transparent 32%),
         linear-gradient(135deg, #0b1020 0%, #11152b 48%, #101827 100%);
       color: var(--dt-ink);
-      background-size: 180% 180%; animation: dt-border-flow 28s ease-in-out infinite;
+      background-size: 180% 180%; animation: dt-border-flow 9s ease-in-out infinite;
     }
     /* Soft moving ambient light, kept behind all app controls. */
     [data-testid="stAppViewContainer"] {position:relative; isolation:isolate;}
@@ -381,13 +381,13 @@ def inject_premium_theme():
       content:""; position:fixed; z-index:-1; pointer-events:none; width:34rem; height:34rem;
       top:8%; left:-13rem; border-radius:50%; filter:blur(72px);
       background:radial-gradient(circle,rgba(124,58,237,.13),rgba(59,130,246,.06) 48%,transparent 72%);
-      animation:dt-float 11s ease-in-out infinite;
+      animation:dt-float 6s ease-in-out infinite;
     }
     [data-testid="stAppViewContainer"]:after {
       content:""; position:fixed; z-index:-1; pointer-events:none; width:30rem; height:30rem;
       right:-12rem; bottom:3%; border-radius:50%; filter:blur(75px);
       background:radial-gradient(circle,rgba(236,72,153,.12),rgba(20,184,166,.05) 48%,transparent 72%);
-      animation:dt-float 14s ease-in-out infinite reverse;
+      animation:dt-float 7.5s ease-in-out infinite reverse;
     }
     [data-testid="stHeader"] {background: rgba(11,16,32,.72); backdrop-filter: blur(14px);}
     [data-testid="stSidebar"] {
@@ -404,7 +404,7 @@ def inject_premium_theme():
       border: 1px solid rgba(129,140,248,.42); padding: 18px 20px; border-radius: 18px;
       box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.06);
       transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
-      animation: dt-chart-rise .7s cubic-bezier(.2,.75,.25,1) both, dt-soft-glow 7s ease-in-out 1.2s infinite;
+      animation: dt-chart-rise .85s cubic-bezier(.2,.75,.25,1) both, dt-soft-glow 3.2s ease-in-out 1s infinite;
     }
     [data-testid="stMetric"]:nth-of-type(2) {animation-delay:.08s,.8s}
     [data-testid="stMetric"]:nth-of-type(3) {animation-delay:.16s,1.2s}
@@ -417,9 +417,28 @@ def inject_premium_theme():
       position: relative; overflow: hidden;
       background: linear-gradient(112deg, rgba(124,58,237,.38), rgba(37,99,235,.24) 48%, rgba(13,148,136,.25));
       border: 1px solid rgba(167,139,250,.48); border-radius: 24px; padding: 28px 30px; margin-bottom: 22px;
-      background-size: 180% 180%; animation: dt-gradient-drift 12s ease-in-out infinite, dt-fade-up .7s ease both;
+      background-size: 180% 180%; animation: dt-gradient-drift 5s ease-in-out infinite, dt-fade-up .9s ease both;
       box-shadow: 0 18px 50px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.08);
     }
+    @keyframes dt-sparkle-drift {
+      0%,100% { transform:translate3d(0,0,0) rotate(0deg); opacity:.35; }
+      50% { transform:translate3d(-18px,-24px,0) rotate(18deg); opacity:.95; }
+    }
+    @keyframes dt-hero-border-pulse {
+      0%,100% { box-shadow:0 18px 50px rgba(0,0,0,.2), 0 0 0 rgba(96,165,250,0), inset 0 1px rgba(255,255,255,.08); }
+      50% { box-shadow:0 18px 50px rgba(0,0,0,.2), 0 0 32px rgba(96,165,250,.3), 0 0 54px rgba(236,72,153,.14), inset 0 1px rgba(255,255,255,.12); }
+    }
+    .hero { animation:dt-gradient-drift 5s ease-in-out infinite, dt-fade-up .9s ease both, dt-hero-border-pulse 3.4s ease-in-out 1s infinite; }
+    .hero:after { animation:dt-pulse 3.2s ease-in-out infinite; }
+    [data-testid="stMetric"] { position:relative; overflow:hidden; }
+    [data-testid="stMetric"]:after {
+      content:""; position:absolute; top:-60%; left:-80%; width:55%; height:220%; pointer-events:none;
+      background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);
+      transform:skewX(-18deg); animation:dt-shimmer 4.2s linear infinite;
+    }
+    [data-testid="stMetric"]:nth-of-type(2):after {animation-delay:.6s;}
+    [data-testid="stMetric"]:nth-of-type(3):after {animation-delay:1.2s;}
+    [data-testid="stMetric"]:nth-of-type(4):after {animation-delay:1.8s;}
     .hero:after {content: ""; position: absolute; width: 220px; height: 220px; right: -70px; top: -105px;
       border-radius: 50%; background: radial-gradient(circle, rgba(255,107,168,.35), transparent 70%); pointer-events: none;
       animation:dt-pulse 6s ease-in-out infinite;}
@@ -430,7 +449,7 @@ def inject_premium_theme():
     .hero-title {font-size: clamp(1.7rem, 3vw, 2.45rem); line-height: 1.12; font-weight: 850; margin: .45rem 0 .6rem; color: #fff;
       background:linear-gradient(90deg,#fff 0%,#c4b5fd 24%,#7dd3fc 48%,#99f6e4 68%,#fff 100%);
       background-size:220% auto; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-      animation:dt-shimmer 9s linear infinite;}
+      animation:dt-shimmer 3.2s linear infinite;}
     .hero-copy,.section-note {color: #d2def2; font-size: .96rem;}
     div[data-testid="stTabs"] {border-radius: 14px; animation:dt-fade-up .65s ease both;}
     div[data-testid="stTabs"] button {border-radius: 11px; padding: 10px 15px; color: #d6def0; transition:background .25s ease, transform .25s ease, color .25s ease;}
@@ -441,7 +460,7 @@ def inject_premium_theme():
       animation:dt-chart-rise .8s cubic-bezier(.2,.75,.25,1) both; transition:border-color .25s ease, box-shadow .25s ease;}
     [data-testid="stDataFrame"]:hover, [data-testid="stTable"]:hover {border-color:rgba(94,234,212,.55); box-shadow:0 10px 32px rgba(96,165,250,.08);}
     [data-testid="stFileUploader"] {background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(20,184,166,.08)); background-size:180% 180%;
-      border: 1px dashed rgba(129,140,248,.6); border-radius: 16px; padding: 8px; animation:dt-border-flow 12s ease infinite; transition:transform .25s ease, border-color .25s ease;}
+      border: 1px dashed rgba(129,140,248,.6); border-radius: 16px; padding: 8px; animation:dt-border-flow 4.5s ease infinite; transition:transform .25s ease, border-color .25s ease;}
     [data-testid="stFileUploader"]:hover {transform:translateY(-2px); border-color:rgba(94,234,212,.85);}
     [data-testid="stExpander"] {transition:border-color .25s ease, box-shadow .25s ease;}
     [data-testid="stExpander"]:hover {border-color:rgba(167,139,250,.6); box-shadow:0 8px 26px rgba(124,58,237,.08);}
@@ -449,7 +468,7 @@ def inject_premium_theme():
     .stButton button, [data-testid="stDownloadButton"] button {
       border: 1px solid rgba(167,139,250,.48); border-radius: 11px; font-weight: 750;
       transition: transform .2s ease, filter .2s ease, box-shadow .2s ease; color: #fff;
-      background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2); background-size:180% 180%; animation:dt-border-flow 10s ease infinite;
+      background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2); background-size:180% 180%; animation:dt-border-flow 4s ease infinite;
     }
     .stButton button:hover, [data-testid="stDownloadButton"] button:hover {transform: translateY(-2px) scale(1.01); filter: brightness(1.14); border-color: #5eead4; color: #fff; box-shadow: 0 8px 24px rgba(96,165,250,.18);}
     .stButton button[kind="primary"], button[kind="primary"] {
