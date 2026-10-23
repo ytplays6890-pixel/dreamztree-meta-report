@@ -343,6 +343,18 @@ def inject_premium_theme():
     """Apply Dreamztree's brighter, colorful premium dashboard theme."""
     st.markdown("""
     <style>
+    @keyframes dt-fade-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dt-gradient-drift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes dt-soft-glow {
+      0%, 100% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 0 rgba(139,92,246,0); }
+      50% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 28px rgba(139,92,246,.16); }
+    }
     :root {
       --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
       --dt-purple: #a78bfa; --dt-blue: #60a5fa; --dt-cyan: #5eead4;
@@ -362,7 +374,7 @@ def inject_premium_theme():
       border-right: 1px solid rgba(167,139,250,.3);
     }
     [data-testid="stSidebar"] * {color: var(--dt-ink);}
-    .block-container {max-width: 1480px; padding-top: 1.6rem; padding-bottom: 3rem;}
+    .block-container {max-width: 1480px; padding-top: 1.6rem; padding-bottom: 3rem; animation: dt-fade-up .65s ease both;}
     h1,h2,h3 {letter-spacing: -.035em; color: #fff;}
     h2 {text-shadow: 0 2px 24px rgba(96,165,250,.14);}
     p, label, [data-testid="stMarkdownContainer"] {color: var(--dt-ink);}
@@ -370,9 +382,10 @@ def inject_premium_theme():
       background: linear-gradient(135deg, rgba(99,102,241,.23), rgba(30,41,72,.84) 55%, rgba(14,165,233,.13));
       border: 1px solid rgba(129,140,248,.42); padding: 18px 20px; border-radius: 18px;
       box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.06);
-      transition: transform .18s ease, border-color .18s ease;
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+      animation: dt-fade-up .55s ease both;
     }
-    [data-testid="stMetric"]:hover {transform: translateY(-2px); border-color: rgba(94,234,212,.7);}
+    [data-testid="stMetric"]:hover {transform: translateY(-4px) scale(1.01); border-color: rgba(94,234,212,.85); box-shadow: 0 16px 34px rgba(0,0,0,.28), 0 0 20px rgba(94,234,212,.12);}
     [data-testid="stMetricLabel"] {color: #c6d2ea !important;}
     [data-testid="stMetricValue"] {color: #fff !important; font-weight: 800;}
     [data-testid="stMetricDelta"] {font-weight: 700;}
@@ -380,6 +393,7 @@ def inject_premium_theme():
       position: relative; overflow: hidden;
       background: linear-gradient(112deg, rgba(124,58,237,.38), rgba(37,99,235,.24) 48%, rgba(13,148,136,.25));
       border: 1px solid rgba(167,139,250,.48); border-radius: 24px; padding: 28px 30px; margin-bottom: 22px;
+      background-size: 180% 180%; animation: dt-gradient-drift 12s ease-in-out infinite, dt-fade-up .7s ease both;
       box-shadow: 0 18px 50px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.08);
     }
     .hero:after {content: ""; position: absolute; width: 220px; height: 220px; right: -70px; top: -105px;
@@ -399,7 +413,7 @@ def inject_premium_theme():
       transition: transform .15s ease, filter .15s ease; color: #fff;
       background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2);
     }
-    .stButton button:hover, [data-testid="stDownloadButton"] button:hover {transform: translateY(-1px); filter: brightness(1.12); border-color: #5eead4; color: #fff;}
+    .stButton button:hover, [data-testid="stDownloadButton"] button:hover {transform: translateY(-2px) scale(1.01); filter: brightness(1.14); border-color: #5eead4; color: #fff; box-shadow: 0 8px 24px rgba(96,165,250,.18);}
     .stButton button[kind="primary"], button[kind="primary"] {
       background: linear-gradient(100deg, #ec4899, #8b5cf6 52%, #3b82f6); color: #fff; border: 0;
       box-shadow: 0 8px 22px rgba(139,92,246,.24); font-weight: 850;
@@ -412,6 +426,9 @@ def inject_premium_theme():
     hr {border-color: rgba(167,139,250,.25);}
     a {color: #7dd3fc !important;}
     ::selection {background: rgba(236,72,153,.45); color: #fff;}
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important;}
+    }
     @media (max-width: 700px) {
       .block-container {padding-top: 1rem;}
       .hero {padding: 22px 20px; border-radius: 18px;}
@@ -514,6 +531,8 @@ def _show_login_header():
     st.markdown(
         """
         <style>
+        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
+        @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         [data-testid="stAppViewContainer"] {
           background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
             radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
@@ -523,7 +542,9 @@ def _show_login_header():
         .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
           border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
+          background-size: 180% 180%; animation: dt-login-entrance .75s cubic-bezier(.2,.75,.25,1) both, dt-login-shift 14s ease-in-out infinite;
           box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
+        @media (prefers-reduced-motion: reduce) {.login-panel {animation:none !important;}}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
           font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
