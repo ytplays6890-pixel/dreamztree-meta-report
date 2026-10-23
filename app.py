@@ -782,7 +782,6 @@ def require_login():
 def main():
     require_login()
     inject_premium_theme()
-    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     header_left, header_right = st.columns([5, 1])
     with header_right:
         if st.button("Sign out", use_container_width=True):
@@ -797,222 +796,79 @@ def main():
             st.session_state.pop("authenticated_user", None)
             st.session_state.pop("auth_method", None)
             st.rerun()
+    # Separate page navigation keeps games completely away from the reporting workspace.
+    page = st.radio("Main navigation", ["📊 Marketing Dashboard", "🎮 Mini Games"], horizontal=True, label_visibility="collapsed", key="main_page_navigation")
+    if page == "🎮 Mini Games":
+        st.markdown("""<div style="padding:2rem;border-radius:24px;background:linear-gradient(120deg,#4c1d95,#1d4ed8,#0f766e);background-size:250% 250%;animation:dt-gradient-drift 5s ease infinite"><p style="letter-spacing:.2em;font-weight:900;color:#99f6e4">DREAMZTREE BREAK ROOM</p><h1 style="color:white">🎮 Play. Think. Recharge.</h1><p style="color:#e0f2fe">Three colourful games. Your reports stay on their own page.</p></div>""", unsafe_allow_html=True)
+        game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Classic Sudoku", "🦖 Dino Run"], horizontal=True, key="separate_game_choice")
+        if game == "🧠 Brain Test":
+            st.header("🧠 Brain Test")
+            qs = [("What comes next? 2, 6, 12, 20, 30, __", ["36","40","42","44"],"42","The differences are +4, +6, +8, +10, then +12."),("A bat and a ball cost ₹110. The bat costs ₹100 more than the ball. How much is the ball?",["₹5","₹10","₹15","₹1"],"₹5","The ball is ₹5 and the bat ₹105."),("Which does not belong?",["Hexagon","Triangle","Circle","Cube"],"Cube","The first three are 2D shapes; a cube is 3D."),("You overtake the person in second place. What place are you in?",["First","Second","Third","Last"],"Second","You take the position of the person you passed."),("What comes next? 1, 1, 2, 3, 5, 8, __",["11","12","13","15"],"13","Each number is the sum of the previous two.")]
+            if "brain3_i" not in st.session_state: st.session_state.brain3_i=0; st.session_state.brain3_score=0; st.session_state.brain3_done=False
+            i=st.session_state.brain3_i
+            if i < len(qs):
+                q, opts, ans, why=qs[i]
+                st.progress(i/len(qs), text=f"Question {i+1}/{len(qs)} · Score {st.session_state.brain3_score}")
+                st.markdown(f"<div style='padding:1.2rem;border-radius:18px;background:linear-gradient(120deg,#6d28d9,#0369a1,#be185d);color:white'><h3>{q}</h3></div>",unsafe_allow_html=True)
+                choice=st.radio("Answer",opts,key=f"brain3_choice_{i}",label_visibility="collapsed")
+                if st.button("✨ Submit answer",key=f"brain3_submit_{i}",type="primary",disabled=st.session_state.brain3_done):
+                    st.session_state.brain3_done=True; st.session_state.brain3_correct=(choice==ans); st.session_state.brain3_why=why; st.session_state.brain3_ans=ans
+                    if choice==ans: st.session_state.brain3_score+=1
+                    st.rerun()
+                if st.session_state.brain3_done:
+                    st.success("Correct! 🥳" if st.session_state.brain3_correct else f"Correct answer: {st.session_state.brain3_ans}")
+                    st.info(st.session_state.brain3_why)
+                    if st.button("Next question →",key=f"brain3_next_{i}"):
+                        st.session_state.brain3_i+=1; st.session_state.brain3_done=False; st.rerun()
+            else:
+                st.balloons(); st.success(f"Finished! Score: {st.session_state.brain3_score}/{len(qs)}")
+                if st.button("Play again",key="brain3_again"):
+                    st.session_state.brain3_i=0; st.session_state.brain3_score=0; st.session_state.brain3_done=False; st.rerun()
+        elif game == "🔢 Classic Sudoku":
+            st.header("🔢 Classic Sudoku · 9×9")
+            st.write("Fill each row, column and 3×3 box with digits 1–9 exactly once. Fixed clues cannot be changed.")
+            puzzle=[[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]]
+            sol=[[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]]
+            if "sudoku9_board" not in st.session_state: st.session_state.sudoku9_board=[r[:] for r in puzzle]
+            for r in range(9):
+                cols=st.columns(9,gap="small")
+                for c in range(9):
+                    with cols[c]:
+                        if puzzle[r][c]: st.markdown(f"<div style='text-align:center;padding:9px 0;border-radius:5px;background:linear-gradient(135deg,#312e81,#1d4ed8);font-weight:900;color:white'>{puzzle[r][c]}</div>",unsafe_allow_html=True)
+                        else:
+                            v=st.selectbox(f"R{r+1}C{c+1}",range(10),index=st.session_state.sudoku9_board[r][c],key=f"sudoku9_{r}_{c}",format_func=lambda x:"·" if x==0 else str(x),label_visibility="collapsed")
+                            st.session_state.sudoku9_board[r][c]=v
+            a,b,c=st.columns(3)
+            if a.button("✅ Check solution",type="primary",use_container_width=True,key="sudoku9_check"):
+                board=st.session_state.sudoku9_board; valid=all(sorted(row)==list(range(1,10)) for row in board) and all(sorted([board[r][j] for r in range(9)])==list(range(1,10)) for j in range(9)) and all(sorted([board[r][j] for r in range(br,br+3) for j in range(bc,bc+3)])==list(range(1,10)) for br in (0,3,6) for bc in (0,3,6))
+                if valid and board==sol: st.balloons(); st.success("Perfect! Every row, column and 3×3 box is correct. 🏆")
+                elif any(0 in row for row in board): st.warning("Fill every empty cell first.")
+                elif not valid: st.error("Rule conflict: each row, column and 3×3 box must contain 1–9 once each.")
+                else: st.warning("No duplicates, but some values are incorrect.")
+            if b.button("💡 Hint",use_container_width=True,key="sudoku9_hint"):
+                board=st.session_state.sudoku9_board; cells=[(r,j) for r in range(9) for j in range(9) if puzzle[r][j]==0 and board[r][j]!=sol[r][j]]
+                if cells:
+                    r,j=cells[0]; board[r][j]=sol[r][j]; st.session_state.sudoku9_board=board
+                    for rr in range(9):
+                        for cc in range(9):
+                            if puzzle[rr][cc]==0: st.session_state.pop(f"sudoku9_{rr}_{cc}",None)
+                    st.rerun()
+                else: st.info("No hint needed for the current entries.")
+            if c.button("↻ Reset",use_container_width=True,key="sudoku9_reset"):
+                st.session_state.sudoku9_board=[r[:] for r in puzzle]
+                for rr in range(9):
+                    for cc in range(9):
+                        if puzzle[rr][cc]==0: st.session_state.pop(f"sudoku9_{rr}_{cc}",None)
+                st.rerun()
+        else:
+            st.header("🦖 Dino Run · Neon Jungle")
+            st.caption("Press SPACE or ↑ to jump. On phones, tap JUMP. Avoid obstacles and beat your best score!")
+            import streamlit.components.v1 as components
+            components.html("""<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'><style>body{margin:0;font-family:system-ui;color:white}.box{padding:14px;border-radius:22px;background:linear-gradient(130deg,#4c1d95,#075985,#065f46);box-shadow:0 0 28px #a78bfa88}.hud{display:flex;justify-content:space-between;font-weight:900;padding:8px}.score{color:#5eead4}canvas{width:100%;background:linear-gradient(#312e81,#0f766e);border-radius:14px;touch-action:manipulation}.btn{border:0;border-radius:12px;padding:12px 20px;margin:10px 5px 0 0;font-weight:900;background:linear-gradient(90deg,#f0abfc,#93c5fd,#6ee7b7);cursor:pointer}</style></head><body><div class='box'><div class='hud'><span>🦖 NEON JUNGLE RUN</span><span>SCORE <b class='score' id='s'>0</b> · BEST <b id='b'>0</b></span></div><canvas id='c' width='900' height='270'></canvas><button class='btn' id='j'>⬆ JUMP / TAP</button><button class='btn' id='r'>↻ RESTART</button><p id='m'>Jump over neon obstacles!</p></div><script>let c=document.getElementById('c'),x=c.getContext('2d'),s=document.getElementById('s'),b=document.getElementById('b'),m=document.getElementById('m'),d,o,score,best=0,frame,speed,over;function reset(){d={x:80,y:190,vy:0};o=[];score=0;frame=0;speed=5;over=false;m.textContent='Jump over neon obstacles!';draw()}function jump(){if(over){reset();return}if(d.y>=190)d.vy=-13}document.getElementById('j').onclick=jump;document.getElementById('r').onclick=reset;c.onpointerdown=jump;window.onkeydown=e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}};function draw(){x.clearRect(0,0,900,270);let g=x.createLinearGradient(0,0,0,270);g.addColorStop(0,'#312e81');g.addColorStop(1,'#0f766e');x.fillStyle=g;x.fillRect(0,0,900,270);for(let i=0;i<40;i++){x.fillStyle=i%2?'#ffffff77':'#67e8f977';x.fillRect((i*131-frame*.3)%900,15+(i*29)%140,3,3)}x.fillStyle='#2dd4bf';x.fillRect(0,232,900,5);d.vy+=.65;d.y+=d.vy;if(d.y>190){d.y=190;d.vy=0}x.fillStyle='#a7f3d0';x.fillRect(d.x,d.y,34,40);x.fillRect(d.x+22,d.y-12,19,20);x.fillStyle='#0f172a';x.fillRect(d.x+34,d.y-5,4,4);frame++;if(frame%75===0)o.push({x:920,w:22,h:25+Math.random()*30});o.forEach(z=>{z.x-=speed;x.shadowColor='#fb7185';x.shadowBlur=14;x.fillStyle='#fb7185';x.beginPath();x.moveTo(z.x,232);x.lineTo(z.x+z.w/2,232-z.h);x.lineTo(z.x+z.w,232);x.fill();x.shadowBlur=0;if(d.x+30>z.x&&d.x<z.x+z.w&&d.y+40>232-z.h)over=true});o=o.filter(z=>z.x+z.w>0);if(!over){score+=.12;speed=5+Math.min(7,score/20)}else m.textContent='Game over! Tap RESTART or JUMP to play again.';s.textContent=Math.floor(score);best=Math.max(best,Math.floor(score));b.textContent=best;if(!over)requestAnimationFrame(draw);else{x.fillStyle='white';x.textAlign='center';x.font='bold 38px system-ui';x.fillText('GAME OVER',450,120)}}reset();</script></body></html>""",height=420,scrolling=False)
+        st.stop()
+
+    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
-
-    # Optional mini-game arcade for short breaks; game state stays in this browser session.
-    if "show_break_games" not in st.session_state:
-        st.session_state["show_break_games"] = False
-    arcade_col, arcade_note = st.columns([1, 3], vertical_alignment="center")
-    with arcade_col:
-        if st.button(
-            "🎮  Take a break · Mini Games" if not st.session_state["show_break_games"] else "✖  Close Mini Games",
-            key="toggle_break_games",
-            use_container_width=True,
-            type="primary",
-        ):
-            st.session_state["show_break_games"] = not st.session_state["show_break_games"]
-            st.rerun()
-    with arcade_note:
-        st.caption("Quick games for a short break — your report data stays untouched.")
-
-    if st.session_state["show_break_games"]:
-        st.markdown("""<div class="arcade-banner"><span class="arcade-kicker">DREAMZTREE BREAK ROOM</span><h2>🎮 Mini Game Arcade</h2><p>Take a quick break, then get back to the leads.</p></div>""", unsafe_allow_html=True)
-        game_tabs = st.tabs([
-            "🎯 Number Guess", "✊ RPS", "🧠 Brain Test", "🧩 Memory", "🔢 Mini Sudoku",
-            "🔤 Word Ladder", "➕ Math Sprint", "♟️ Queens Logic", "🟦 Color Match"
-        ])
-        with game_tabs[0]:
-            if "break_number_target" not in st.session_state:
-                st.session_state["break_number_target"] = random.randint(1, 20)
-            if "break_number_attempts" not in st.session_state:
-                st.session_state["break_number_attempts"] = 0
-            if "break_number_message" not in st.session_state:
-                st.session_state["break_number_message"] = "I'm thinking of a number from 1 to 20. Can you guess it?"
-            st.markdown("#### 🎯 Guess the Number")
-            st.write("Pick a number from **1 to 20**. Try to find it in as few guesses as possible!")
-            guess_col, guess_btn_col, reset_col = st.columns([2, 1, 1])
-            with guess_col:
-                guess_value = st.number_input("Your guess", min_value=1, max_value=20, value=10, step=1, key="break_number_guess")
-            with guess_btn_col:
-                st.write("")
-                if st.button("Check guess", key="break_check_guess", use_container_width=True):
-                    st.session_state["break_number_attempts"] += 1
-                    target = st.session_state["break_number_target"]
-                    if int(guess_value) == target:
-                        st.session_state["break_number_message"] = f"🎉 Correct! You found {target} in {st.session_state['break_number_attempts']} guesses!"
-                    elif int(guess_value) < target:
-                        st.session_state["break_number_message"] = "⬆️ Too low — try a higher number!"
-                    else:
-                        st.session_state["break_number_message"] = "⬇️ Too high — try a lower number!"
-            with reset_col:
-                st.write("")
-                if st.button("New game", key="break_reset_guess", use_container_width=True):
-                    st.session_state["break_number_target"] = random.randint(1, 20)
-                    st.session_state["break_number_attempts"] = 0
-                    st.session_state["break_number_message"] = "New number picked! Make your guess."
-                    st.rerun()
-            st.info(st.session_state["break_number_message"])
-            st.caption(f"Guesses: {st.session_state['break_number_attempts']}")
-
-        with game_tabs[1]:
-            st.markdown("#### ✊ Rock Paper Scissors")
-            st.write("Choose your move and see if you can beat the computer.")
-            rps_cols = st.columns(3)
-            moves = [("✊ Rock", "Rock"), ("✋ Paper", "Paper"), ("✌️ Scissors", "Scissors")]
-            for col, (label, move) in zip(rps_cols, moves):
-                with col:
-                    if st.button(label, key=f"break_rps_{move.lower()}", use_container_width=True):
-                        computer_move = random.choice(["Rock", "Paper", "Scissors"])
-                        if move == computer_move:
-                            outcome = "It's a tie! 🤝"
-                        elif (move, computer_move) in [("Rock", "Scissors"), ("Paper", "Rock"), ("Scissors", "Paper")]:
-                            outcome = "You win! 🎉"
-                        else:
-                            outcome = "Computer wins this round! 🤖"
-                        st.session_state["break_rps_result"] = f"You chose {move}. Computer chose {computer_move}. {outcome}"
-            if st.session_state.get("break_rps_result"):
-                st.success(st.session_state["break_rps_result"])
-            else:
-                st.caption("Your result will appear here after you choose a move.")
-
-        with game_tabs[2]:
-            st.markdown("#### 🧠 Brain Test")
-            brain_questions = [
-                ("What comes next? 2, 4, 8, 16, __", ["18", "24", "32", "30"], "32", "Each number doubles."),
-                ("Which one doesn't belong?", ["Triangle", "Square", "Circle", "Blue"], "Blue", "The others are shapes."),
-                ("A farmer has 12 sheep. All but 5 run away. How many remain?", ["5", "7", "12", "0"], "5", "‘All but 5’ means five remain."),
-                ("What comes next? J, F, M, A, M, __", ["J", "A", "S", "D"], "J", "The first letters of the months: January, February, March..."),
-                ("You overtake the person in second place. What place are you in?", ["First", "Second", "Third", "Last"], "Second", "You take their position."),
-            ]
-            if "brain_question_index" not in st.session_state: st.session_state.brain_question_index = 0
-            if "brain_score" not in st.session_state: st.session_state.brain_score = 0
-            if "brain_answered" not in st.session_state: st.session_state.brain_answered = False
-            qi = st.session_state.brain_question_index
-            if qi < len(brain_questions):
-                question, options, answer, explanation = brain_questions[qi]
-                st.progress(qi / len(brain_questions), text=f"Question {qi+1} of {len(brain_questions)} · Score {st.session_state.brain_score}")
-                st.write(f"**{question}**")
-                selected = st.radio("Choose your answer", options, key=f"brain_pick_{qi}", label_visibility="collapsed")
-                if st.button("Submit answer", key=f"brain_submit_{qi}", type="primary") and not st.session_state.brain_answered:
-                    st.session_state.brain_answered = True
-                    st.session_state.brain_last_correct = selected == answer
-                    if selected == answer: st.session_state.brain_score += 1
-                    st.session_state.brain_explanation = explanation
-                    st.rerun()
-                if st.session_state.brain_answered:
-                    if st.session_state.get("brain_last_correct"): st.success("Correct! 🧠✨")
-                    else: st.warning(f"Not quite. Answer: {answer}")
-                    st.caption(explanation)
-                    if st.button("Next question ➜", key=f"brain_next_{qi}"):
-                        st.session_state.brain_question_index += 1
-                        st.session_state.brain_answered = False
-                        st.rerun()
-            else:
-                st.success(f"Brain test complete! You scored {st.session_state.brain_score}/{len(brain_questions)}.")
-                if st.button("Play brain test again", key="brain_restart"):
-                    st.session_state.brain_question_index = 0; st.session_state.brain_score = 0; st.session_state.brain_answered = False; st.rerun()
-
-        with game_tabs[3]:
-            st.markdown("#### 🧩 Memory Sequence")
-            st.write("Memorize this sequence, then type it back in the same order.")
-            if "memory_sequence" not in st.session_state:
-                st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(4)]
-                st.session_state.memory_length = 4
-            st.markdown(f"### `{'  ·  '.join(map(str, st.session_state.memory_sequence))}`")
-            memory_guess = st.text_input("Enter the digits without spaces", key="memory_guess")
-            if st.button("Check memory", key="memory_check"):
-                expected = "".join(map(str, st.session_state.memory_sequence))
-                if memory_guess.strip().replace(" ", "") == expected:
-                    st.success("Amazing memory! 🎉")
-                    st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(min(9, st.session_state.memory_length + 1))]
-                    st.session_state.memory_length = min(9, st.session_state.memory_length + 1)
-                    st.rerun()
-                else: st.error(f"Not quite. The sequence was {expected}. Try a new round!")
-            if st.button("Reset memory game", key="memory_reset"):
-                st.session_state.memory_length = 4
-                st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(4)]
-                st.rerun()
-
-        with game_tabs[4]:
-            st.markdown("#### 🔢 Mini Sudoku · 4×4")
-            st.write("Fill each row and column with 1–4 without repeating a number. This is a mini practice puzzle.")
-            sudoku_solution = [[1,2,3,4],[3,4,1,2],[2,1,4,3],[4,3,2,1]]
-            sudoku_clues = [[1,0,0,4],[0,4,1,0],[2,0,4,0],[0,3,0,1]]
-            if "sudoku_board" not in st.session_state: st.session_state.sudoku_board = [row[:] for row in sudoku_clues]
-            sudoku_cols = st.columns(4)
-            for ri in range(4):
-                row_cols = st.columns(4)
-                for ci in range(4):
-                    with row_cols[ci]:
-                        if sudoku_clues[ri][ci]: st.markdown(f"### {sudoku_clues[ri][ci]}")
-                        else:
-                            v = st.selectbox(f"R{ri+1}C{ci+1}", [0,1,2,3,4], index=st.session_state.sudoku_board[ri][ci], key=f"sudoku_{ri}_{ci}", format_func=lambda x: "·" if x == 0 else str(x), label_visibility="collapsed")
-                            st.session_state.sudoku_board[ri][ci] = v
-            if st.button("Check Sudoku", key="sudoku_check", type="primary"):
-                if st.session_state.sudoku_board == sudoku_solution: st.success("Solved! 🏆")
-                else: st.warning("Not solved yet. Check every row and column; each must contain 1, 2, 3 and 4 once.")
-            if st.button("Reset Sudoku", key="sudoku_reset"):
-                st.session_state.sudoku_board = [row[:] for row in sudoku_clues]; st.rerun()
-
-        with game_tabs[5]:
-            st.markdown("#### 🔤 Word Ladder")
-            st.write("Change one letter at a time to turn **COLD** into **WARM**. Use a valid 4-letter word for each step.")
-            if "ladder_words" not in st.session_state: st.session_state.ladder_words = ["COLD"]
-            st.caption("Your path: " + " → ".join(st.session_state.ladder_words))
-            ladder_word = st.text_input("Next four-letter word", max_chars=4, key="ladder_input").strip().upper()
-            if st.button("Add word", key="ladder_add"):
-                prev = st.session_state.ladder_words[-1]
-                if len(ladder_word) != 4 or not ladder_word.isalpha(): st.error("Enter exactly four letters.")
-                elif sum(a != b for a,b in zip(prev, ladder_word)) != 1: st.error("Change exactly one letter from the previous word.")
-                elif ladder_word in st.session_state.ladder_words: st.error("You've already used that word.")
-                else:
-                    st.session_state.ladder_words.append(ladder_word)
-                    if ladder_word == "WARM": st.success(f"You made it in {len(st.session_state.ladder_words)-1} moves! 🏆")
-                    else: st.rerun()
-            if st.button("Restart ladder", key="ladder_reset"): st.session_state.ladder_words = ["COLD"]; st.rerun()
-            st.caption("Try: CORD → CARD → WARD → WARM")
-
-        with game_tabs[6]:
-            st.markdown("#### ➕ Math Sprint")
-            if "math_problem" not in st.session_state: st.session_state.math_problem = (random.randint(2,12), random.randint(2,12), random.choice(["+", "−", "×"]))
-            a,b,op = st.session_state.math_problem
-            correct = a+b if op == "+" else (a-b if op == "−" else a*b)
-            st.markdown(f"## {a} {op} {b} = ?")
-            math_answer = st.number_input("Your answer", value=0, step=1, key="math_answer")
-            if st.button("Check answer", key="math_check"):
-                if int(math_answer) == correct: st.success("Correct! ⚡ Fast brain!")
-                else: st.error(f"Not quite — the answer is {correct}.")
-            if st.button("Next problem", key="math_next"):
-                st.session_state.math_problem = (random.randint(2,12), random.randint(2,12), random.choice(["+", "−", "×"]))
-                st.rerun()
-
-        with game_tabs[7]:
-            st.markdown("#### ♟️ Queens Logic · 4×4")
-            st.write("Place four queens on a 4×4 board so no two queens share a row, column, or diagonal. Choose one column for each row.")
-            queen_cols = [st.selectbox(f"Queen in row {r+1}", [1,2,3,4], key=f"queen_row_{r}") for r in range(4)]
-            if st.button("Check queens", key="queens_check", type="primary"):
-                safe = len(set(queen_cols)) == 4 and all(abs(queen_cols[i]-queen_cols[j]) != abs(i-j) for i in range(4) for j in range(i+1,4))
-                if safe: st.success("Perfect placement! 👑")
-                else: st.warning("Some queens can attack each other. Try another arrangement.")
-            st.caption("Hint: try columns 2, 4, 1, 3.")
-
-        with game_tabs[8]:
-            st.markdown("#### 🟦 Color Match")
-            st.write("Choose the colour named by the word, not the colour used to display it — a quick focus test.")
-            colors = {"RED":"#ef4444", "BLUE":"#3b82f6", "GREEN":"#22c55e", "PURPLE":"#a855f7", "ORANGE":"#f97316"}
-            if "color_match_word" not in st.session_state:
-                st.session_state.color_match_word = random.choice(list(colors))
-                st.session_state.color_match_ink = random.choice(list(colors))
-            word = st.session_state.color_match_word
-            st.markdown(f"<div style='font-size:2.6rem;font-weight:900;text-align:center;color:{colors[st.session_state.color_match_ink]};padding:1rem'>{word}</div>", unsafe_allow_html=True)
-            color_choice = st.radio("Which colour is written?", list(colors), horizontal=True, key="color_match_choice")
-            if st.button("Submit colour", key="color_match_submit"):
-                if color_choice == word: st.success("Correct — great focus! 🎯")
-                else: st.error(f"The word says {word}.")
-            if st.button("Next colour", key="color_match_next"):
-                st.session_state.color_match_word = random.choice(list(colors))
-                st.session_state.color_match_ink = random.choice(list(colors))
-                st.rerun()
 
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
