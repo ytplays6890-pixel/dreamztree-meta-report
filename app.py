@@ -1,4 +1,6 @@
 import re
+import hmac
+import hashlib
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -419,50 +421,131 @@ def summarize_campaign_performance(frame, exchange_rate):
     return valid, int(valid["Results"].sum()), float(valid["Spent"].sum() * exchange_rate), top
 
 
+
+def require_login():
+    """Require credentials configured privately in Streamlit Cloud Secrets."""
+    try:
+        users = dict(st.secrets["auth"]["users"])
+    except Exception:
+        st.title("Dreamztree Meta Report")
+        st.error("Login is not configured yet.")
+        st.markdown(
+            "To protect your report, add credentials in **Streamlit Cloud → App settings → Secrets**. "
+            "Use the setup instructions in README.txt supplied with this app."
+        )
+        st.stop()
+
+    current_user = st.session_state.get("authenticated_user", "")
+    expected_password = str(users.get(current_user, ""))
+    current_fingerprint = hashlib.sha256(
+        (current_user + "\\0" + expected_password).encode("utf-8")
+    ).hexdigest()
+    if (
+        st.session_state.get("authenticated")
+        and current_user in users
+        and hmac.compare_digest(
+            st.session_state.get("login_fingerprint", ""),
+            current_fingerprint,
+        )
+    ):
+        return
+    st.session_state["authenticated"] = False
+    st.session_state.pop("login_fingerprint", None)
+
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] {background: radial-gradient(circle at top left, #17283a, #090d13 58%);}
+        [data-testid="stHeader"] {background: transparent;}
+        .login-panel {max-width: 560px; margin: 5vh auto 0 auto; padding: 2rem;
+          border: 1px solid #2b3b50; border-radius: 22px;
+          background: linear-gradient(145deg, #151f2c, #0e141d);
+          box-shadow: 0 20px 55px rgba(0,0,0,.25);}
+        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #65e5c6;
+          font-size: .75rem; font-weight: 800;}
+        </style>
+        <div class="login-panel">
+          <div class="login-kicker">Dreamztree · Marketing Intelligence</div>
+          <h1>Meta Leads Command Center</h1>
+          <p>Sign in to access campaign performance and lead reports.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.form("login_form", clear_on_submit=False):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+    if submitted:
+        expected = users.get(username.strip())
+        if expected is not None and hmac.compare_digest(password, str(expected)):
+            st.session_state["authenticated"] = True
+            st.session_state["authenticated_user"] = username.strip()
+            st.session_state["login_fingerprint"] = hashlib.sha256(
+                (username.strip() + "\\0" + str(expected)).encode("utf-8")
+            ).hexdigest()
+            st.rerun()
+        else:
+            st.error("Incorrect username or password.")
+    st.stop()
+
+
 def main():
+    require_login()
     inject_premium_theme()
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
+    header_left, header_right = st.columns([5, 1])
+    with header_right:
+        if st.button("Sign out", use_container_width=True):
+            st.session_state["authenticated"] = False
+            st.session_state.pop("authenticated_user", None)
+            st.session_state.pop("login_fingerprint", None)
+            st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
-    with st.sidebar:
-        st.header("Settings")
+    with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
-        st.subheader("USD → KWD exchange rate")
-        use_manual_rate = st.checkbox(
-            "Use manual fallback rate instead",
-            value=False,
-            help="Enable this only if you need to use your company's rate or the automatic reference rate is unavailable.",
-        )
-        manual_factor = st.number_input(
-            "Manual fallback rate (1 USD = KWD)",
-            min_value=0.000001,
-            value=MANUAL_FALLBACK_KWD_FACTOR,
-            step=0.001,
-            format="%.6f",
-            disabled=not use_manual_rate,
-        )
-        if use_manual_rate:
-            factor = float(manual_factor)
-            st.warning(f"Manual fallback rate in use: 1 USD = {factor:.6f} KWD. This is not a live rate.")
-            rate_source_label = "Manual fallback"
-            rate_date_label = "Manually entered"
-        else:
-            try:
-                with st.spinner("Fetching latest published USD → KWD reference rate…"):
-                    factor, rate_date_label = fetch_usd_kwd_rate()
-                rate_source_label = "Open ER API reference rate"
-                st.success(f"1 USD = {factor:.6f} KWD")
-                st.caption(f"Rate date: {rate_date_label} · Source: open.er-api.com · Cached for up to 24 hours.")
-            except Exception as exc:
+        settings_left, settings_right = st.columns(2, gap="large")
+        with settings_left:
+            st.subheader("USD → KWD exchange rate")
+            use_manual_rate = st.checkbox(
+                "Use manual fallback rate instead",
+                value=False,
+                help="Enable this only if you need to use your company's rate or the automatic reference rate is unavailable.",
+            )
+            manual_factor = st.number_input(
+                "Manual fallback rate (1 USD = KWD)",
+                min_value=0.000001,
+                value=MANUAL_FALLBACK_KWD_FACTOR,
+                step=0.001,
+                format="%.6f",
+                disabled=not use_manual_rate,
+            )
+            if use_manual_rate:
                 factor = float(manual_factor)
-                rate_source_label = "Manual fallback (API unavailable)"
+                st.warning(f"Manual fallback rate in use: 1 USD = {factor:.6f} KWD. This is not a live rate.")
+                rate_source_label = "Manual fallback"
                 rate_date_label = "Manually entered"
-                st.error("Could not fetch the exchange rate. The app is using the clearly labelled manual fallback below.")
-                st.warning(f"Fallback in use: 1 USD = {factor:.6f} KWD. Check your connection and verify this rate before using cost totals.")
-                st.caption(f"Technical detail: {type(exc).__name__}: {exc}")
-
-        mapping_upload = st.file_uploader("Optional campaign mapping file", type=["xlsx", "xls", "csv"])
-        st.caption("Mapping columns: Campaign, Staff, Course, Branch.")
+            else:
+                try:
+                    with st.spinner("Fetching latest published USD → KWD reference rate…"):
+                        factor, rate_date_label = fetch_usd_kwd_rate()
+                    rate_source_label = "Open ER API reference rate"
+                    st.success(f"1 USD = {factor:.6f} KWD")
+                    st.caption(f"Rate date: {rate_date_label} · Source: open.er-api.com · Cached for up to 24 hours.")
+                except Exception as exc:
+                    factor = float(manual_factor)
+                    rate_source_label = "Manual fallback (API unavailable)"
+                    rate_date_label = "Manually entered"
+                    st.error("Could not fetch the exchange rate. The app is using the clearly labelled manual fallback below.")
+                    st.warning(f"Fallback in use: 1 USD = {factor:.6f} KWD. Check your connection and verify this rate before using cost totals.")
+                    st.caption(f"Technical detail: {type(exc).__name__}: {exc}")
+        with settings_right:
+            st.subheader("Campaign mapping")
+            mapping_upload = st.file_uploader(
+                "Optional campaign mapping file", type=["xlsx", "xls", "csv"], key="mapping_upload_settings"
+            )
+            st.caption("Mapping columns: Campaign, Staff, Course, Branch.")
     mappings = read_mapping_file(mapping_upload)
     st.subheader("1. Upload Meta Ads reports")
     upload_today_col, upload_yesterday_col = st.columns(2)
