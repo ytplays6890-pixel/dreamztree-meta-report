@@ -1,4 +1,5 @@
 import re
+import random
 import hmac
 import hashlib
 import os
@@ -491,7 +492,15 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
-    </style>""", unsafe_allow_html=True)
+    
+        .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
+        .arcade-banner h2 { margin: .35rem 0; color: white; }
+        .arcade-banner p { margin-bottom: 0; color: #f5f3ff; }
+        .arcade-kicker { letter-spacing: .18em; font-size: .72rem; font-weight: 900; color: #fef08a; }
+        @keyframes arcade-gradient { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
+</style>""", unsafe_allow_html=True)
 
 
 def load_campaign_report(upload, mappings):
@@ -789,6 +798,222 @@ def main():
             st.session_state.pop("auth_method", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
+
+    # Optional mini-game arcade for short breaks; game state stays in this browser session.
+    if "show_break_games" not in st.session_state:
+        st.session_state["show_break_games"] = False
+    arcade_col, arcade_note = st.columns([1, 3], vertical_alignment="center")
+    with arcade_col:
+        if st.button(
+            "🎮  Take a break · Mini Games" if not st.session_state["show_break_games"] else "✖  Close Mini Games",
+            key="toggle_break_games",
+            use_container_width=True,
+            type="primary",
+        ):
+            st.session_state["show_break_games"] = not st.session_state["show_break_games"]
+            st.rerun()
+    with arcade_note:
+        st.caption("Quick games for a short break — your report data stays untouched.")
+
+    if st.session_state["show_break_games"]:
+        st.markdown("""<div class="arcade-banner"><span class="arcade-kicker">DREAMZTREE BREAK ROOM</span><h2>🎮 Mini Game Arcade</h2><p>Take a quick break, then get back to the leads.</p></div>""", unsafe_allow_html=True)
+        game_tabs = st.tabs([
+            "🎯 Number Guess", "✊ RPS", "🧠 Brain Test", "🧩 Memory", "🔢 Mini Sudoku",
+            "🔤 Word Ladder", "➕ Math Sprint", "♟️ Queens Logic", "🟦 Color Match"
+        ])
+        with game_tabs[0]:
+            if "break_number_target" not in st.session_state:
+                st.session_state["break_number_target"] = random.randint(1, 20)
+            if "break_number_attempts" not in st.session_state:
+                st.session_state["break_number_attempts"] = 0
+            if "break_number_message" not in st.session_state:
+                st.session_state["break_number_message"] = "I'm thinking of a number from 1 to 20. Can you guess it?"
+            st.markdown("#### 🎯 Guess the Number")
+            st.write("Pick a number from **1 to 20**. Try to find it in as few guesses as possible!")
+            guess_col, guess_btn_col, reset_col = st.columns([2, 1, 1])
+            with guess_col:
+                guess_value = st.number_input("Your guess", min_value=1, max_value=20, value=10, step=1, key="break_number_guess")
+            with guess_btn_col:
+                st.write("")
+                if st.button("Check guess", key="break_check_guess", use_container_width=True):
+                    st.session_state["break_number_attempts"] += 1
+                    target = st.session_state["break_number_target"]
+                    if int(guess_value) == target:
+                        st.session_state["break_number_message"] = f"🎉 Correct! You found {target} in {st.session_state['break_number_attempts']} guesses!"
+                    elif int(guess_value) < target:
+                        st.session_state["break_number_message"] = "⬆️ Too low — try a higher number!"
+                    else:
+                        st.session_state["break_number_message"] = "⬇️ Too high — try a lower number!"
+            with reset_col:
+                st.write("")
+                if st.button("New game", key="break_reset_guess", use_container_width=True):
+                    st.session_state["break_number_target"] = random.randint(1, 20)
+                    st.session_state["break_number_attempts"] = 0
+                    st.session_state["break_number_message"] = "New number picked! Make your guess."
+                    st.rerun()
+            st.info(st.session_state["break_number_message"])
+            st.caption(f"Guesses: {st.session_state['break_number_attempts']}")
+
+        with game_tabs[1]:
+            st.markdown("#### ✊ Rock Paper Scissors")
+            st.write("Choose your move and see if you can beat the computer.")
+            rps_cols = st.columns(3)
+            moves = [("✊ Rock", "Rock"), ("✋ Paper", "Paper"), ("✌️ Scissors", "Scissors")]
+            for col, (label, move) in zip(rps_cols, moves):
+                with col:
+                    if st.button(label, key=f"break_rps_{move.lower()}", use_container_width=True):
+                        computer_move = random.choice(["Rock", "Paper", "Scissors"])
+                        if move == computer_move:
+                            outcome = "It's a tie! 🤝"
+                        elif (move, computer_move) in [("Rock", "Scissors"), ("Paper", "Rock"), ("Scissors", "Paper")]:
+                            outcome = "You win! 🎉"
+                        else:
+                            outcome = "Computer wins this round! 🤖"
+                        st.session_state["break_rps_result"] = f"You chose {move}. Computer chose {computer_move}. {outcome}"
+            if st.session_state.get("break_rps_result"):
+                st.success(st.session_state["break_rps_result"])
+            else:
+                st.caption("Your result will appear here after you choose a move.")
+
+        with game_tabs[2]:
+            st.markdown("#### 🧠 Brain Test")
+            brain_questions = [
+                ("What comes next? 2, 4, 8, 16, __", ["18", "24", "32", "30"], "32", "Each number doubles."),
+                ("Which one doesn't belong?", ["Triangle", "Square", "Circle", "Blue"], "Blue", "The others are shapes."),
+                ("A farmer has 12 sheep. All but 5 run away. How many remain?", ["5", "7", "12", "0"], "5", "‘All but 5’ means five remain."),
+                ("What comes next? J, F, M, A, M, __", ["J", "A", "S", "D"], "J", "The first letters of the months: January, February, March..."),
+                ("You overtake the person in second place. What place are you in?", ["First", "Second", "Third", "Last"], "Second", "You take their position."),
+            ]
+            if "brain_question_index" not in st.session_state: st.session_state.brain_question_index = 0
+            if "brain_score" not in st.session_state: st.session_state.brain_score = 0
+            if "brain_answered" not in st.session_state: st.session_state.brain_answered = False
+            qi = st.session_state.brain_question_index
+            if qi < len(brain_questions):
+                question, options, answer, explanation = brain_questions[qi]
+                st.progress(qi / len(brain_questions), text=f"Question {qi+1} of {len(brain_questions)} · Score {st.session_state.brain_score}")
+                st.write(f"**{question}**")
+                selected = st.radio("Choose your answer", options, key=f"brain_pick_{qi}", label_visibility="collapsed")
+                if st.button("Submit answer", key=f"brain_submit_{qi}", type="primary") and not st.session_state.brain_answered:
+                    st.session_state.brain_answered = True
+                    st.session_state.brain_last_correct = selected == answer
+                    if selected == answer: st.session_state.brain_score += 1
+                    st.session_state.brain_explanation = explanation
+                    st.rerun()
+                if st.session_state.brain_answered:
+                    if st.session_state.get("brain_last_correct"): st.success("Correct! 🧠✨")
+                    else: st.warning(f"Not quite. Answer: {answer}")
+                    st.caption(explanation)
+                    if st.button("Next question ➜", key=f"brain_next_{qi}"):
+                        st.session_state.brain_question_index += 1
+                        st.session_state.brain_answered = False
+                        st.rerun()
+            else:
+                st.success(f"Brain test complete! You scored {st.session_state.brain_score}/{len(brain_questions)}.")
+                if st.button("Play brain test again", key="brain_restart"):
+                    st.session_state.brain_question_index = 0; st.session_state.brain_score = 0; st.session_state.brain_answered = False; st.rerun()
+
+        with game_tabs[3]:
+            st.markdown("#### 🧩 Memory Sequence")
+            st.write("Memorize this sequence, then type it back in the same order.")
+            if "memory_sequence" not in st.session_state:
+                st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(4)]
+                st.session_state.memory_length = 4
+            st.markdown(f"### `{'  ·  '.join(map(str, st.session_state.memory_sequence))}`")
+            memory_guess = st.text_input("Enter the digits without spaces", key="memory_guess")
+            if st.button("Check memory", key="memory_check"):
+                expected = "".join(map(str, st.session_state.memory_sequence))
+                if memory_guess.strip().replace(" ", "") == expected:
+                    st.success("Amazing memory! 🎉")
+                    st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(min(9, st.session_state.memory_length + 1))]
+                    st.session_state.memory_length = min(9, st.session_state.memory_length + 1)
+                    st.rerun()
+                else: st.error(f"Not quite. The sequence was {expected}. Try a new round!")
+            if st.button("Reset memory game", key="memory_reset"):
+                st.session_state.memory_length = 4
+                st.session_state.memory_sequence = [random.randint(1, 9) for _ in range(4)]
+                st.rerun()
+
+        with game_tabs[4]:
+            st.markdown("#### 🔢 Mini Sudoku · 4×4")
+            st.write("Fill each row and column with 1–4 without repeating a number. This is a mini practice puzzle.")
+            sudoku_solution = [[1,2,3,4],[3,4,1,2],[2,1,4,3],[4,3,2,1]]
+            sudoku_clues = [[1,0,0,4],[0,4,1,0],[2,0,4,0],[0,3,0,1]]
+            if "sudoku_board" not in st.session_state: st.session_state.sudoku_board = [row[:] for row in sudoku_clues]
+            sudoku_cols = st.columns(4)
+            for ri in range(4):
+                row_cols = st.columns(4)
+                for ci in range(4):
+                    with row_cols[ci]:
+                        if sudoku_clues[ri][ci]: st.markdown(f"### {sudoku_clues[ri][ci]}")
+                        else:
+                            v = st.selectbox(f"R{ri+1}C{ci+1}", [0,1,2,3,4], index=st.session_state.sudoku_board[ri][ci], key=f"sudoku_{ri}_{ci}", format_func=lambda x: "·" if x == 0 else str(x), label_visibility="collapsed")
+                            st.session_state.sudoku_board[ri][ci] = v
+            if st.button("Check Sudoku", key="sudoku_check", type="primary"):
+                if st.session_state.sudoku_board == sudoku_solution: st.success("Solved! 🏆")
+                else: st.warning("Not solved yet. Check every row and column; each must contain 1, 2, 3 and 4 once.")
+            if st.button("Reset Sudoku", key="sudoku_reset"):
+                st.session_state.sudoku_board = [row[:] for row in sudoku_clues]; st.rerun()
+
+        with game_tabs[5]:
+            st.markdown("#### 🔤 Word Ladder")
+            st.write("Change one letter at a time to turn **COLD** into **WARM**. Use a valid 4-letter word for each step.")
+            if "ladder_words" not in st.session_state: st.session_state.ladder_words = ["COLD"]
+            st.caption("Your path: " + " → ".join(st.session_state.ladder_words))
+            ladder_word = st.text_input("Next four-letter word", max_chars=4, key="ladder_input").strip().upper()
+            if st.button("Add word", key="ladder_add"):
+                prev = st.session_state.ladder_words[-1]
+                if len(ladder_word) != 4 or not ladder_word.isalpha(): st.error("Enter exactly four letters.")
+                elif sum(a != b for a,b in zip(prev, ladder_word)) != 1: st.error("Change exactly one letter from the previous word.")
+                elif ladder_word in st.session_state.ladder_words: st.error("You've already used that word.")
+                else:
+                    st.session_state.ladder_words.append(ladder_word)
+                    if ladder_word == "WARM": st.success(f"You made it in {len(st.session_state.ladder_words)-1} moves! 🏆")
+                    else: st.rerun()
+            if st.button("Restart ladder", key="ladder_reset"): st.session_state.ladder_words = ["COLD"]; st.rerun()
+            st.caption("Try: CORD → CARD → WARD → WARM")
+
+        with game_tabs[6]:
+            st.markdown("#### ➕ Math Sprint")
+            if "math_problem" not in st.session_state: st.session_state.math_problem = (random.randint(2,12), random.randint(2,12), random.choice(["+", "−", "×"]))
+            a,b,op = st.session_state.math_problem
+            correct = a+b if op == "+" else (a-b if op == "−" else a*b)
+            st.markdown(f"## {a} {op} {b} = ?")
+            math_answer = st.number_input("Your answer", value=0, step=1, key="math_answer")
+            if st.button("Check answer", key="math_check"):
+                if int(math_answer) == correct: st.success("Correct! ⚡ Fast brain!")
+                else: st.error(f"Not quite — the answer is {correct}.")
+            if st.button("Next problem", key="math_next"):
+                st.session_state.math_problem = (random.randint(2,12), random.randint(2,12), random.choice(["+", "−", "×"]))
+                st.rerun()
+
+        with game_tabs[7]:
+            st.markdown("#### ♟️ Queens Logic · 4×4")
+            st.write("Place four queens on a 4×4 board so no two queens share a row, column, or diagonal. Choose one column for each row.")
+            queen_cols = [st.selectbox(f"Queen in row {r+1}", [1,2,3,4], key=f"queen_row_{r}") for r in range(4)]
+            if st.button("Check queens", key="queens_check", type="primary"):
+                safe = len(set(queen_cols)) == 4 and all(abs(queen_cols[i]-queen_cols[j]) != abs(i-j) for i in range(4) for j in range(i+1,4))
+                if safe: st.success("Perfect placement! 👑")
+                else: st.warning("Some queens can attack each other. Try another arrangement.")
+            st.caption("Hint: try columns 2, 4, 1, 3.")
+
+        with game_tabs[8]:
+            st.markdown("#### 🟦 Color Match")
+            st.write("Choose the colour named by the word, not the colour used to display it — a quick focus test.")
+            colors = {"RED":"#ef4444", "BLUE":"#3b82f6", "GREEN":"#22c55e", "PURPLE":"#a855f7", "ORANGE":"#f97316"}
+            if "color_match_word" not in st.session_state:
+                st.session_state.color_match_word = random.choice(list(colors))
+                st.session_state.color_match_ink = random.choice(list(colors))
+            word = st.session_state.color_match_word
+            st.markdown(f"<div style='font-size:2.6rem;font-weight:900;text-align:center;color:{colors[st.session_state.color_match_ink]};padding:1rem'>{word}</div>", unsafe_allow_html=True)
+            color_choice = st.radio("Which colour is written?", list(colors), horizontal=True, key="color_match_choice")
+            if st.button("Submit colour", key="color_match_submit"):
+                if color_choice == word: st.success("Correct — great focus! 🎯")
+                else: st.error(f"The word says {word}.")
+            if st.button("Next colour", key="color_match_next"):
+                st.session_state.color_match_word = random.choice(list(colors))
+                st.session_state.color_match_ink = random.choice(list(colors))
+                st.rerun()
+
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
