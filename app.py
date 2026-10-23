@@ -358,9 +358,11 @@ def main():
             staff, course, branch, status = infer_campaign(r["Campaign"], mappings)
             assignments.append({"Campaign": r["Campaign"], "Results": int(r["Results"]), "Spent": float(r["Spent"]), "Staff": staff, "Course": course, "Branch": branch, "Status": status})
         assigned = pd.DataFrame(assignments)
-        initial_unresolved = assigned[(assigned["Staff"].astype(str).str.strip() == "") | (assigned["Course"].astype(str).str.strip() == "") | (assigned["Branch"].astype(str).str.strip() == "")]
+        # A campaign can be included in branch/staff totals when Staff and Branch are known.
+        # A missing Course is labelled "Unclassified course" in the report instead of excluding leads.
+        initial_unresolved = assigned[(assigned["Staff"].astype(str).str.strip() == "") | (assigned["Branch"].astype(str).str.strip() == "") | (assigned["Course"].astype(str).str.strip() == "")]
         if not initial_unresolved.empty:
-            st.warning(f"{len(initial_unresolved)} campaign(s) need review. These are highlighted below and are excluded until all required fields are filled.")
+            st.warning(f"{len(initial_unresolved)} campaign(s) need review. Campaigns with Staff and Branch identified can still be included; missing courses will appear as 'Unclassified course'.")
             st.dataframe(initial_unresolved, use_container_width=True, hide_index=True)
         edited = st.data_editor(
             assigned,
@@ -376,12 +378,17 @@ def main():
         )
         unresolved = edited[(edited["Staff"].astype(str).str.strip() == "") | (edited["Course"].astype(str).str.strip() == "") | (edited["Branch"].astype(str).str.strip() == "")]
         if not unresolved.empty:
-            st.warning(f"{len(unresolved)} campaign(s) need staff/course/branch review. They will not be included in the grouped report until you fill the missing fields.")
+            can_include = unresolved[(unresolved["Staff"].astype(str).str.strip() != "") & (unresolved["Branch"].astype(str).str.strip() != "")]
+            needs_staff_branch = len(unresolved) - len(can_include)
+            st.warning(f"{len(can_include)} campaign(s) with Staff and Branch identified can be included despite a missing course. {needs_staff_branch} campaign(s) still need Staff or Branch review.")
         if st.button("Generate report", type="primary"):
-            valid = edited[(edited["Staff"].astype(str).str.strip() != "") & (edited["Course"].astype(str).str.strip() != "") & (edited["Branch"].astype(str).str.strip() != "")]
+            # Only Staff and Branch are required for inclusion. Missing courses are not allowed
+            # to remove otherwise valid leads from the branch/staff report.
+            valid = edited[(edited["Staff"].astype(str).str.strip() != "") & (edited["Branch"].astype(str).str.strip() != "")].copy()
             if valid.empty:
-                st.error("No campaigns have complete assignments. Review the assignment table first.")
+                st.error("No campaigns have both Staff and Branch identified. Review the assignment table first.")
                 return
+            valid["Course"] = valid["Course"].astype(str).str.strip().replace("", "Unclassified course")
             grouped = valid.groupby(["Branch", "Staff", "Course"], sort=False).agg(Results=("Results", "sum"), Spent=("Spent", "sum")).reset_index()
             lines = [f"*📋 Leads Count  ·  {date_value.strftime('%d/%m/%Y')}*", ""]
             grand_leads, grand_spent = 0, 0.0
