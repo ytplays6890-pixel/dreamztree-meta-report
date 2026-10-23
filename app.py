@@ -355,6 +355,12 @@ def inject_premium_theme():
       0%, 100% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 0 rgba(139,92,246,0); }
       50% { box-shadow: 0 18px 50px rgba(0,0,0,.20), 0 0 28px rgba(139,92,246,.16); }
     }
+    @keyframes dt-float {0%,100% {transform:translate3d(0,0,0)} 50% {transform:translate3d(0,-10px,0)}}
+    @keyframes dt-border-flow {0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%}}
+    @keyframes dt-shimmer {0% {background-position:-200% center} 100% {background-position:200% center}}
+    @keyframes dt-orbit {from {transform:rotate(0deg) translateX(18px) rotate(0deg)} to {transform:rotate(360deg) translateX(18px) rotate(-360deg)}}
+    @keyframes dt-pulse {0%,100% {opacity:.48; transform:scale(1)} 50% {opacity:.9; transform:scale(1.08)}}
+    @keyframes dt-chart-rise {from {opacity:0; transform:translateY(22px) scale(.985)} to {opacity:1; transform:translateY(0) scale(1)}}
     :root {
       --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
       --dt-purple: #a78bfa; --dt-blue: #60a5fa; --dt-cyan: #5eead4;
@@ -367,6 +373,21 @@ def inject_premium_theme():
         radial-gradient(ellipse at 70% 88%, rgba(20,184,166,.13), transparent 32%),
         linear-gradient(135deg, #0b1020 0%, #11152b 48%, #101827 100%);
       color: var(--dt-ink);
+      background-size: 180% 180%; animation: dt-border-flow 28s ease-in-out infinite;
+    }
+    /* Soft moving ambient light, kept behind all app controls. */
+    [data-testid="stAppViewContainer"] {position:relative; isolation:isolate;}
+    [data-testid="stAppViewContainer"]:before {
+      content:""; position:fixed; z-index:-1; pointer-events:none; width:34rem; height:34rem;
+      top:8%; left:-13rem; border-radius:50%; filter:blur(72px);
+      background:radial-gradient(circle,rgba(124,58,237,.13),rgba(59,130,246,.06) 48%,transparent 72%);
+      animation:dt-float 11s ease-in-out infinite;
+    }
+    [data-testid="stAppViewContainer"]:after {
+      content:""; position:fixed; z-index:-1; pointer-events:none; width:30rem; height:30rem;
+      right:-12rem; bottom:3%; border-radius:50%; filter:blur(75px);
+      background:radial-gradient(circle,rgba(236,72,153,.12),rgba(20,184,166,.05) 48%,transparent 72%);
+      animation:dt-float 14s ease-in-out infinite reverse;
     }
     [data-testid="stHeader"] {background: rgba(11,16,32,.72); backdrop-filter: blur(14px);}
     [data-testid="stSidebar"] {
@@ -383,8 +404,11 @@ def inject_premium_theme():
       border: 1px solid rgba(129,140,248,.42); padding: 18px 20px; border-radius: 18px;
       box-shadow: 0 12px 30px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.06);
       transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
-      animation: dt-fade-up .55s ease both;
+      animation: dt-chart-rise .7s cubic-bezier(.2,.75,.25,1) both, dt-soft-glow 7s ease-in-out 1.2s infinite;
     }
+    [data-testid="stMetric"]:nth-of-type(2) {animation-delay:.08s,.8s}
+    [data-testid="stMetric"]:nth-of-type(3) {animation-delay:.16s,1.2s}
+    [data-testid="stMetric"]:nth-of-type(4) {animation-delay:.24s,1.6s}
     [data-testid="stMetric"]:hover {transform: translateY(-4px) scale(1.01); border-color: rgba(94,234,212,.85); box-shadow: 0 16px 34px rgba(0,0,0,.28), 0 0 20px rgba(94,234,212,.12);}
     [data-testid="stMetricLabel"] {color: #c6d2ea !important;}
     [data-testid="stMetricValue"] {color: #fff !important; font-weight: 800;}
@@ -397,21 +421,35 @@ def inject_premium_theme():
       box-shadow: 0 18px 50px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.08);
     }
     .hero:after {content: ""; position: absolute; width: 220px; height: 220px; right: -70px; top: -105px;
-      border-radius: 50%; background: radial-gradient(circle, rgba(255,107,168,.35), transparent 70%); pointer-events: none;}
+      border-radius: 50%; background: radial-gradient(circle, rgba(255,107,168,.35), transparent 70%); pointer-events: none;
+      animation:dt-pulse 6s ease-in-out infinite;}
+    .hero:before {content:""; position:absolute; width:170px; height:170px; right:18%; bottom:-125px; border-radius:50%;
+      border:1px solid rgba(94,234,212,.2); box-shadow:0 0 42px rgba(96,165,250,.1); pointer-events:none;
+      animation:dt-orbit 18s linear infinite;}
     .eyebrow {color: #77f3df; font-size: .76rem; font-weight: 900; text-transform: uppercase; letter-spacing: .16em;}
-    .hero-title {font-size: clamp(1.7rem, 3vw, 2.45rem); line-height: 1.12; font-weight: 850; margin: .45rem 0 .6rem; color: #fff;}
+    .hero-title {font-size: clamp(1.7rem, 3vw, 2.45rem); line-height: 1.12; font-weight: 850; margin: .45rem 0 .6rem; color: #fff;
+      background:linear-gradient(90deg,#fff 0%,#c4b5fd 24%,#7dd3fc 48%,#99f6e4 68%,#fff 100%);
+      background-size:220% auto; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+      animation:dt-shimmer 9s linear infinite;}
     .hero-copy,.section-note {color: #d2def2; font-size: .96rem;}
-    div[data-testid="stTabs"] {border-radius: 14px;}
-    div[data-testid="stTabs"] button {border-radius: 11px; padding: 10px 15px; color: #d6def0;}
+    div[data-testid="stTabs"] {border-radius: 14px; animation:dt-fade-up .65s ease both;}
+    div[data-testid="stTabs"] button {border-radius: 11px; padding: 10px 15px; color: #d6def0; transition:background .25s ease, transform .25s ease, color .25s ease;}
+    div[data-testid="stTabs"] button:hover {transform:translateY(-2px); background:rgba(96,165,250,.13);}
     div[data-testid="stTabs"] button[aria-selected="true"] {background: linear-gradient(90deg, rgba(124,58,237,.34), rgba(37,99,235,.27)); color: #8cf5e4;}
     div[data-testid="stTabs"] button[aria-selected="true"] p {color: #8cf5e4 !important; font-weight: 800;}
-    [data-testid="stDataFrame"], [data-testid="stTable"] {border: 1px solid rgba(129,140,248,.3); border-radius: 14px; overflow: hidden;}
-    [data-testid="stFileUploader"] {background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(20,184,166,.08)); border: 1px dashed rgba(129,140,248,.6); border-radius: 16px; padding: 8px;}
+    [data-testid="stDataFrame"], [data-testid="stTable"] {border: 1px solid rgba(129,140,248,.3); border-radius: 14px; overflow: hidden;
+      animation:dt-chart-rise .8s cubic-bezier(.2,.75,.25,1) both; transition:border-color .25s ease, box-shadow .25s ease;}
+    [data-testid="stDataFrame"]:hover, [data-testid="stTable"]:hover {border-color:rgba(94,234,212,.55); box-shadow:0 10px 32px rgba(96,165,250,.08);}
+    [data-testid="stFileUploader"] {background: linear-gradient(135deg, rgba(99,102,241,.13), rgba(20,184,166,.08)); background-size:180% 180%;
+      border: 1px dashed rgba(129,140,248,.6); border-radius: 16px; padding: 8px; animation:dt-border-flow 12s ease infinite; transition:transform .25s ease, border-color .25s ease;}
+    [data-testid="stFileUploader"]:hover {transform:translateY(-2px); border-color:rgba(94,234,212,.85);}
+    [data-testid="stExpander"] {transition:border-color .25s ease, box-shadow .25s ease;}
+    [data-testid="stExpander"]:hover {border-color:rgba(167,139,250,.6); box-shadow:0 8px 26px rgba(124,58,237,.08);}
     [data-testid="stExpander"] {background: rgba(26,34,61,.62); border: 1px solid rgba(129,140,248,.28); border-radius: 14px;}
     .stButton button, [data-testid="stDownloadButton"] button {
       border: 1px solid rgba(167,139,250,.48); border-radius: 11px; font-weight: 750;
-      transition: transform .15s ease, filter .15s ease; color: #fff;
-      background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2);
+      transition: transform .2s ease, filter .2s ease, box-shadow .2s ease; color: #fff;
+      background: linear-gradient(100deg, #7c3aed, #2563eb 55%, #0891b2); background-size:180% 180%; animation:dt-border-flow 10s ease infinite;
     }
     .stButton button:hover, [data-testid="stDownloadButton"] button:hover {transform: translateY(-2px) scale(1.01); filter: brightness(1.14); border-color: #5eead4; color: #fff; box-shadow: 0 8px 24px rgba(96,165,250,.18);}
     .stButton button[kind="primary"], button[kind="primary"] {
@@ -533,6 +571,8 @@ def _show_login_header():
         <style>
         @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
+        @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
+        @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
         [data-testid="stAppViewContainer"] {
           background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
             radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
@@ -542,9 +582,14 @@ def _show_login_header():
         .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
           border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
-          background-size: 180% 180%; animation: dt-login-entrance .75s cubic-bezier(.2,.75,.25,1) both, dt-login-shift 14s ease-in-out infinite;
+          background-size: 180% 180%; position:relative; overflow:hidden;
+          animation: dt-login-entrance .75s cubic-bezier(.2,.75,.25,1) both, dt-login-shift 14s ease-in-out infinite, dt-login-glow 7s ease-in-out infinite;
           box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
-        @media (prefers-reduced-motion: reduce) {.login-panel {animation:none !important;}}
+        .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
+          border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
+        [data-testid="stForm"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
+        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
+        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"] {animation:none !important;}}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
           font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
