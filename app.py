@@ -506,31 +506,38 @@ def main():
         df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
 
         st.success(f"Loaded {len(df)} campaigns with {int(df['Results'].sum())} total results.")
-        st.subheader("Campaigns with no results")
-        nr1, nr2, nr3 = st.columns(3)
-        nr1.metric("No-result campaigns", f"{no_result_count:,}")
-        nr2.metric("Spend · USD", f"${no_result_spend_usd:,.2f}")
-        nr3.metric("Spend · KWD", f"{no_result_spend_usd * factor:,.3f}")
-        if no_result_count:
-            st.warning("These campaigns spent money but recorded zero results. They are excluded from lead totals, but their spend is shown separately.")
-            no_result_display = no_result_df[["Campaign", "Results", "Spent"]].copy()
-            no_result_display["Cost (KWD)"] = no_result_display["Spent"] * factor
-            no_result_display = no_result_display.rename(
-                columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
-            )
-            no_result_display["Spend (USD)"] = no_result_display["Spend (USD)"].map(lambda v: f"${v:,.2f}")
-            no_result_display["Cost (KWD)"] = no_result_display["Cost (KWD)"].map(lambda v: f"{v:,.3f} KD")
-            st.dataframe(no_result_display, use_container_width=True, hide_index=True)
-            st.download_button(
-                "Download no-result campaign list (CSV)",
-                no_result_df.assign(**{"Cost_KWD": no_result_df["Spent"] * factor})[
-                    ["Campaign", "Results", "Spent", "Cost_KWD"]
-                ].to_csv(index=False).encode("utf-8-sig"),
-                f"dreamztree_no_result_campaigns_{date_value.strftime('%Y%m%d')}.csv",
-                "text/csv",
-            )
-        else:
-            st.success("No campaigns with zero results were found in this export.")
+        with st.container(border=True):
+            st.markdown("### ⚠️ Campaigns with no results")
+            if no_result_count:
+                st.warning(
+                    f"Attention: {no_result_count} campaign(s) generated zero results "
+                    f"and spent ${no_result_spend_usd:,.2f} USD "
+                    f"({no_result_spend_usd * factor:,.3f} KD). "
+                    "These costs are excluded from the leads report but shown here for review."
+                )
+                nr1, nr2, nr3 = st.columns(3)
+                nr1.metric("Zero-result campaigns", f"{no_result_count:,}")
+                nr2.metric("Total spend · USD", f"${no_result_spend_usd:,.2f}")
+                nr3.metric("Total spend · KWD", f"{no_result_spend_usd * factor:,.3f} KD")
+
+                no_result_display = no_result_df[["Campaign", "Results", "Spent"]].copy()
+                no_result_display["Cost (KWD)"] = no_result_display["Spent"] * factor
+                no_result_display = no_result_display.rename(
+                    columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
+                )
+                no_result_display["Spend (USD)"] = no_result_display["Spend (USD)"].map(lambda v: f"${v:,.2f}")
+                no_result_display["Cost (KWD)"] = no_result_display["Cost (KWD)"].map(lambda v: f"{v:,.3f} KD")
+                st.dataframe(no_result_display, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "Download no-result campaign list (CSV)",
+                    no_result_df.assign(**{"Cost_KWD": no_result_df["Spent"] * factor})[
+                        ["Campaign", "Results", "Spent", "Cost_KWD"]
+                    ].to_csv(index=False).encode("utf-8-sig"),
+                    f"dreamztree_no_result_campaigns_{date_value.strftime('%Y%m%d')}.csv",
+                    "text/csv",
+                )
+            else:
+                st.success("No campaigns with zero results were found in this export.")
         st.subheader("2. Review campaign assignments")
         assignments = []
         for _, r in df.iterrows():
