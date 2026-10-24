@@ -598,7 +598,15 @@ def _show_login_header():
     st.markdown(
         """
         <style>
-        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
+        @keyframes dt-logo-rise-away {
+          0% { opacity: 1; transform: translateY(0) scale(1); }
+          68% { opacity: 1; transform: translateY(-42px) scale(.98); }
+          100% { opacity: 0; transform: translateY(-115px) scale(.94); }
+        }
+        @keyframes dt-login-panel-rise {
+          0% { opacity: 0; transform: translateY(54px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
         @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
@@ -608,22 +616,65 @@ def _show_login_header():
             linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
         }
         [data-testid="stHeader"] {background: transparent;}
-        .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
-          border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
+        /* Limit the login page width without changing the dashboard after login. */
+        .block-container:has(.login-panel) {
+          max-width: 760px !important;
+          padding-top: 1rem !important;
+          padding-bottom: 1.5rem !important;
+        }
+        .dt-login-logo {
+          display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:.25rem; margin: 0 auto 1rem; min-height:112px; text-align:center;
+          animation: dt-logo-rise-away 3.8s cubic-bezier(.4,0,.2,1) .15s both;
+        }
+        .dt-login-logo-mark {
+          width:64px; height:64px; display:flex; align-items:center; justify-content:center;
+          border-radius:20px; font-size:2.6rem;
+          background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(13,148,136,.25));
+          border:1px solid rgba(94,234,212,.5);
+          box-shadow:0 0 30px rgba(96,165,250,.18);
+        }
+        .dt-login-logo-name {
+          color:#fff; font-weight:900; font-size:1.12rem; letter-spacing:.12em;
+          text-transform:uppercase;
+        }
+        .login-panel {
+          max-width: 620px; width:100%; box-sizing:border-box;
+          margin: -12px auto .8rem auto; padding: 1.6rem 1.8rem;
+          border: 1px solid rgba(167,139,250,.55); border-radius: 22px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
           background-size: 180% 180%; position:relative; overflow:hidden;
-          animation: dt-login-entrance .75s cubic-bezier(.2,.75,.25,1) both, dt-login-shift 14s ease-in-out infinite, dt-login-glow 7s ease-in-out infinite;
-          box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
+          opacity:0; animation: dt-login-panel-rise 1.4s cubic-bezier(.2,.75,.25,1) 2.1s forwards,
+          dt-login-shift 14s ease-in-out 3.5s infinite, dt-login-glow 7s ease-in-out 3.5s infinite;
+          box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);
+        }
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
           border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
-        [data-testid="stForm"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
+        /* Keep tabs and forms centered and compact, and bring them into view after the logo. */
+        div[data-testid="stTabs"] {
+          max-width:620px; width:100%; margin:0 auto !important;
+          opacity:0; animation:dt-login-panel-rise 1.35s cubic-bezier(.2,.75,.25,1) 2.45s forwards;
+        }
+        [data-testid="stForm"] {
+          max-width:620px; margin-left:auto; margin-right:auto;
+          opacity:0; animation:dt-login-panel-rise 1.35s cubic-bezier(.2,.75,.25,1) 2.65s forwards;
+        }
         [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
-        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"] {animation:none !important;}}
-        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
-          font-size: .75rem; font-weight: 900;}
-        .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
+        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df; font-size: .75rem; font-weight: 900;}
+        .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18); font-size:clamp(1.7rem,3vw,2.25rem); line-height:1.12;}
         .login-panel p {color: #d6def0;}
+        @media (max-width:700px) {
+          .block-container:has(.login-panel) {padding-left:1rem !important;padding-right:1rem !important;}
+          .login-panel {padding:1.3rem 1.2rem; margin-top:-8px;}
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"] {animation:none !important; opacity:1 !important; transform:none !important;}
+        }
         </style>
+        <div class="dt-login-logo">
+          <div class="dt-login-logo-mark">🌴</div>
+          <div class="dt-login-logo-name">Dreamztree</div>
+        </div>
         <div class="login-panel">
           <div class="login-kicker">Dreamztree · Marketing Intelligence</div>
           <h1>Meta Leads Command Center</h1>
@@ -632,7 +683,6 @@ def _show_login_header():
         """,
         unsafe_allow_html=True,
     )
-
 
 def require_login():
     """Use Supabase Auth for colleague registration and sign-in.
