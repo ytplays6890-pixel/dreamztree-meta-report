@@ -567,9 +567,18 @@ def summarize_campaign_performance(frame, exchange_rate):
 
 
 def get_supabase_client():
-    """Create one Supabase client per Streamlit browser session."""
+    """Create or restore the Supabase client for this Streamlit session."""
     if "supabase_client" in st.session_state:
-        return st.session_state["supabase_client"]
+        client = st.session_state["supabase_client"]
+        access_token = st.session_state.get("supabase_access_token")
+        refresh_token = st.session_state.get("supabase_refresh_token")
+        if access_token and refresh_token:
+            try:
+                client.auth.set_session(access_token, refresh_token)
+            except Exception:
+                # Keep the existing client; the login screen can request a fresh sign-in.
+                pass
+        return client
 
     # Render uses environment variables; Streamlit Cloud can still use secrets.toml.
     supabase_url = str(os.environ.get("SUPABASE_URL", "")).strip()
@@ -588,6 +597,13 @@ def get_supabase_client():
     try:
         client = create_client(supabase_url, publishable_key)
         st.session_state["supabase_client"] = client
+        access_token = st.session_state.get("supabase_access_token")
+        refresh_token = st.session_state.get("supabase_refresh_token")
+        if access_token and refresh_token:
+            try:
+                client.auth.set_session(access_token, refresh_token)
+            except Exception:
+                pass
         return client
     except Exception as exc:
         st.session_state["supabase_setup_error"] = str(exc)
@@ -745,6 +761,9 @@ def require_login():
                             {"email": login_id, "password": password}
                         )
                         if response and response.user:
+                            if getattr(response, "session", None):
+                                st.session_state["supabase_access_token"] = response.session.access_token
+                                st.session_state["supabase_refresh_token"] = response.session.refresh_token
                             st.session_state["authenticated"] = True
                             st.session_state["authenticated_user"] = (
                                 response.user.email or login_id
@@ -797,6 +816,8 @@ def require_login():
                         }
                     )
                     if response and response.session and response.user:
+                        st.session_state["supabase_access_token"] = response.session.access_token
+                        st.session_state["supabase_refresh_token"] = response.session.refresh_token
                         st.session_state["authenticated"] = True
                         st.session_state["authenticated_user"] = (
                             response.user.email or new_email
@@ -1220,6 +1241,8 @@ def main():
             st.session_state["authenticated"] = False
             st.session_state.pop("authenticated_user", None)
             st.session_state.pop("auth_method", None)
+            st.session_state.pop("supabase_access_token", None)
+            st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
