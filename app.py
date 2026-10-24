@@ -14,66 +14,6 @@ from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
 
-
-# Persistent login across browser refreshes (signed cookie).
-# Configure APP_AUTH_SECRET in Streamlit secrets or environment variables.
-def _auth_cookie_secret():
-    secret = str(os.environ.get("APP_AUTH_SECRET", "")).strip()
-    if not secret:
-        try:
-            secret = str(st.secrets.get("APP_AUTH_SECRET", "")).strip()
-        except Exception:
-            secret = ""
-    return secret
-
-
-def _auth_cookie_value():
-    """Read the signed auth token from the browser URL fragment bridge."""
-    try:
-        return str(st.query_params.get("_dt_auth", "")).strip()
-    except Exception:
-        return ""
-
-
-def _make_auth_token(username):
-    secret = _auth_cookie_secret()
-    if not secret:
-        return ""
-    issued = str(int(datetime.utcnow().timestamp()))
-    payload = f"{username}|{issued}"
-    signature = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
-    return f"{payload}|{signature}"
-
-
-def _verify_auth_token(token):
-    secret = _auth_cookie_secret()
-    if not secret or not token:
-        return None
-    try:
-        username, issued, signature = token.rsplit("|", 2)
-        payload = f"{username}|{issued}"
-        expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(signature, expected):
-            return None
-        age = int(datetime.utcnow().timestamp()) - int(issued)
-        if age < 0 or age > 60 * 60 * 24 * 7:
-            return None
-        return username
-    except Exception:
-        return None
-
-
-def _restore_persistent_login():
-    """Restore login after a refresh if a valid signed token is present."""
-    if st.session_state.get("authenticated"):
-        return
-    token = _auth_cookie_value()
-    username = _verify_auth_token(token)
-    if username:
-        st.session_state["authenticated"] = True
-        st.session_state["authenticated_user"] = username
-        st.session_state["auth_method"] = "persistent"
-
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
     ("Jincy |01| healthacreleads campaign", "Jincy", "Healthcare", "Mangaf"),
@@ -749,7 +689,6 @@ def require_login():
     Optional legacy admin credentials in [auth.users] remain supported so the
     existing administrator can still sign in during the transition.
     """
-    _restore_persistent_login()
     if st.session_state.get("authenticated"):
         return
 
@@ -799,9 +738,6 @@ def require_login():
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
-                    token = _make_auth_token(login_id)
-                    if token:
-                        st.query_params["_dt_auth"] = token
                     st.rerun()
                 elif "@" in login_id:
                     try:
@@ -814,9 +750,6 @@ def require_login():
                                 response.user.email or login_id
                             )
                             st.session_state["auth_method"] = "supabase"
-                            token = _make_auth_token(response.user.email or login_id)
-                            if token:
-                                st.query_params["_dt_auth"] = token
                             st.rerun()
                         else:
                             st.error("Sign-in failed. Check your email and password.")
@@ -1166,7 +1099,6 @@ def main():
             st.session_state["authenticated"] = False
             st.session_state.pop("authenticated_user", None)
             st.session_state.pop("auth_method", None)
-            st.query_params.pop("_dt_auth", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
