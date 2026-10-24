@@ -848,6 +848,104 @@ def require_login():
     st.stop()
 
 
+def render_multiplayer_dino():
+    """Shared Dino challenge rooms and leaderboard for authenticated teammates."""
+    st.markdown("### 🦖 Multiplayer Dino · Team Challenge")
+    st.write("Create a room and share its code with colleagues. Each player runs Dino Runner and submits their score to the same live leaderboard.")
+    client = get_supabase_client()
+    if client is None:
+        st.error("Supabase is not configured. Check the app's Supabase settings.")
+        return
+    try:
+        auth_response = client.auth.get_user()
+        user = auth_response.user
+        if not user:
+            st.warning("Please sign in with your Supabase work account to join a multiplayer room.")
+            return
+    except Exception:
+        st.warning("Please sign in with your Supabase work account to join a multiplayer room.")
+        return
+
+    user_id = str(user.id)
+    email = str(user.email or "")
+    metadata = getattr(user, "user_metadata", None) or {}
+    player_name = str(metadata.get("username") or metadata.get("name") or email.split("@")[0] or "Player").strip()[:60]
+
+    with st.expander("How to play", expanded=True):
+        st.markdown("1. Create a room or enter a colleague's room code.\n2. Open **Dino Runner** from Game Zone and play.\n3. Return here and submit your final score.\n4. Everyone in the room can see the shared leaderboard.")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Create a room")
+        if st.button("🎮 Create multiplayer room", type="primary", use_container_width=True):
+            room_code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+            try:
+                client.table("dino_rooms").insert({
+                    "room_code": room_code,
+                    "created_by": user_id,
+                    "created_by_email": email,
+                }).execute()
+                st.session_state["dino_room_code"] = room_code
+                st.success(f"Room created: {room_code}")
+            except Exception as exc:
+                st.error("Could not create the room. Run the multiplayer Dino SQL setup in Supabase first.")
+                st.caption(f"Technical detail: {exc}")
+    with right:
+        st.subheader("Join a room")
+        entered_code = st.text_input("Room code from your colleague", max_chars=6, key="dino_join_code").strip().upper()
+        if st.button("Join room", use_container_width=True):
+            if len(entered_code) != 6:
+                st.warning("Enter the 6-character room code.")
+            else:
+                try:
+                    room = client.table("dino_rooms").select("room_code").eq("room_code", entered_code).limit(1).execute().data or []
+                    if room:
+                        st.session_state["dino_room_code"] = entered_code
+                        st.success(f"Joined room {entered_code}")
+                    else:
+                        st.error("Room not found. Check the code with your colleague.")
+                except Exception as exc:
+                    st.error("Could not check the room. Run the multiplayer Dino SQL setup in Supabase first.")
+                    st.caption(f"Technical detail: {exc}")
+
+    room_code = st.session_state.get("dino_room_code", "")
+    if not room_code:
+        st.info("Create a room or join one using a colleague's code to see the shared leaderboard.")
+        return
+
+    st.markdown(f"### Current room: `{room_code}`")
+    st.caption("Share this 6-character code with colleagues so they can join the same challenge.")
+    score = st.number_input("Your final Dino score", min_value=0, max_value=1000000, value=0, step=10, key="dino_score_entry")
+    if st.button("🏁 Submit score", type="primary"):
+        try:
+            client.table("dino_scores").insert({
+                "room_code": room_code,
+                "player_id": user_id,
+                "player_name": player_name,
+                "score": int(score),
+            }).execute()
+            st.success("Score submitted to the room leaderboard!")
+        except Exception as exc:
+            st.error("Could not submit your score. Check the multiplayer Dino SQL setup and your Supabase session.")
+            st.caption(f"Technical detail: {exc}")
+
+    if st.button("🔄 Refresh leaderboard"):
+        st.rerun()
+    try:
+        scores = client.table("dino_scores").select("player_name, score, created_at").eq("room_code", room_code).order("score", desc=True).limit(100).execute().data or []
+        st.subheader("🏆 Room leaderboard")
+        if scores:
+            board = pd.DataFrame(scores)
+            board = board.rename(columns={"player_name": "Player", "score": "Score", "created_at": "Submitted at"})
+            st.dataframe(board, use_container_width=True, hide_index=True)
+            st.success(f"Top score: {board.iloc[0]['Player']} — {int(board.iloc[0]['Score'])}")
+        else:
+            st.info("No scores yet. Play Dino Runner and submit your score to get started!")
+    except Exception as exc:
+        st.error("Could not load the leaderboard. Run the multiplayer Dino SQL setup in Supabase.")
+        st.caption(f"Technical detail: {exc}")
+
+
 def render_games_page():
     st.markdown("""
     <style>
@@ -855,7 +953,10 @@ def render_games_page():
     .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
     </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
     """, unsafe_allow_html=True)
-    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner", "🦖 Multiplayer Dino"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    if game == "🦖 Multiplayer Dino":
+        render_multiplayer_dino()
+        return
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
         questions = [
