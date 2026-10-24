@@ -19,13 +19,20 @@ st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout
 LOGO_PATH = Path(__file__).with_name("dreamztree_white_logo.png")
 
 def show_dreamztree_logo(width=260):
-    """Display the white Dreamztree logo centered in the Streamlit content area."""
+    """Display the white Dreamztree logo centered across the full app content width."""
     if LOGO_PATH.is_file():
         try:
-            # Use Streamlit columns for reliable centering within the app content area.
-            left, center, right = st.columns([1, 2, 1])
-            with center:
-                st.image(str(LOGO_PATH), width=int(width))
+            # Inline the image as a data URI so flexbox centers it across the full page.
+            encoded_logo = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+            logo_html = (
+                '<div style="width:100%;display:flex;justify-content:center;'
+                'align-items:center;margin:0 auto 30px auto;text-align:center;">'
+                f'<img src="data:image/png;base64,{encoded_logo}" alt="Dreamztree logo" '
+                f'style="display:block;width:min({int(width)}px,80vw);height:auto;'
+                'margin:0 auto;object-fit:contain;" />'
+                '</div>'
+            )
+            st.markdown(logo_html, unsafe_allow_html=True)
         except Exception:
             st.warning("Dreamztree logo could not be loaded. Check the logo file in the repository.")
 
