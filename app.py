@@ -926,11 +926,47 @@ def render_games_page():
         </script></body></html>""", height=465, scrolling=False)
 
 
+@st.fragment(run_every="30s")
+def _game_zone_popup():
+    """Show a small Game Zone invitation every 30 seconds without a sidebar item."""
+    import time
+
+    now = time.time()
+    if "game_popup_last_shown" not in st.session_state:
+        st.session_state.game_popup_last_shown = now
+        return
+
+    if now - float(st.session_state.game_popup_last_shown) < 29:
+        return
+
+    @st.dialog("🎮 Take a quick break?")
+    def _show_game_dialog():
+        st.write("Ready for a quick brain test, Sudoku, or Dino Runner?")
+        left, right = st.columns(2)
+        with left:
+            if st.button("Play now", type="primary", use_container_width=True, key="game_popup_play"):
+                st.session_state.game_popup_last_shown = time.time()
+                st.query_params["page"] = "game"
+                st.rerun()
+        with right:
+            if st.button("Maybe later", use_container_width=True, key="game_popup_later"):
+                st.session_state.game_popup_last_shown = time.time()
+                st.rerun()
+
+    st.session_state.game_popup_last_shown = now
+    _show_game_dialog()
+
+
 def main():
     require_login()
     inject_premium_theme()
-    page = st.sidebar.radio("Navigation", ["📊 Meta Leads Dashboard", "🎮 Game Zone"], key="main_navigation")
-    if page == "🎮 Game Zone":
+    _game_zone_popup()
+
+    page = st.query_params.get("page", "dashboard")
+    if page == "game":
+        if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
+            st.query_params["page"] = "dashboard"
+            st.rerun()
         render_games_page()
         return
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
