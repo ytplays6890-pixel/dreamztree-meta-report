@@ -849,101 +849,66 @@ def require_login():
 
 
 def render_multiplayer_dino():
-    """Shared Dino challenge rooms and leaderboard for authenticated teammates."""
-    st.markdown("### 🦖 Multiplayer Dino · Team Challenge")
-    st.write("Create a room and share its code with colleagues. Each player runs Dino Runner and submits their score to the same live leaderboard.")
+    """Live shared Dino race for authenticated teammates."""
+    st.markdown("### 🦖 Multiplayer Dino · Live Team Race")
+    st.write("Create a room and share its code. Teammates join the same race, jump over obstacles, and see live player scores.")
     client = get_supabase_client()
     if client is None:
-        st.error("Supabase is not configured. Check the app's Supabase settings.")
-        return
+        st.error("Supabase is not configured."); return
     try:
-        auth_response = client.auth.get_user()
-        user = auth_response.user
-        if not user:
-            st.warning("Please sign in with your Supabase work account to join a multiplayer room.")
-            return
+        user = client.auth.get_user().user
+        if not user: raise ValueError("No user")
     except Exception:
-        st.warning("Please sign in with your Supabase work account to join a multiplayer room.")
-        return
-
-    user_id = str(user.id)
-    email = str(user.email or "")
-    metadata = getattr(user, "user_metadata", None) or {}
-    player_name = str(metadata.get("username") or metadata.get("name") or email.split("@")[0] or "Player").strip()[:60]
-
-    with st.expander("How to play", expanded=True):
-        st.markdown("1. Create a room or enter a colleague's room code.\n2. Open **Dino Runner** from Game Zone and play.\n3. Return here and submit your final score.\n4. Everyone in the room can see the shared leaderboard.")
-
-    left, right = st.columns(2)
-    with left:
-        st.subheader("Create a room")
-        if st.button("🎮 Create multiplayer room", type="primary", use_container_width=True):
-            room_code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
-            try:
-                client.table("dino_rooms").insert({
-                    "room_code": room_code,
-                    "created_by": user_id,
-                    "created_by_email": email,
-                }).execute()
-                st.session_state["dino_room_code"] = room_code
-                st.success(f"Room created: {room_code}")
-            except Exception as exc:
-                st.error("Could not create the room. Run the multiplayer Dino SQL setup in Supabase first.")
-                st.caption(f"Technical detail: {exc}")
-    with right:
-        st.subheader("Join a room")
-        entered_code = st.text_input("Room code from your colleague", max_chars=6, key="dino_join_code").strip().upper()
-        if st.button("Join room", use_container_width=True):
-            if len(entered_code) != 6:
-                st.warning("Enter the 6-character room code.")
-            else:
-                try:
-                    room = client.table("dino_rooms").select("room_code").eq("room_code", entered_code).limit(1).execute().data or []
-                    if room:
-                        st.session_state["dino_room_code"] = entered_code
-                        st.success(f"Joined room {entered_code}")
-                    else:
-                        st.error("Room not found. Check the code with your colleague.")
-                except Exception as exc:
-                    st.error("Could not check the room. Run the multiplayer Dino SQL setup in Supabase first.")
-                    st.caption(f"Technical detail: {exc}")
-
-    room_code = st.session_state.get("dino_room_code", "")
-    if not room_code:
-        st.info("Create a room or join one using a colleague's code to see the shared leaderboard.")
-        return
-
-    st.markdown(f"### Current room: `{room_code}`")
-    st.caption("Share this 6-character code with colleagues so they can join the same challenge.")
-    score = st.number_input("Your final Dino score", min_value=0, max_value=1000000, value=0, step=10, key="dino_score_entry")
-    if st.button("🏁 Submit score", type="primary"):
-        try:
-            client.table("dino_scores").insert({
-                "room_code": room_code,
-                "player_id": user_id,
-                "player_name": player_name,
-                "score": int(score),
-            }).execute()
-            st.success("Score submitted to the room leaderboard!")
-        except Exception as exc:
-            st.error("Could not submit your score. Check the multiplayer Dino SQL setup and your Supabase session.")
-            st.caption(f"Technical detail: {exc}")
-
-    if st.button("🔄 Refresh leaderboard"):
-        st.rerun()
+        st.warning("Please sign in with your Supabase work email and password to play live multiplayer."); return
+    uid, email = str(user.id), str(user.email or "")
+    meta = getattr(user, "user_metadata", None) or {}
+    name = str(meta.get("username") or meta.get("name") or email.split("@")[0] or "Player")[:40]
+    token = st.session_state.get("supabase_access_token", "")
     try:
-        scores = client.table("dino_scores").select("player_name, score, created_at").eq("room_code", room_code).order("score", desc=True).limit(100).execute().data or []
-        st.subheader("🏆 Room leaderboard")
-        if scores:
-            board = pd.DataFrame(scores)
-            board = board.rename(columns={"player_name": "Player", "score": "Score", "created_at": "Submitted at"})
-            st.dataframe(board, use_container_width=True, hide_index=True)
-            st.success(f"Top score: {board.iloc[0]['Player']} — {int(board.iloc[0]['Score'])}")
-        else:
-            st.info("No scores yet. Play Dino Runner and submit your score to get started!")
-    except Exception as exc:
-        st.error("Could not load the leaderboard. Run the multiplayer Dino SQL setup in Supabase.")
-        st.caption(f"Technical detail: {exc}")
+        cfg = st.secrets["supabase"]
+        url, key = str(cfg["url"]).rstrip("/"), str(cfg["publishable_key"])
+    except Exception:
+        st.error("Missing Supabase URL or publishable key in Streamlit Secrets."); return
+    if not token:
+        st.warning("This login has no Supabase session. Sign in using your Supabase email/password, not the legacy admin login."); return
+    with st.expander("How to play", expanded=True):
+        st.markdown("1. Create a room or enter a colleague's room code.\n2. Share the 6-character code.\n3. Press **Start live race for everyone**.\n4. Press **Space**, **↑**, or tap the game to jump. Keep this page open.")
+    a,b=st.columns(2)
+    with a:
+        if st.button("🎮 Create live race room", type="primary", use_container_width=True):
+            code=''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+            try:
+                client.table("dino_rooms").insert({"room_code":code,"created_by":uid,"created_by_email":email}).execute()
+                st.session_state["dino_room_code"]=code
+            except Exception as e: st.error(f"Could not create room: {e}")
+    with b:
+        entered=st.text_input("Room code from colleague",max_chars=6,key="dino_join_code").strip().upper()
+        if st.button("Join room",use_container_width=True):
+            try:
+                rows=client.table("dino_rooms").select("room_code").eq("room_code",entered).limit(1).execute().data or []
+                if rows: st.session_state["dino_room_code"]=entered
+                else: st.error("Room not found. Check the code.")
+            except Exception as e: st.error(f"Could not join room: {e}")
+    room=st.session_state.get("dino_room_code","")
+    if not room: st.info("Create or join a room to begin."); return
+    st.markdown(f"### Current room: `{room}`")
+    if st.button("🏁 Start live race for everyone",type="primary"):
+        try:
+            client.table("dino_race_starts").insert({"room_code":room,"started_by":uid}).execute()
+            st.success("Race start sent. Everyone in the room should keep this page open.")
+        except Exception as e: st.error(f"Live-race tables are missing. Run the new SQL migration first. Details: {e}")
+    payload=json.dumps({"url":url,"key":key,"token":token,"room":room,"uid":uid,"name":name}).replace("</","<\\/")
+    html='''<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#10182e;color:white;font:14px Arial}.box{padding:12px;border:1px solid #53617c;border-radius:12px}canvas{width:100%;background:#f8fafc;border-radius:8px}.muted{color:#a7f3d0;margin:5px}</style></head><body><div class="box"><div id="s" class="muted">Connecting…</div><canvas id="c" width="900" height="320"></canvas><p>Press SPACE/↑ or tap the track to jump. Keep this page open to stay in the race.</p></div><script>
+const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('c'),x=cv.getContext('2d'),st=document.getElementById('s');let y=0,v=0,score=0,alive=true,run=false,starts=0,players=[],obs=[],lastObs=0,lastSync=0,lastFrame=performance.now();
+async function call(path,opt={}){return fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}})}
+async function poll(){try{let r=await call('dino_race_starts?room_code=eq.'+C.room+'&select=id,created_at&order=id.desc&limit=1'),d=await r.json();if(d.length&&Number(d[0].id)>starts){starts=Number(d[0].id);run=true;y=0;v=0;score=0;alive=true;obs=[];lastObs=0}}catch(e){}try{let r=await call('dino_race_presence?room_code=eq.'+C.room+'&select=player_id,player_name,score,alive,last_seen');players=await r.json();if(!Array.isArray(players))players=[]}catch(e){}}
+async function sync(){try{await call('dino_race_presence?on_conflict=room_code,player_id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({room_code:C.room,player_id:C.uid,player_name:C.name,score:Math.floor(score),alive,last_seen:new Date().toISOString()})})}catch(e){st.textContent='Could not sync. Check Supabase policies.'}}
+function jump(){if(run&&alive&&y===0)v=-12}addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}});cv.addEventListener('pointerdown',jump);
+function dino(px,base,col,label,jump=0){x.fillStyle=col;x.fillRect(px,base-27-jump,23,27);x.fillRect(px+12,base-38-jump,19,17);x.fillStyle='#fff';x.fillRect(px+25,base-33-jump,4,4);x.fillStyle=col;x.fillRect(px+2,base-2-jump,6,7);x.fillRect(px+15,base-2-jump,6,7);x.fillStyle='#1e293b';x.font='12px Arial';x.fillText(label.slice(0,14),px-5,base+20)}
+function frame(now){let dt=Math.min((now-lastFrame)/16.7,2);lastFrame=now;x.clearRect(0,0,900,320);x.fillStyle='#cbd5e1';x.fillRect(0,265,900,2);x.fillStyle='#334155';x.font='bold 15px Arial';x.fillText('ROOM '+C.room+' · LIVE TEAM RACE',15,23);if(run&&alive){v+=.7*dt;y+=v*dt;if(y>0){y=0;v=0}score+=.18*dt;if(now-lastObs>1250){obs.push({px:920,h:20+Math.random()*25});lastObs=now}obs.forEach(o=>o.px-=5*dt);obs=obs.filter(o=>o.px>-25);for(let o of obs){x.fillStyle='#16a34a';x.fillRect(o.px,265-o.h,13,o.h);if(o.px<88&&o.px+13>65&&y>-o.h+25)alive=false}}dino(65,265,'#7c3aed',C.name,-y);let n=0;for(let p of players){if(p.player_id===C.uid||n>=6)continue;let px=180+n*110;dino(px,265,['#0284c7','#db2777','#ea580c','#059669','#4f46e5','#0891b2'][n],p.player_name,0);x.fillStyle='#334155';x.font='12px Arial';x.fillText('Score '+p.score+(p.alive?'':' · OUT'),px-8,310);n++}x.fillStyle='#0f172a';x.font='bold 18px Arial';x.fillText('Your score: '+Math.floor(score),700,25);if(!run){x.fillStyle='#334155';x.font='bold 22px Arial';x.fillText('Waiting for host to start…',280,145)}else if(!alive){x.fillStyle='#b91c1c';x.font='bold 22px Arial';x.fillText('RUN OVER — wait for next race',260,145)}st.textContent='Live room '+C.room+' · '+Math.max(1,players.length)+' player(s)';if(now-lastSync>700){lastSync=now;sync();poll()}requestAnimationFrame(frame)}poll();requestAnimationFrame(frame);
+</script></body></html>'''.replace('PAYLOAD',payload)
+    components.html(html,height=420,scrolling=False)
+    st.caption("Live player status and scores sync while this page is open. This is a multiplayer prototype; obstacle timing is local to each browser, so it is not yet a competitive-grade identical physics simulation.")
 
 
 def render_games_page():
