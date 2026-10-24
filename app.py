@@ -624,7 +624,7 @@ def _show_login_header():
         }
         .dt-login-logo {
           display:flex; flex-direction:column; align-items:center; justify-content:center;
-          gap:.25rem; margin: 0 auto 1rem; min-height:112px; text-align:center;
+          gap:.25rem; margin: 24px auto 1rem; min-height:112px; text-align:center;
           animation: dt-logo-rise-away 2.8s cubic-bezier(.4,0,.2,1) .15s both;
         }
         .dt-login-logo-image {
