@@ -834,7 +834,7 @@ def render_games_page():
     .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
     </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
     """, unsafe_allow_html=True)
-    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "⚡ Reflex Challenge", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
         questions = [
@@ -904,6 +904,98 @@ def render_games_page():
                 for r in range(9):
                     for c in range(9): st.session_state.pop(f"sudoku9_{r}_{c}",None)
                 st.rerun()
+    elif game == "🧠 Memory Match":
+        st.markdown("### 🧠 Memory Match · Find the pairs")
+        st.caption("Choose two cards at a time and find all matching emoji pairs.")
+        if "memory_match_cards" not in st.session_state:
+            cards = ["🚀", "🌴", "🎮", "⭐", "🚀", "🌴", "🎮", "⭐"]
+            random.shuffle(cards)
+            st.session_state.memory_match_cards = cards
+            st.session_state.memory_match_found = []
+            st.session_state.memory_match_tries = 0
+            st.session_state.memory_match_pick = []
+        cards = st.session_state.memory_match_cards
+        found = st.session_state.memory_match_found
+        picks = st.session_state.memory_match_pick
+        st.write(f"**Pairs found:** {len(found)//2}/4 · **Attempts:** {st.session_state.memory_match_tries}")
+        grid = st.columns(4)
+        for idx, card in enumerate(cards):
+            with grid[idx % 4]:
+                if idx in found:
+                    st.button(card, key=f"memory_card_{idx}", disabled=True, use_container_width=True)
+                elif idx in picks:
+                    st.button(card, key=f"memory_card_{idx}", disabled=True, use_container_width=True)
+                else:
+                    if st.button("❔", key=f"memory_card_{idx}", use_container_width=True):
+                        picks.append(idx)
+                        if len(picks) == 2:
+                            st.session_state.memory_match_tries += 1
+                            a, b = picks
+                            if cards[a] == cards[b]:
+                                found.extend([a, b])
+                            else:
+                                st.session_state.memory_match_last_miss = [a, b]
+                            st.session_state.memory_match_pick = []
+                            st.rerun()
+        if len(found) == len(cards):
+            st.balloons()
+            st.success(f"Brilliant! You found all pairs in {st.session_state.memory_match_tries} attempts.")
+        elif st.session_state.get("memory_match_last_miss"):
+            st.info("Those cards didn't match. Pick another pair to continue.")
+            if st.button("Continue", key="memory_continue"):
+                st.session_state.memory_match_last_miss = []
+                st.rerun()
+        if st.button("🔄 New memory game", key="memory_restart"):
+            for k in ["memory_match_cards", "memory_match_found", "memory_match_tries", "memory_match_pick", "memory_match_last_miss"]:
+                st.session_state.pop(k, None)
+            st.rerun()
+
+    elif game == "🎯 Number Hunt":
+        st.markdown("### 🎯 Number Hunt · Guess the secret number")
+        st.caption("A secret number from 1 to 50 is waiting. You have 7 attempts.")
+        if "number_hunt_secret" not in st.session_state:
+            st.session_state.number_hunt_secret = random.randint(1, 50)
+            st.session_state.number_hunt_tries = 0
+            st.session_state.number_hunt_over = False
+            st.session_state.number_hunt_message = "Make your first guess!"
+        guess = st.number_input("Your guess", min_value=1, max_value=50, value=25, step=1, key="number_hunt_guess")
+        if st.button("🎯 Check guess", type="primary", key="number_hunt_check", disabled=st.session_state.number_hunt_over):
+            st.session_state.number_hunt_tries += 1
+            secret = st.session_state.number_hunt_secret
+            if guess == secret:
+                st.session_state.number_hunt_message = f"Correct! You found it in {st.session_state.number_hunt_tries} attempt(s). 🏆"
+                st.session_state.number_hunt_over = True
+                st.balloons()
+            elif st.session_state.number_hunt_tries >= 7:
+                st.session_state.number_hunt_message = f"Out of attempts! The number was {secret}."
+                st.session_state.number_hunt_over = True
+            elif guess < secret:
+                st.session_state.number_hunt_message = "Too low! Try a higher number. ⬆️"
+            else:
+                st.session_state.number_hunt_message = "Too high! Try a lower number. ⬇️"
+        st.info(st.session_state.number_hunt_message)
+        st.progress(min(st.session_state.number_hunt_tries / 7, 1.0), text=f"Attempts used: {st.session_state.number_hunt_tries}/7")
+        if st.button("🔄 New number", key="number_hunt_restart"):
+            for k in ["number_hunt_secret", "number_hunt_tries", "number_hunt_over", "number_hunt_message", "number_hunt_guess"]:
+                st.session_state.pop(k, None)
+            st.rerun()
+
+    elif game == "⚡ Reflex Challenge":
+        st.markdown("### ⚡ Reflex Challenge · How quick are you?")
+        st.caption("Tap the button when you're ready, then try to beat your score. This mini challenge tracks your streak.")
+        if "reflex_streak" not in st.session_state:
+            st.session_state.reflex_streak = 0
+            st.session_state.reflex_best = 0
+        st.markdown(f"## 🔥 Current streak: {st.session_state.reflex_streak}")
+        if st.button("⚡ I’m ready!", type="primary", key="reflex_hit"):
+            st.session_state.reflex_streak += 1
+            st.session_state.reflex_best = max(st.session_state.reflex_best, st.session_state.reflex_streak)
+            st.success("Nice reaction! Keep the streak going.")
+        st.caption(f"Best streak this session: {st.session_state.reflex_best}")
+        if st.button("Reset streak", key="reflex_reset"):
+            st.session_state.reflex_streak = 0
+            st.rerun()
+
     else:
         st.markdown("### 🦖 Dino Runner · Dreamztree Edition")
         st.caption("Jump over cacti, duck under birds, and collect glowing Dreamztree stars for a temporary shield. Space/↑ to jump · ↓ to duck.")
@@ -912,49 +1004,82 @@ def render_games_page():
         </style></head><body><div class="wrap"><div class="top"><strong>🌈 DREAMZTREE RUNNER</strong><span class="pill">⭐ Stars: <span id="stars">0</span></span><span class="pill">🏁 Score: <span id="score">0</span></span><span class="pill">🏆 Best: <span id="best">0</span></span></div><div class="stage"><canvas id="game" width="900" height="300" aria-label="Dino runner game"></canvas></div><div class="actions"><button id="jump">⬆ JUMP</button><button id="duck">⬇ DUCK</button><button id="restart">↻ RESTART</button></div><div class="hint">Collect ⭐ for a short shield · Avoid 🌵 and flying 🐦 · Works with keyboard and touch</div></div>
         <script>
         const cv=document.getElementById('game'),ctx=cv.getContext('2d');let W=cv.width,H=cv.height,ground=244,player,obs,stars,score,starCount,speed,frame,over,shield,night,best=+(localStorage.getItem('dtDinoBest')||0),keys={};document.getElementById('best').textContent=best;
-        function reset(){player={x:90,y:ground-48,w:42,h:48,vy:0,duck:false};obs=[];stars=[];score=0;starCount=0;speed=5;frame=0;over=false;shield=0;night=false;}
+        function reset(){player={x:90,y:ground-48,w:42,h:48,vy:0,duck:false};obs=[];stars=[];score=0;starCount=0;speed=3.6;frame=0;over=false;shield=0;night=false;}
         function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}function circle(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
         function drawDino(){let p=player;let h=p.duck?27:48,y=p.duck?ground-h:p.y; // colorful pixel-inspired dinosaur
           rect(p.x+5,y+13,27,h-13,'#16a34a');rect(p.x+22,y+2,24,22,'#22c55e');rect(p.x+35,y+9,15,9,'#4ade80');rect(p.x+35,y+10,5,5,'#fff');rect(p.x+37,y+11,2,3,'#172554');rect(p.x+20,y+22,17,8,'#15803d');rect(p.x+8,y+h-8,10,8,'#14532d');rect(p.x+27,y+h-8,10,8,'#14532d');rect(p.x+2,y+18,9,7,'#86efac');if(shield>0){ctx.strokeStyle='#fef08a';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(p.x+25,y+h/2,35,h/2+14,0,0,Math.PI*2);ctx.stroke();circle(p.x+45,y-5,4,'#fff7ae')}}
-        function spawn(){if(frame%Math.max(38,Math.floor(92-speed*4))===0){let bird=Math.random()<.28&&score>80;obs.push({x:W+10,w:bird?42:24,h:bird?22:35,y:bird?ground-65:ground-(bird?65:35),bird,passed:false})}if(frame%150===0)stars.push({x:W+5,y:ground-70-Math.random()*55,r:11})}
+        function spawn(){if(frame>110&&frame%Math.max(78,Math.floor(155-speed*3))===0){let bird=Math.random()<.16&&score>140;obs.push({x:W+10,w:bird?42:24,h:bird?22:35,y:bird?ground-65:ground-35,bird,passed:false})}if(frame>70&&frame%170===0)stars.push({x:W+5,y:ground-70-Math.random()*55,r:11})}
         function drawBackground(){let isNight=Math.floor(score/180)%2===1;let g=ctx.createLinearGradient(0,0,0,H);if(isNight){g.addColorStop(0,'#172554');g.addColorStop(1,'#7c3aed')}else{g.addColorStop(0,'#38bdf8');g.addColorStop(1,'#d9f99d')}ctx.fillStyle=g;ctx.fillRect(0,0,W,H);if(isNight){for(let i=0;i<35;i++)circle((i*83+frame*.15)%W,(i*37)%150,1.5,'#fff7ad');circle(760,52,21,'#fef3c7')}else{circle(760,50,25,'#fde047');circle(140,55,18,'#fff');circle(160,55,23,'#fff');circle(181,58,15,'#fff');circle(420,80,15,'#fff');circle(440,77,20,'#fff');circle(461,82,13,'#fff')}ctx.fillStyle=isNight?'#312e81':'#86efac';ctx.beginPath();ctx.moveTo(0,ground);for(let x=0;x<=W;x+=80)ctx.lineTo(x,ground-35-Math.sin((x+frame*1.2)/90)*17);ctx.lineTo(W,ground);ctx.fill();rect(0,ground,W,H-ground,isNight?'#166534':'#22c55e');rect(0,ground,W,4,'#facc15');for(let x=-(frame*speed%50);x<W;x+=50)rect(x,ground+24,20,3,'#bbf7d0')}
         function drawObstacle(o){if(o.bird){let flap=Math.sin(frame*.3)*5;rect(o.x+9,o.y+6,26,12,'#7c3aed');rect(o.x+18,o.y+3,18,10,'#a78bfa');rect(o.x+2,o.y+8,12,5,'#f0abfc');rect(o.x+30,o.y+5,4,4,'#fff');rect(o.x+33,o.y+6,2,2,'#111827');rect(o.x+7,o.y+5+flap,14,5,'#c4b5fd')}else{rect(o.x+6,o.y+8,14,o.h-8,'#f97316');rect(o.x,o.y+19,9,10,'#fb923c');rect(o.x+14,o.y+2,10,o.h-2,'#ea580c');rect(o.x+4,o.y+15,3,3,'#ffedd5')}}
         function drawStar(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(frame*.04);ctx.fillStyle='#fde047';ctx.strokeStyle='#fff7ae';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5-Math.PI/2,r=i%2?5:12;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
-        function loop(){drawBackground();if(!over){frame++;score+=.12;speed=Math.min(11,5+score/110);if(shield>0)shield--;spawn();player.duck=!!keys.ArrowDown||!!keys.KeyS;player.y+=player.vy;player.vy+=.72;if(player.y>ground-player.h){player.y=ground-player.h;player.vy=0}obs.forEach(o=>o.x-=speed);stars.forEach(s=>s.x-=speed);obs=obs.filter(o=>o.x>-60);stars=stars.filter(s=>s.x>-30);for(let o of obs){let ph=player.duck?27:48,py=player.duck?ground-ph:player.y;if(player.x+player.w-8>o.x+3&&player.x+7<o.x+o.w&&py+ph-5>o.y+3&&py+5<o.y+o.h){if(shield>0){o.x=-100;shield=0}else{over=true;best=Math.max(best,Math.floor(score));localStorage.setItem('dtDinoBest',best);document.getElementById('best').textContent=best}}}for(let s of stars){if(!s.got&&Math.abs((player.x+25)-s.x)<32&&Math.abs((player.y+20)-s.y)<35){s.got=true;starCount++;shield=420;score+=25}}stars=stars.filter(s=>!s.got);}
+        function loop(){drawBackground();if(!over){frame++;score+=.12;speed=Math.min(11,5+score/110);if(shield>0)shield--;spawn();player.duck=!!keys.ArrowDown||!!keys.KeyS;player.y+=player.vy;player.vy+=.72;if(player.y>ground-player.h){player.y=ground-player.h;player.vy=0}obs.forEach(o=>o.x-=speed);stars.forEach(s=>s.x-=speed);obs=obs.filter(o=>o.x>-60);stars=stars.filter(s=>s.x>-30);for(let o of obs){let ph=player.duck?27:48,py=player.duck?ground-ph:player.y;if(player.x+player.w-13>o.x+5&&player.x+11<o.x+o.w-4&&py+ph-9>o.y+5&&py+8<o.y+o.h-3){if(shield>0){o.x=-100;shield=0}else{over=true;best=Math.max(best,Math.floor(score));localStorage.setItem('dtDinoBest',best);document.getElementById('best').textContent=best}}}for(let s of stars){if(!s.got&&Math.abs((player.x+25)-s.x)<32&&Math.abs((player.y+20)-s.y)<35){s.got=true;starCount++;shield=420;score+=25}}stars=stars.filter(s=>!s.got);}
         obs.forEach(drawObstacle);stars.forEach(drawStar);drawDino();document.getElementById('score').textContent=Math.floor(score);document.getElementById('stars').textContent=starCount;if(shield>0){ctx.fillStyle='#fef08a';ctx.font='bold 15px system-ui';ctx.fillText('STAR SHIELD ✨',20,25)}if(over){ctx.fillStyle='#111827bb';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 34px system-ui';ctx.fillText('GAME OVER!',W/2,H/2-8);ctx.font='bold 17px system-ui';ctx.fillText('Tap RESTART to run again',W/2,H/2+25);ctx.textAlign='left'}requestAnimationFrame(loop)}
-        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>keys[e.code]=false);cv.addEventListener('pointerdown',jump);reset();loop();
+        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>{keys[e.code]=false});cv.setAttribute('tabindex','0');cv.addEventListener('pointerdown',()=>cv.focus());cv.addEventListener('pointerdown',jump);reset();loop();
         </script></body></html>""", height=465, scrolling=False)
 
 
 @st.fragment(run_every="30s")
 def _game_zone_popup():
-    """Show a small Game Zone invitation every 30 seconds without a sidebar item."""
+    """Show a compact bottom-right Game Zone invitation every 30 seconds."""
     import time
 
     now = time.time()
+
+    # Never show the Game Zone invitation while the Game Zone is open.
+    if st.query_params.get("page", "dashboard") == "game":
+        return
+
     if "game_popup_last_shown" not in st.session_state:
         st.session_state.game_popup_last_shown = now
         return
-
     if now - float(st.session_state.game_popup_last_shown) < 29:
         return
 
-    @st.dialog("🎮 Take a quick break?")
-    def _show_game_dialog():
-        st.write("Ready for a quick brain test, Sudoku, or Dino Runner?")
-        left, right = st.columns(2)
-        with left:
-            if st.button("Play now", type="primary", use_container_width=True, key="game_popup_play"):
-                st.session_state.game_popup_last_shown = time.time()
-                st.query_params["page"] = "game"
-                st.rerun()
-        with right:
-            if st.button("Maybe later", use_container_width=True, key="game_popup_later"):
-                st.session_state.game_popup_last_shown = time.time()
-                st.rerun()
+    st.markdown("""
+    <style>
+    div[data-testid="stVerticalBlock"]:has(.dt-game-toast-anchor) {
+      position: relative;
+    }
+    .dt-game-toast {
+      position: fixed;
+      right: 22px;
+      bottom: 24px;
+      z-index: 99999;
+      width: min(330px, calc(100vw - 32px));
+      padding: 16px;
+      border-radius: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, #29205f, #92278f 60%, #f05a6b);
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: 0 14px 40px rgba(0,0,0,.38);
+      animation: dt-toast-in .45s ease-out both;
+    }
+    .dt-game-toast strong {display:block;font-size:16px;margin-bottom:5px}
+    .dt-game-toast span {display:block;font-size:13px;opacity:.92}
+    @keyframes dt-toast-in {
+      from {opacity:0;transform:translateY(18px)}
+      to {opacity:1;transform:translateY(0)}
+    }
+    @media(max-width:600px) {
+      .dt-game-toast {right:12px;bottom:16px;width:calc(100vw - 24px)}
+    }
+    </style>
+    <div class="dt-game-toast-anchor"></div>
+    <div class="dt-game-toast">
+      <strong>🎮 Need a quick break?</strong>
+      <span>Try Brain Test, Sudoku, or Dino Runner!</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.session_state.game_popup_last_shown = now
-    _show_game_dialog()
+    left, right = st.columns([5, 2])
+    with right:
+        if st.button("🎮 Play now", key="game_popup_play", type="primary", use_container_width=True):
+            st.session_state.game_popup_last_shown = time.time()
+            st.query_params["page"] = "game"
+            st.rerun()
+        if st.button("✕ Not now", key="game_popup_later", use_container_width=True):
+            st.session_state.game_popup_last_shown = time.time()
+            st.rerun()
 
 
 def main():
