@@ -1,4 +1,5 @@
 import re
+import base64
 import random
 import hmac
 import hashlib
@@ -18,11 +19,15 @@ st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout
 LOGO_PATH = Path(__file__).with_name("dreamztree_white_logo.png")
 
 def show_dreamztree_logo(width=260):
-    """Display the white Dreamztree logo when its PNG asset is present."""
+    """Display the white Dreamztree logo centered in the Streamlit content area."""
     if LOGO_PATH.is_file():
-        left, center, right = st.columns([1, 2, 1])
-        with center:
-            st.image(str(LOGO_PATH), width=width)
+        try:
+            # Use Streamlit columns for reliable centering within the app content area.
+            left, center, right = st.columns([1, 2, 1])
+            with center:
+                st.image(str(LOGO_PATH), width=int(width))
+        except Exception:
+            st.warning("Dreamztree logo could not be loaded. Check the logo file in the repository.")
 
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
