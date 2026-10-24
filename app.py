@@ -624,7 +624,7 @@ def _show_login_header():
         }
         .dt-login-logo {
           display:flex; flex-direction:column; align-items:center; justify-content:center;
-          gap:.25rem; margin: 24px auto 1rem; min-height:112px; text-align:center;
+          gap:.25rem; margin: 48px auto 1rem; min-height:112px; text-align:center;
           animation: dt-logo-rise-away 2.8s cubic-bezier(.4,0,.2,1) .15s both;
         }
         .dt-login-logo-image {
@@ -709,7 +709,7 @@ def require_login():
 
     with sign_in_tab:
         with st.form("supabase_signin_form", clear_on_submit=False):
-            email_or_admin = st.text_input("Email address or admin username")
+            email_or_admin = st.text_input("Email address Or Username")
             password = st.text_input("Password", type="password")
             signin_clicked = st.form_submit_button(
                 "Sign in", type="primary", use_container_width=True
