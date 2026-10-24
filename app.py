@@ -595,60 +595,35 @@ def get_supabase_client():
 
 
 def _show_login_header():
-    # Keep the login screen narrow and animate the brand mark out before
-    # the login controls settle into place. The logo file is optional.
-    import base64
-    from pathlib import Path
-
-    logo_html = ""
-    logo_path = Path(__file__).with_name("dreamztree_white_logo.png")
-    if logo_path.exists():
-        try:
-            logo_data = base64.b64encode(logo_path.read_bytes()).decode("ascii")
-            logo_html = f'<div class="dt-logo-stage"><img class="dt-login-logo" src="data:image/png;base64,{logo_data}" alt="Dreamztree logo"></div>'
-        except Exception:
-            logo_html = ""
-
     st.markdown(
-        f"""
+        """
         <style>
-        @keyframes dt-logo-rise {{
-          0% {{ opacity:1; transform:translateY(0) scale(1); }}
-          65% {{ opacity:1; transform:translateY(-70px) scale(.96); }}
-          100% {{ opacity:0; transform:translateY(-155px) scale(.9); }}
-        }}
-        @keyframes dt-panel-rise {{
-          0%, 35% {{ opacity:0; transform:translateY(34px); }}
-          100% {{ opacity:1; transform:translateY(0); }}
-        }}
-        @keyframes dt-login-shift {{0%,100% {{background-position:0% 50%;}} 50% {{background-position:100% 50%;}}}}
-        @keyframes dt-login-glow {{0%,100% {{box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08)}} 50% {{box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 30px rgba(96,165,250,.18)}}}}
-        [data-testid="stAppViewContainer"] {{
+        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
+        @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
+        @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
+        @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
+        [data-testid="stAppViewContainer"] {
           background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
             radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
             linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
-        }}
-        [data-testid="stHeader"] {{background:transparent;}}
-        [data-testid="stAppViewContainer"] .main .block-container {{max-width: 760px; padding-top: 1.2rem; padding-bottom: 2rem;}}
-        .dt-logo-stage {{height:130px; display:flex; align-items:center; justify-content:center; overflow:visible; margin:0 auto -8px;}}
-        .dt-login-logo {{display:block; width:auto; max-width:210px; max-height:100px; object-fit:contain; animation:dt-logo-rise 1.7s cubic-bezier(.2,.75,.25,1) forwards; filter:drop-shadow(0 8px 24px rgba(96,165,250,.2));}}
-        .login-panel {{max-width:560px; margin:0 auto 1rem; padding:1.7rem 2rem;
-          border:1px solid rgba(167,139,250,.55); border-radius:22px;
-          background:linear-gradient(125deg,rgba(124,58,237,.32),rgba(37,99,235,.2) 55%,rgba(13,148,136,.2));
-          background-size:180% 180%; position:relative; overflow:hidden;
-          animation:dt-panel-rise 1.35s .35s cubic-bezier(.2,.75,.25,1) both,dt-login-shift 14s ease-in-out infinite,dt-login-glow 7s ease-in-out infinite;
-          box-shadow:0 22px 60px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.08);}}
-        .login-panel:after {{content:""; position:absolute; width:120px; height:120px; right:9%; bottom:-96px; border-radius:50%; border:1px solid rgba(94,234,212,.3); pointer-events:none;}}
-        [data-testid="stTabs"] {{max-width:560px; margin:0 auto; animation:dt-panel-rise 1.1s .55s both;}}
-        [data-testid="stForm"] {{max-width:560px; margin:0 auto; animation:dt-panel-rise 1.1s .65s both;}}
-        [data-testid="stTextInput"] input:focus {{box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}}
-        .login-kicker {{letter-spacing:.18em; text-transform:uppercase; color:#77f3df; font-size:.72rem; font-weight:900;}}
-        .login-panel h1 {{color:#fff; text-shadow:0 4px 25px rgba(96,165,250,.18); font-size:clamp(1.6rem,3vw,2.35rem);}}
-        .login-panel p {{color:#d6def0;}}
-        @media (max-width:640px) {{.login-panel {{padding:1.3rem;}} .dt-login-logo {{max-width:170px;}}}}
-        @media (prefers-reduced-motion: reduce) {{.dt-login-logo,.login-panel,[data-testid="stTabs"],[data-testid="stForm"] {{animation:none!important;}}}}
+        }
+        [data-testid="stHeader"] {background: transparent;}
+        .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
+          border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
+          background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
+          background-size: 180% 180%; position:relative; overflow:hidden;
+          animation: dt-login-entrance .75s cubic-bezier(.2,.75,.25,1) both, dt-login-shift 14s ease-in-out infinite, dt-login-glow 7s ease-in-out infinite;
+          box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
+        .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
+          border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
+        [data-testid="stForm"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
+        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
+        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"] {animation:none !important;}}
+        .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
+          font-size: .75rem; font-weight: 900;}
+        .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
+        .login-panel p {color: #d6def0;}
         </style>
-        {logo_html}
         <div class="login-panel">
           <div class="login-kicker">Dreamztree · Marketing Intelligence</div>
           <h1>Meta Leads Command Center</h1>
