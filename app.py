@@ -834,7 +834,7 @@ def render_games_page():
     .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
     </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
     """, unsafe_allow_html=True)
-    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "⚡ Reflex Challenge", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
         questions = [
@@ -980,59 +980,12 @@ def render_games_page():
                 st.session_state.pop(k, None)
             st.rerun()
 
-    elif game == "⚡ Reflex Challenge":
-        st.markdown("### ⚡ Reflex Challenge · How quick are you?")
-        st.caption("Press Start, wait for the green signal, then click as fast as you can.")
-        if "reflex_phase" not in st.session_state:
-            st.session_state.reflex_phase = "idle"
-            st.session_state.reflex_started_at = 0.0
-            st.session_state.reflex_best_ms = None
-            st.session_state.reflex_message = "Ready when you are."
-        phase = st.session_state.reflex_phase
-        if phase == "idle":
-            st.info(st.session_state.reflex_message)
-            if st.button("▶ Start reaction test", type="primary", key="reflex_start"):
-                import time
-                st.session_state.reflex_phase = "wait"
-                st.session_state.reflex_wait_until = time.time() + random.uniform(1.8, 4.0)
-                st.session_state.reflex_message = "Wait for GREEN... don't click yet!"
-                st.rerun()
-        elif phase == "wait":
-            import time
-            st.warning("🟠 Wait for GREEN... don't click yet!")
-            if time.time() >= st.session_state.reflex_wait_until:
-                st.session_state.reflex_phase = "go"
-                st.session_state.reflex_started_at = time.time()
-                st.rerun()
-            else:
-                components.html("<script>setTimeout(()=>window.parent.location.reload(),250)</script>", height=0)
-            if st.button("I clicked early!", key="reflex_early"):
-                st.session_state.reflex_phase = "idle"
-                st.session_state.reflex_message = "Too soon! Wait for the green signal next time."
-                st.rerun()
-        elif phase == "go":
-            st.markdown("<div style='padding:32px;text-align:center;border-radius:18px;background:#16a34a;color:white;font-size:28px;font-weight:900'>🟢 CLICK NOW!</div>", unsafe_allow_html=True)
-            if st.button("🟢 CLICK!", type="primary", key="reflex_go"):
-                import time
-                elapsed = round((time.time() - st.session_state.reflex_started_at) * 1000)
-                best = st.session_state.reflex_best_ms
-                st.session_state.reflex_best_ms = elapsed if best is None else min(best, elapsed)
-                st.session_state.reflex_phase = "idle"
-                st.session_state.reflex_message = f"Your reaction time: {elapsed} ms."
-                st.rerun()
-        if st.session_state.reflex_best_ms is not None:
-            st.caption(f"Best reaction time: {st.session_state.reflex_best_ms} ms")
-        if st.button("Reset test", key="reflex_reset"):
-            for k in ["reflex_phase", "reflex_started_at", "reflex_best_ms", "reflex_message", "reflex_wait_until"]:
-                st.session_state.pop(k, None)
-            st.rerun()
-
     else:
         st.markdown("### 🦖 Dino Runner · Dreamztree Edition")
-        st.caption("Jump over cacti, duck under birds, and collect glowing Dreamztree stars for a temporary shield. Space/↑ to jump · ↓ to duck.")
+        st.info("🎮 **How to play:** Press **SPACE** or **↑ UP ARROW** to JUMP. Hold **↓ DOWN ARROW** to DUCK under flying birds. On-screen **JUMP**, **DUCK**, and **RESTART** buttons also work. Click inside the game first to activate laptop keyboard controls.")
         components.html(r"""<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
         *{box-sizing:border-box}body{margin:0;font-family:system-ui;background:#10172a;color:white}.wrap{padding:12px;border-radius:18px;background:linear-gradient(135deg,#141e46,#4b1c80 60%,#c02f86);border:1px solid #ffffff30;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.pill{background:#ffffff20;border:1px solid #ffffff30;padding:7px 12px;border-radius:999px;font-weight:800}.stage{position:relative;margin-top:10px;border-radius:12px;overflow:hidden;background:#7dd3fc}.stage canvas{display:block;width:100%;height:auto;touch-action:manipulation}.actions{display:flex;gap:10px;margin-top:10px}.actions button{flex:1;border:0;border-radius:12px;padding:12px;font-size:16px;font-weight:900;color:#25113f;background:linear-gradient(135deg,#fde047,#fb923c);box-shadow:0 4px 0 #b45309}.actions button:last-child{background:linear-gradient(135deg,#67e8f9,#818cf8);box-shadow:0 4px 0 #4338ca}.hint{text-align:center;font-size:12px;opacity:.9;margin-top:10px}
-        </style></head><body><div class="wrap"><div class="top"><strong>🌈 DREAMZTREE RUNNER</strong><span class="pill">⭐ Stars: <span id="stars">0</span></span><span class="pill">🏁 Score: <span id="score">0</span></span><span class="pill">🏆 Best: <span id="best">0</span></span></div><div class="stage"><canvas id="game" width="900" height="300" aria-label="Dino runner game"></canvas></div><div class="actions"><button id="jump">⬆ JUMP</button><button id="duck">⬇ DUCK</button><button id="restart">↻ RESTART</button></div><div class="hint">Collect ⭐ for a short shield · Avoid 🌵 and flying 🐦 · Works with keyboard and touch</div></div>
+        </style></head><body><div class="wrap"><div class="top"><strong>🌈 DREAMZTREE RUNNER</strong><span class="pill">⭐ Stars: <span id="stars">0</span></span><span class="pill">🏁 Score: <span id="score">0</span></span><span class="pill">🏆 Best: <span id="best">0</span></span></div><div class="stage"><canvas id="game" width="900" height="300" aria-label="Dino runner game"></canvas></div><div class="actions"><button id="jump">⬆ JUMP (SPACE)</button><button id="duck">⬇ DUCK (↓)</button><button id="restart">↻ RESTART</button></div><div class="hint">Collect ⭐ for a short shield · Avoid 🌵 and flying 🐦 · Works with keyboard and touch</div></div>
         <script>
         const cv=document.getElementById('game'),ctx=cv.getContext('2d');let W=cv.width,H=cv.height,ground=244,player,obs,stars,score,starCount,speed,frame,over,shield,night,best=+(localStorage.getItem('dtDinoBest')||0),keys={};document.getElementById('best').textContent=best;
         function reset(){player={x:90,y:ground-48,w:42,h:48,vy:0,duck:false};obs=[];stars=[];score=0;starCount=0;speed=3.6;frame=0;over=false;shield=0;night=false;}
@@ -1045,7 +998,7 @@ def render_games_page():
         function drawStar(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(frame*.04);ctx.fillStyle='#fde047';ctx.strokeStyle='#fff7ae';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5-Math.PI/2,r=i%2?5:12;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
         function loop(){drawBackground();if(!over){frame++;score+=.12;speed=Math.min(11,5+score/110);if(shield>0)shield--;spawn();player.duck=!!keys.ArrowDown||!!keys.KeyS;player.y+=player.vy;player.vy+=.72;if(player.y>ground-player.h){player.y=ground-player.h;player.vy=0}obs.forEach(o=>o.x-=speed);stars.forEach(s=>s.x-=speed);obs=obs.filter(o=>o.x>-60);stars=stars.filter(s=>s.x>-30);for(let o of obs){let ph=player.duck?27:48,py=player.duck?ground-ph:player.y;if(player.x+player.w-13>o.x+5&&player.x+11<o.x+o.w-4&&py+ph-9>o.y+5&&py+8<o.y+o.h-3){if(shield>0){o.x=-100;shield=0}else{over=true;best=Math.max(best,Math.floor(score));localStorage.setItem('dtDinoBest',best);document.getElementById('best').textContent=best}}}for(let s of stars){if(!s.got&&Math.abs((player.x+25)-s.x)<32&&Math.abs((player.y+20)-s.y)<35){s.got=true;starCount++;shield=420;score+=25}}stars=stars.filter(s=>!s.got);}
         obs.forEach(drawObstacle);stars.forEach(drawStar);drawDino();document.getElementById('score').textContent=Math.floor(score);document.getElementById('stars').textContent=starCount;if(shield>0){ctx.fillStyle='#fef08a';ctx.font='bold 15px system-ui';ctx.fillText('STAR SHIELD ✨',20,25)}if(over){ctx.fillStyle='#111827bb';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 34px system-ui';ctx.fillText('GAME OVER!',W/2,H/2-8);ctx.font='bold 17px system-ui';ctx.fillText('Tap RESTART to run again',W/2,H/2+25);ctx.textAlign='left'}requestAnimationFrame(loop)}
-        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>{keys[e.code]=false});cv.setAttribute('tabindex','0');document.body.tabIndex=0;document.body.addEventListener('pointerdown',()=>window.focus());cv.addEventListener('pointerdown',()=>{cv.focus();jump()});reset();loop();
+        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});document.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}if(['ArrowDown','KeyS'].includes(e.code)){e.preventDefault();keys.ArrowDown=true}});document.addEventListener('keyup',e=>{if(['ArrowDown','KeyS'].includes(e.code))keys.ArrowDown=false});window.addEventListener('keyup',e=>{keys[e.code]=false});cv.setAttribute('tabindex','0');document.body.tabIndex=0;document.body.addEventListener('pointerdown',()=>window.focus());cv.addEventListener('pointerdown',()=>{cv.focus();jump()});reset();loop();
         </script></body></html>""", height=465, scrolling=False)
 
 
