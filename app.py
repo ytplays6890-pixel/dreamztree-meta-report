@@ -749,7 +749,6 @@ def require_login():
                             st.session_state["authenticated_user"] = (
                                 response.user.email or login_id
                             )
-                            st.session_state["authenticated_user_id"] = str(response.user.id)
                             st.session_state["auth_method"] = "supabase"
                             st.rerun()
                         else:
@@ -802,7 +801,6 @@ def require_login():
                         st.session_state["authenticated_user"] = (
                             response.user.email or new_email
                         )
-                        st.session_state["authenticated_user_id"] = str(response.user.id)
                         st.session_state["auth_method"] = "supabase"
                         # Profile details are optional; Auth remains the source of truth.
                         try:
@@ -1075,94 +1073,115 @@ def _game_zone_popup():
             st.rerun()
 
 
-
 def render_team_chat():
-    """Group and private chat using Supabase Auth + RLS-protected messages."""
-    st.markdown(
-        '<div class="hero"><div class="eyebrow">Dreamztree · Team workspace</div>'
-        '<div class="hero-title">Team Chat</div>'
-        '<p class="hero-copy">Send messages to the whole team or privately to a colleague.</p></div>',
-        unsafe_allow_html=True,
-    )
+    """Render authenticated group chat and one-to-one private messages."""
+    st.title("💬 Dreamztree Team Chat")
+    st.caption("Group messages and private messages for signed-in team members.")
+
     client = get_supabase_client()
-    user_id = st.session_state.get("authenticated_user_id")
-    email = str(st.session_state.get("authenticated_user", "")).strip().lower()
-
-    if st.session_state.get("auth_method") != "supabase" or not user_id or not email:
-        st.warning("Team Chat requires a signed-in Supabase account. Sign in with your work email account to use chat.")
-        return
     if client is None:
-        st.error("Supabase is not configured.")
+        st.error("Supabase is not configured. Check the app's Supabase settings.")
         return
 
-    mode = st.radio("Chat type", ["Group Chat", "Private Message"], horizontal=True)
-    recipient_email = None
-    if mode == "Private Message":
-        recipient_email = st.text_input(
-            "Colleague's work email",
-            placeholder="colleague@dreamztree.com",
-            help="Enter the email address they use to sign in to this dashboard.",
-        ).strip().lower()
-        if not recipient_email or "@" not in recipient_email:
-            st.info("Enter your colleague's existing dashboard account email to view the conversation.")
-            return
-        if recipient_email == email:
-            st.warning("Enter a colleague's email, not your own.")
-            return
-
-    st.caption(f"Signed in as {email}")
+    # Chat requires a real Supabase Auth session. Legacy-only admin logins do not
+    # have a database user identity and therefore cannot safely use private chat.
     try:
-        query = client.table("team_chat_messages").select(
-            "id, sender_id, sender_email, recipient_email, message, created_at"
+        auth_response = client.auth.get_user()
+        user = auth_response.user
+        if not user:
+            st.warning("Team Chat requires a Supabase account session. Please sign out and sign in with your work email account.")
+            return
+    except Exception:
+        st.warning("Team Chat requires a Supabase account session. Please sign out and sign in with your work email account.")
+        return
+
+    user_id = str(user.id)
+    email = user.email or ""
+    metadata = getattr(user, "user_metadata", None) or {}
+    display_name = str(metadata.get("username") or metadata.get("name") or email or "Team member").strip()
+
+    try:
+        client.table("team_chat_profiles").upsert({
+            "id": user_id,
+            "username": display_name,
+            "email": email,
+            "updated_at": datetime.now().isoformat(),
+        }).execute()
+        people_response = (
+            client.table("team_chat_profiles")
+            .select("id, username, email")
+            .neq("id", user_id)
+            .order("username")
+            .execute()
+        )
+        people = people_response.data or []
+    except Exception as exc:
+        st.error("Could not load chat members. Confirm that the Team Chat SQL setup completed successfully.")
+        st.caption(f"Technical detail: {exc}")
+        return
+
+    mode = st.radio("Chat type", ["Group Chat", "Private Message"], horizontal=True, key="team_chat_mode")
+    recipient_id = None
+    if mode == "Private Message":
+        if not people:
+            st.info("No other team members have opened Team Chat yet. Ask each colleague to sign in and open Team Chat once.")
+            return
+        options = {}
+        for person in people:
+            label = f"{person.get('username') or person.get('email') or 'Team member'} ({person.get('email') or 'No email'})"
+            options[label] = person["id"]
+        selected_person = st.selectbox("Send a private message to", list(options.keys()), key="team_chat_recipient")
+        recipient_id = options[selected_person]
+
+    try:
+        query = (
+            client.table("team_chat_messages")
+            .select("id, sender_id, recipient_id, message, created_at")
+            .order("created_at")
+            .limit(100)
         )
         if mode == "Group Chat":
-            query = query.is_("recipient_email", "null")
+            query = query.is_("recipient_id", "null")
         else:
             query = query.or_(
-                f"and(sender_email.eq.{email},recipient_email.eq.{recipient_email}),"
-                f"and(sender_email.eq.{recipient_email},recipient_email.eq.{email})"
+                f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),"
+                f"and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})"
             )
-        result = query.order("created_at", desc=False).limit(200).execute()
-        messages = result.data or []
+        messages = query.execute().data or []
     except Exception as exc:
-        st.error("Could not load chat messages. Make sure the Supabase SQL setup has been run.")
-        st.caption(str(exc))
+        st.error("Could not load messages. Confirm the database tables and access policies are set up.")
+        st.caption(f"Technical detail: {exc}")
         return
 
     st.markdown("---")
+    st.subheader("Messages")
     if not messages:
-        st.info("No messages yet. Start the conversation below.")
-    for msg in messages:
-        sender = str(msg.get("sender_email") or "Colleague")
-        created = str(msg.get("created_at") or "")
-        body = str(msg.get("message") or "")
-        with st.chat_message("user" if sender.lower() == email else "assistant"):
-            st.markdown(f"**{sender}** · {created.replace('T', ' ')[:16]}")
-            st.write(body)
+        st.info("No messages yet. Start the conversation!")
+    for item in messages:
+        is_me = str(item.get("sender_id")) == user_id
+        sender_label = "You" if is_me else "Team member"
+        created_at = str(item.get("created_at") or "")
+        st.markdown(f"**{sender_label}** · {created_at}\n\n{item.get('message', '')}")
+        st.divider()
 
     with st.form("team_chat_send_form", clear_on_submit=True):
-        body = st.text_area("Message", placeholder="Write a message…", max_chars=4000)
-        send = st.form_submit_button("Send message", type="primary", use_container_width=True)
+        message = st.text_area("Your message", max_chars=2000, placeholder="Write a message...")
+        send = st.form_submit_button("Send message", type="primary")
     if send:
-        body = body.strip()
-        if not body:
-            st.warning("Type a message first.")
+        message = message.strip()
+        if not message:
+            st.warning("Please type a message first.")
         else:
-            payload = {
-                "sender_id": user_id,
-                "sender_email": email,
-                "recipient_email": recipient_email if mode == "Private Message" else None,
-                "message": body,
-            }
             try:
-                client.table("team_chat_messages").insert(payload).execute()
-                st.success("Message sent.")
+                client.table("team_chat_messages").insert({
+                    "sender_id": user_id,
+                    "recipient_id": recipient_id,
+                    "message": message,
+                }).execute()
                 st.rerun()
             except Exception as exc:
-                st.error("Message could not be sent. Check that the SQL setup and Supabase login are configured.")
-                st.caption(str(exc))
-    if st.button("Refresh messages", use_container_width=False):
-        st.rerun()
+                st.error("Message could not be sent. Confirm that you are signed in with a Supabase account.")
+                st.caption(f"Technical detail: {exc}")
 
 
 def main():
@@ -1171,26 +1190,24 @@ def main():
     _game_zone_popup()
 
     page = st.query_params.get("page", "dashboard")
-    nav1, nav2, nav3 = st.columns([1, 1, 5])
-    with nav1:
-        if st.button("📊 Dashboard", use_container_width=True):
-            st.query_params["page"] = "dashboard"
-            st.rerun()
-    with nav2:
-        if st.button("💬 Team Chat", use_container_width=True):
-            st.query_params["page"] = "chat"
-            st.rerun()
-    if page == "chat":
-        render_team_chat()
-        return
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
             st.rerun()
         render_games_page()
         return
+    if page == "chat":
+        if st.button("← Back to Meta Leads Dashboard", key="back_from_team_chat"):
+            st.query_params["page"] = "dashboard"
+            st.rerun()
+        render_team_chat()
+        return
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
-    header_left, header_right = st.columns([5, 1])
+    header_left, chat_col, header_right = st.columns([4, 1, 1])
+    with chat_col:
+        if st.button("💬 Team Chat", use_container_width=True):
+            st.query_params["page"] = "chat"
+            st.rerun()
     with header_right:
         if st.button("Sign out", use_container_width=True):
             if st.session_state.get("auth_method") == "supabase":
@@ -1202,7 +1219,6 @@ def main():
                     pass
             st.session_state["authenticated"] = False
             st.session_state.pop("authenticated_user", None)
-            st.session_state.pop("authenticated_user_id", None)
             st.session_state.pop("auth_method", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
