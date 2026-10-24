@@ -18,7 +18,7 @@ st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout
 # Keep dreamztree_white_logo.png in the same GitHub folder as app.py.
 LOGO_PATH = Path(__file__).with_name("dreamztree_white_logo.png")
 
-def show_dreamztree_logo(width=260):
+def show_dreamztree_logo(width=180):
     """Display the white Dreamztree logo centered across the full app content width."""
     if LOGO_PATH.is_file():
         try:
@@ -617,11 +617,11 @@ def get_supabase_client():
 
 
 def _show_login_header():
-    show_dreamztree_logo(300)
+    show_dreamztree_logo(180)
     st.markdown(
         """
         <style>
-        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
+        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(-22px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
         @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
@@ -631,7 +631,7 @@ def _show_login_header():
             linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
         }
         [data-testid="stHeader"] {background: transparent;}
-        .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
+        .login-panel {max-width: 760px; margin: 1vh auto .5rem auto; padding: 1.45rem 2rem;
           border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
           background-size: 180% 180%; position:relative; overflow:hidden;
@@ -639,9 +639,11 @@ def _show_login_header():
           box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
           border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
-        [data-testid="stForm"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
+        [data-testid="stForm"], [data-testid="stTabs"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
+        [data-testid="stTabs"] {margin-top:0 !important;}
+        [data-testid="stAppViewBlockContainer"] {padding-top:1rem !important;}
         [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
-        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"] {animation:none !important;}}
+        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"],[data-testid="stTabs"] {animation:none !important;}}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
           font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
