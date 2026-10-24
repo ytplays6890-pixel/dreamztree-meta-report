@@ -982,18 +982,49 @@ def render_games_page():
 
     elif game == "⚡ Reflex Challenge":
         st.markdown("### ⚡ Reflex Challenge · How quick are you?")
-        st.caption("Tap the button when you're ready, then try to beat your score. This mini challenge tracks your streak.")
-        if "reflex_streak" not in st.session_state:
-            st.session_state.reflex_streak = 0
-            st.session_state.reflex_best = 0
-        st.markdown(f"## 🔥 Current streak: {st.session_state.reflex_streak}")
-        if st.button("⚡ I’m ready!", type="primary", key="reflex_hit"):
-            st.session_state.reflex_streak += 1
-            st.session_state.reflex_best = max(st.session_state.reflex_best, st.session_state.reflex_streak)
-            st.success("Nice reaction! Keep the streak going.")
-        st.caption(f"Best streak this session: {st.session_state.reflex_best}")
-        if st.button("Reset streak", key="reflex_reset"):
-            st.session_state.reflex_streak = 0
+        st.caption("Press Start, wait for the green signal, then click as fast as you can.")
+        if "reflex_phase" not in st.session_state:
+            st.session_state.reflex_phase = "idle"
+            st.session_state.reflex_started_at = 0.0
+            st.session_state.reflex_best_ms = None
+            st.session_state.reflex_message = "Ready when you are."
+        phase = st.session_state.reflex_phase
+        if phase == "idle":
+            st.info(st.session_state.reflex_message)
+            if st.button("▶ Start reaction test", type="primary", key="reflex_start"):
+                import time
+                st.session_state.reflex_phase = "wait"
+                st.session_state.reflex_wait_until = time.time() + random.uniform(1.8, 4.0)
+                st.session_state.reflex_message = "Wait for GREEN... don't click yet!"
+                st.rerun()
+        elif phase == "wait":
+            import time
+            st.warning("🟠 Wait for GREEN... don't click yet!")
+            if time.time() >= st.session_state.reflex_wait_until:
+                st.session_state.reflex_phase = "go"
+                st.session_state.reflex_started_at = time.time()
+                st.rerun()
+            else:
+                components.html("<script>setTimeout(()=>window.parent.location.reload(),250)</script>", height=0)
+            if st.button("I clicked early!", key="reflex_early"):
+                st.session_state.reflex_phase = "idle"
+                st.session_state.reflex_message = "Too soon! Wait for the green signal next time."
+                st.rerun()
+        elif phase == "go":
+            st.markdown("<div style='padding:32px;text-align:center;border-radius:18px;background:#16a34a;color:white;font-size:28px;font-weight:900'>🟢 CLICK NOW!</div>", unsafe_allow_html=True)
+            if st.button("🟢 CLICK!", type="primary", key="reflex_go"):
+                import time
+                elapsed = round((time.time() - st.session_state.reflex_started_at) * 1000)
+                best = st.session_state.reflex_best_ms
+                st.session_state.reflex_best_ms = elapsed if best is None else min(best, elapsed)
+                st.session_state.reflex_phase = "idle"
+                st.session_state.reflex_message = f"Your reaction time: {elapsed} ms."
+                st.rerun()
+        if st.session_state.reflex_best_ms is not None:
+            st.caption(f"Best reaction time: {st.session_state.reflex_best_ms} ms")
+        if st.button("Reset test", key="reflex_reset"):
+            for k in ["reflex_phase", "reflex_started_at", "reflex_best_ms", "reflex_message", "reflex_wait_until"]:
+                st.session_state.pop(k, None)
             st.rerun()
 
     else:
@@ -1014,7 +1045,7 @@ def render_games_page():
         function drawStar(s){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(frame*.04);ctx.fillStyle='#fde047';ctx.strokeStyle='#fff7ae';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<10;i++){let a=i*Math.PI/5-Math.PI/2,r=i%2?5:12;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
         function loop(){drawBackground();if(!over){frame++;score+=.12;speed=Math.min(11,5+score/110);if(shield>0)shield--;spawn();player.duck=!!keys.ArrowDown||!!keys.KeyS;player.y+=player.vy;player.vy+=.72;if(player.y>ground-player.h){player.y=ground-player.h;player.vy=0}obs.forEach(o=>o.x-=speed);stars.forEach(s=>s.x-=speed);obs=obs.filter(o=>o.x>-60);stars=stars.filter(s=>s.x>-30);for(let o of obs){let ph=player.duck?27:48,py=player.duck?ground-ph:player.y;if(player.x+player.w-13>o.x+5&&player.x+11<o.x+o.w-4&&py+ph-9>o.y+5&&py+8<o.y+o.h-3){if(shield>0){o.x=-100;shield=0}else{over=true;best=Math.max(best,Math.floor(score));localStorage.setItem('dtDinoBest',best);document.getElementById('best').textContent=best}}}for(let s of stars){if(!s.got&&Math.abs((player.x+25)-s.x)<32&&Math.abs((player.y+20)-s.y)<35){s.got=true;starCount++;shield=420;score+=25}}stars=stars.filter(s=>!s.got);}
         obs.forEach(drawObstacle);stars.forEach(drawStar);drawDino();document.getElementById('score').textContent=Math.floor(score);document.getElementById('stars').textContent=starCount;if(shield>0){ctx.fillStyle='#fef08a';ctx.font='bold 15px system-ui';ctx.fillText('STAR SHIELD ✨',20,25)}if(over){ctx.fillStyle='#111827bb';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 34px system-ui';ctx.fillText('GAME OVER!',W/2,H/2-8);ctx.font='bold 17px system-ui';ctx.fillText('Tap RESTART to run again',W/2,H/2+25);ctx.textAlign='left'}requestAnimationFrame(loop)}
-        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>{keys[e.code]=false});cv.setAttribute('tabindex','0');cv.addEventListener('pointerdown',()=>cv.focus());cv.addEventListener('pointerdown',jump);reset();loop();
+        function jump(){if(over){reset();return}if(player.y>=ground-player.h-1)player.vy=-13}document.getElementById('jump').onclick=jump;document.getElementById('duck').onpointerdown=()=>keys.ArrowDown=true;document.getElementById('duck').onpointerup=()=>keys.ArrowDown=false;document.getElementById('duck').onpointerleave=()=>keys.ArrowDown=false;document.getElementById('restart').onclick=reset;window.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});window.addEventListener('keyup',e=>{keys[e.code]=false});cv.setAttribute('tabindex','0');document.body.tabIndex=0;document.body.addEventListener('pointerdown',()=>window.focus());cv.addEventListener('pointerdown',()=>{cv.focus();jump()});reset();loop();
         </script></body></html>""", height=465, scrolling=False)
 
 
