@@ -14,6 +14,16 @@ from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
 
+# Keep dreamztree_white_logo.png in the same GitHub folder as app.py.
+LOGO_PATH = Path(__file__).with_name("dreamztree_white_logo.png")
+
+def show_dreamztree_logo(width=260):
+    """Display the white Dreamztree logo when its PNG asset is present."""
+    if LOGO_PATH.is_file():
+        left, center, right = st.columns([1, 2, 1])
+        with center:
+            st.image(str(LOGO_PATH), width=width)
+
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
     ("Jincy |01| healthacreleads campaign", "Jincy", "Healthcare", "Mangaf"),
@@ -595,6 +605,7 @@ def get_supabase_client():
 
 
 def _show_login_header():
+    show_dreamztree_logo(300)
     st.markdown(
         """
         <style>
@@ -770,10 +781,12 @@ def require_login():
                             "Registration received. Check your email for a verification "
                             "link, then return here and sign in."
                         )
-                
-                except Exception as e:
-                    st.error(f"Account creation failed: {e}")
-
+                except Exception:
+                    st.error(
+                        "Account creation failed. The email may already be registered, "
+                        "or Supabase may require email verification. Check the Supabase "
+                        "Authentication settings and try again."
+                    )
 
     st.stop()
 
@@ -884,6 +897,7 @@ def main():
     if page == "🎮 Game Zone":
         render_games_page()
         return
+    show_dreamztree_logo(220)
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     header_left, header_right = st.columns([5, 1])
     with header_right:
