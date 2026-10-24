@@ -1,5 +1,4 @@
 import re
-import base64
 import random
 import hmac
 import hashlib
@@ -14,27 +13,6 @@ import streamlit.components.v1 as components
 from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
-
-# Keep dreamztree_white_logo.png in the same GitHub folder as app.py.
-LOGO_PATH = Path(__file__).with_name("dreamztree_white_logo.png")
-
-def show_dreamztree_logo(width=180):
-    """Display the white Dreamztree logo centered across the full app content width."""
-    if LOGO_PATH.is_file():
-        try:
-            # Inline the image as a data URI so flexbox centers it across the full page.
-            encoded_logo = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
-            logo_html = (
-                '<div style="width:100%;display:flex;justify-content:center;'
-                'align-items:center;margin:0 auto 30px auto;text-align:center;">'
-                f'<img src="data:image/png;base64,{encoded_logo}" alt="Dreamztree logo" '
-                f'style="display:block;width:min({int(width)}px,80vw);height:auto;'
-                'margin:0 auto;object-fit:contain;" />'
-                '</div>'
-            )
-            st.markdown(logo_html, unsafe_allow_html=True)
-        except Exception:
-            st.warning("Dreamztree logo could not be loaded. Check the logo file in the repository.")
 
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
@@ -617,11 +595,10 @@ def get_supabase_client():
 
 
 def _show_login_header():
-    show_dreamztree_logo(180)
     st.markdown(
         """
         <style>
-        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(-22px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
+        @keyframes dt-login-entrance {from {opacity:0; transform:translateY(18px) scale(.99);} to {opacity:1; transform:translateY(0) scale(1);}}
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
         @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
@@ -631,7 +608,7 @@ def _show_login_header():
             linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
         }
         [data-testid="stHeader"] {background: transparent;}
-        .login-panel {max-width: 760px; margin: 1vh auto .5rem auto; padding: 1.45rem 2rem;
+        .login-panel {max-width: 760px; margin: 4vh auto 1rem auto; padding: 2.2rem;
           border: 1px solid rgba(167,139,250,.55); border-radius: 24px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
           background-size: 180% 180%; position:relative; overflow:hidden;
@@ -639,11 +616,9 @@ def _show_login_header():
           box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);}
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
           border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
-        [data-testid="stForm"], [data-testid="stTabs"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
-        [data-testid="stTabs"] {margin-top:0 !important;}
-        [data-testid="stAppViewBlockContainer"] {padding-top:1rem !important;}
+        [data-testid="stForm"] {animation:dt-login-entrance .9s cubic-bezier(.2,.75,.25,1) both;}
         [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
-        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"],[data-testid="stTabs"] {animation:none !important;}}
+        @media (prefers-reduced-motion: reduce) {.login-panel,[data-testid="stForm"] {animation:none !important;}}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df;
           font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18);}
@@ -795,12 +770,10 @@ def require_login():
                             "Registration received. Check your email for a verification "
                             "link, then return here and sign in."
                         )
-                except Exception:
-                    st.error(
-                        "Account creation failed. The email may already be registered, "
-                        "or Supabase may require email verification. Check the Supabase "
-                        "Authentication settings and try again."
-                    )
+                
+                except Exception as e:
+                    st.error(f"Account creation failed: {e}")
+
 
     st.stop()
 
@@ -911,7 +884,6 @@ def main():
     if page == "🎮 Game Zone":
         render_games_page()
         return
-    show_dreamztree_logo(220)
     st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
     header_left, header_right = st.columns([5, 1])
     with header_right:
