@@ -13,7 +13,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from supabase import create_client
 
-st.set_page_config(page_title="Dreamztree Meta Report", page_icon="", layout="wide")
+st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
