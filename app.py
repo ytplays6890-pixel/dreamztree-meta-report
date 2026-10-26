@@ -1006,26 +1006,44 @@ def _show_login_header():
         @media (prefers-reduced-motion: reduce) {
           #dt-login-universe *,#dt-login-universe *::before,#dt-login-universe *::after {animation:none !important;}
         }
-        /* Playful login prank: the whole login page dodges for 10 seconds when a field is focused. */
+        /* Playful fast escape: the entire page dodges sharply for 30 seconds on hover. */
         @keyframes dt-login-escape-dodge {
           0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
-          8%   { transform: translate3d(12vw,-5vh,0) rotate(1.2deg) scale(.985); }
-          18%  { transform: translate3d(-13vw,7vh,0) rotate(-1.5deg) scale(.99); }
-          30%  { transform: translate3d(9vw,12vh,0) rotate(1deg) scale(.98); }
-          42%  { transform: translate3d(-8vw,-10vh,0) rotate(-1deg) scale(.99); }
-          55%  { transform: translate3d(14vw,3vh,0) rotate(1.3deg) scale(.985); }
-          68%  { transform: translate3d(-12vw,5vh,0) rotate(-1.2deg) scale(.99); }
-          80%  { transform: translate3d(6vw,-8vh,0) rotate(.8deg) scale(.99); }
-          91%  { transform: translate3d(-4vw,3vh,0) rotate(-.4deg) scale(1); }
+          4%   { transform: translate3d(7vw,-5vh,0) rotate(1deg) scale(.99); }
+          9%   { transform: translate3d(-8vw,4vh,0) rotate(-1.2deg) scale(.99); }
+          14%  { transform: translate3d(5vw,7vh,0) rotate(.8deg) scale(.985); }
+          20%  { transform: translate3d(-6vw,-6vh,0) rotate(-.9deg) scale(.99); }
+          27%  { transform: translate3d(8vw,2vh,0) rotate(1.1deg) scale(.985); }
+          34%  { transform: translate3d(-7vw,6vh,0) rotate(-1deg) scale(.99); }
+          42%  { transform: translate3d(4vw,-7vh,0) rotate(.7deg) scale(.985); }
+          50%  { transform: translate3d(-8vw,-2vh,0) rotate(-1.1deg) scale(.99); }
+          58%  { transform: translate3d(7vw,6vh,0) rotate(.9deg) scale(.985); }
+          66%  { transform: translate3d(-5vw,-5vh,0) rotate(-.8deg) scale(.99); }
+          74%  { transform: translate3d(8vw,4vh,0) rotate(1deg) scale(.985); }
+          82%  { transform: translate3d(-7vw,1vh,0) rotate(-1deg) scale(.99); }
+          90%  { transform: translate3d(5vw,-6vh,0) rotate(.7deg) scale(.99); }
+          96%  { transform: translate3d(-3vw,2vh,0) rotate(-.4deg) scale(.998); }
           100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
         }
-        .block-container:has(.login-panel):has([data-testid="stTextInput"] input:focus) {
+        /* Hovering the login area starts a fast, erratic 30-second escape. Focusing a field pauses it so typing remains possible. */
+        body:has(.login-panel:hover):not(:has([data-testid="stTextInput"] input:focus)) [data-testid="stAppViewContainer"],
+        body:has(.login-panel:hover):not(:has([data-testid="stTextInput"] input:focus)) [data-testid="stHeader"],
+        body:has(.login-panel:hover):not(:has([data-testid="stTextInput"] input:focus)) #dt-login-universe {
           transform-origin: center center;
-          animation: dt-login-escape-dodge 10s cubic-bezier(.45,0,.55,1) both !important;
+          animation: dt-login-escape-dodge 30s cubic-bezier(.65,0,.35,1) 1 both !important;
           will-change: transform;
         }
+        /* Stop movement during active typing to avoid making text entry impossible. */
+        body:has([data-testid="stTextInput"] input:focus) [data-testid="stAppViewContainer"],
+        body:has([data-testid="stTextInput"] input:focus) [data-testid="stHeader"],
+        body:has([data-testid="stTextInput"] input:focus) #dt-login-universe {
+          animation: none !important;
+          transform: none !important;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .block-container:has(.login-panel):has([data-testid="stTextInput"] input:focus) { animation:none !important; }
+          body:has(.login-panel:hover) [data-testid="stAppViewContainer"],
+          body:has(.login-panel:hover) [data-testid="stHeader"],
+          body:has(.login-panel:hover) #dt-login-universe { animation:none !important; }
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
