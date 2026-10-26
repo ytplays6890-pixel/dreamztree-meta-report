@@ -648,10 +648,13 @@ def _show_login_header():
     st.markdown(
         """
         <style>
-        @keyframes dt-logo-rise-away {
-          0% { opacity: 1; transform: translateY(0) scale(1); }
-          68% { opacity: 1; transform: translateY(-42px) scale(.98); }
-          100% { opacity: 0; transform: translateY(-115px) scale(.94); }
+        @keyframes dt-logo-enter {
+          0% { opacity: 0; transform: translateY(18px) scale(.96); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes dt-logo-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
         }
         @keyframes dt-login-panel-rise {
           0% { opacity: 0; transform: translateY(54px); }
@@ -688,7 +691,8 @@ def _show_login_header():
         .dt-login-logo {
           display:flex; flex-direction:column; align-items:center; justify-content:center;
           gap:.25rem; margin: 48px auto 1rem; min-height:112px; text-align:center;
-          animation: dt-logo-rise-away 2.8s cubic-bezier(.4,0,.2,1) .15s both;
+          opacity: 1;
+          animation: dt-logo-enter .75s cubic-bezier(.2,.75,.25,1) both, dt-logo-float 5s ease-in-out .8s infinite;
         }
         .dt-login-logo-image {
           display:block; width:116px; height:100px; object-fit:contain;
@@ -700,8 +704,8 @@ def _show_login_header():
           border: 1px solid rgba(167,139,250,.55); border-radius: 22px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
           background-size: 180% 180%; position:relative; overflow:hidden;
-          opacity:0; animation: dt-login-panel-rise 1.05s cubic-bezier(.2,.75,.25,1) 1.05s forwards,
-          dt-login-shift 14s ease-in-out 2.4s infinite, dt-login-glow 7s ease-in-out 2.4s infinite;
+          opacity:1; animation: dt-login-panel-rise .75s cubic-bezier(.2,.75,.25,1) .12s both,
+          dt-login-shift 12s ease-in-out .8s infinite, dt-login-glow 6s ease-in-out 1s infinite;
           box-shadow: 0 22px 60px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.08);
         }
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
@@ -729,11 +733,11 @@ def _show_login_header():
         /* Keep tabs and forms centered and compact, and bring them into view after the logo. */
         div[data-testid="stTabs"] {
           max-width:620px; width:100%; margin:0 auto !important;
-          opacity:0; animation:dt-login-panel-rise 1.0s cubic-bezier(.2,.75,.25,1) 1.25s forwards;
+          opacity:1; animation:dt-login-panel-rise .7s cubic-bezier(.2,.75,.25,1) .18s both;
         }
         [data-testid="stForm"] {
           max-width:620px; margin-left:auto; margin-right:auto;
-          opacity:0; animation:dt-login-panel-rise 1.0s cubic-bezier(.2,.75,.25,1) 1.4s forwards;
+          opacity:1; animation:dt-login-panel-rise .7s cubic-bezier(.2,.75,.25,1) .24s both;
         }
         [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {
           box-shadow:0 0 0 1px rgba(94,234,212,.72),0 0 20px rgba(96,165,250,.2);
@@ -805,6 +809,25 @@ def _show_login_header():
         [data-testid="stFormSubmitButton"] button:active { transform: scale(.985) !important; }
         [data-testid="stTabs"] button[role="tab"] { transition: color .2s ease, background .2s ease, box-shadow .2s ease; }
         [data-testid="stTabs"] button[role="tab"]:hover { color:#5eead4 !important; }
+        @keyframes dt-login-typing-pulse {
+          0%,100% { box-shadow: 0 0 0 1px rgba(94,234,212,.35), 0 0 12px rgba(96,165,250,.10); }
+          50% { box-shadow: 0 0 0 2px rgba(94,234,212,.72), 0 0 24px rgba(96,165,250,.25); }
+        }
+        /* Strong, visible feedback while the user types or focuses an input. */
+        [data-testid="stForm"] [data-testid="stTextInput"]:focus-within {
+          transform: translateY(-3px) !important;
+          filter: drop-shadow(0 0 12px rgba(94,234,212,.18)) !important;
+        }
+        [data-testid="stForm"] [data-testid="stTextInput"]:focus-within input {
+          animation: dt-login-typing-pulse 1.8s ease-in-out infinite !important;
+          border-color: #5eead4 !important;
+        }
+        [data-testid="stForm"] [data-testid="stTextInput"]:focus-within label {
+          color: #99f6e4 !important;
+        }
+        [data-testid="stFormSubmitButton"] button:focus-visible {
+          outline: 2px solid #99f6e4 !important; outline-offset: 4px !important;
+        }
         @media (prefers-reduced-motion: reduce) {
           [data-testid="stTextInput"], [data-testid="stTextInput"] input,
           [data-testid="stFormSubmitButton"] button { animation:none !important; transition:none !important; }
