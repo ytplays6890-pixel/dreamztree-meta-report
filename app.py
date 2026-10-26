@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import os
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -494,65 +495,23 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
-    
-    /* Dreamztree x Higgsfield-inspired visual layer: black canvas + drifting binary. */
+    /* Animated binary layer: decorative only, never intercepts clicks. */
+    .dt-binary-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+      opacity: .105; color: #b8c9ff; font: 600 13px/1.9 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .28em; white-space: pre-wrap; overflow-wrap: anywhere;
+      text-shadow: 0 0 8px rgba(96,165,250,.38);
+      mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 85%, transparent);
+      animation: dt-binary-drift 26s linear infinite;
+    }
     @keyframes dt-binary-drift {
-      from { background-position: 0 0, 0 0; }
-      to   { background-position: 0 520px, 0 0; }
+      from { transform: translateY(-8%); }
+      to { transform: translateY(8%); }
     }
-    .stApp {
-      background-color: #050505 !important;
-      background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='92' height='120' viewBox='0 0 92 120'%3E%3Cg fill='%23b8c2cc' fill-opacity='.105' font-family='monospace' font-size='10'%3E%3Ctext x='9' y='18'%3E0%3C/text%3E%3Ctext x='33' y='39'%3E1%3C/text%3E%3Ctext x='65' y='25'%3E1%3C/text%3E%3Ctext x='19' y='67'%3E1%3C/text%3E%3Ctext x='52' y='83'%3E0%3C/text%3E%3Ctext x='77' y='58'%3E0%3C/text%3E%3Ctext x='8' y='108'%3E1%3C/text%3E%3Ctext x='38' y='113'%3E0%3C/text%3E%3Ctext x='70' y='101'%3E1%3C/text%3E%3C/g%3E%3C/svg%3E"),
-        radial-gradient(ellipse at 50% 42%, rgba(255,255,255,.025), transparent 58%) !important;
-      background-size: 92px 120px, 100% 100% !important;
-      background-repeat: repeat, no-repeat !important;
-      animation: dt-binary-drift 24s linear infinite !important;
-      color: #f7f7f7;
-    }
-    [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
-      background: transparent !important;
-    }
-    [data-testid="stHeader"] {background: rgba(5,5,5,.78) !important;}
-    [data-testid="stSidebar"] {
-      background: rgba(7,7,7,.96) !important;
-      border-right: 1px solid rgba(255,255,255,.09) !important;
-    }
-    .hero {
-      background: linear-gradient(110deg, rgba(10,10,10,.94), rgba(22,22,22,.88)) !important;
-      border: 1px solid rgba(255,255,255,.13) !important;
-      box-shadow: 0 14px 44px rgba(0,0,0,.32) !important;
-    }
-    .hero-title {
-      background: linear-gradient(90deg,#fff 0%,#fff 52%,#c7ff00 53%,#c7ff00 100%) !important;
-      background-size: 100% auto !important;
-      -webkit-text-fill-color: transparent !important;
-      animation: none !important;
-    }
-    .eyebrow, .login-kicker {color:#c7ff00 !important;}
-    [data-testid="stMetric"] {
-      background: rgba(15,15,15,.82) !important;
-      border-color: rgba(255,255,255,.13) !important;
-      animation: dt-chart-rise .7s ease both !important;
-    }
-    [data-testid="stMetric"]:after {display:none !important;}
-    .stButton button, [data-testid="stDownloadButton"] button {
-      background: #171717 !important;
-      border: 1px solid rgba(255,255,255,.18) !important;
-      animation: none !important;
-    }
-    .stButton button[kind="primary"], button[kind="primary"] {
-      background: #c7ff00 !important;
-      color: #080808 !important;
-      border: 1px solid #c7ff00 !important;
-      box-shadow: 0 0 22px rgba(199,255,0,.13) !important;
-    }
-    .stButton button:hover, [data-testid="stDownloadButton"] button:hover {
-      border-color:#c7ff00 !important;
-      box-shadow:0 0 18px rgba(199,255,0,.12) !important;
-    }
-    @media (prefers-reduced-motion: reduce) {.stApp {animation:none !important;}}
-
+    [data-testid="stAppViewContainer"] { isolation: isolate; }
+    [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
+    @media (prefers-reduced-motion: reduce) { .dt-binary-bg { animation: none; } }
+    
         .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
         .arcade-banner h2 { margin: .35rem 0; color: white; }
         .arcade-banner p { margin-bottom: 0; color: #f5f3ff; }
@@ -561,6 +520,17 @@ def inject_premium_theme():
         @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
 </style>""", unsafe_allow_html=True)
+    st.markdown(
+        """<div class="dt-binary-bg" aria-hidden="true">01001010 10110100 01010101 11001010 10101001 00110101 01101010 11010010
+10110101 01001101 11010100 00101011 10110010 01010110 01101001 10100101
+01011010 10100110 00101101 11010010 01101010 10010101 01001110 10110100
+10101001 01100101 11001010 00110110 01011010 10110101 00101101 11010010
+01101001 10100101 01011010 11010010 10110100 00101101 01101010 10100101
+01001110 11010010 10101001 00110101 01101010 11010010 10110101 01001101
+11010100 00101011 10110010 01010110 01101001 10100101 01011010 10100110
+00101101 11010010 01101010 10010101 01001110 10110100 10101001 01100101</div>""",
+        unsafe_allow_html=True,
+    )
 
 
 def load_campaign_report(upload, mappings):
@@ -1442,7 +1412,54 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
+    # Landing-page hero: matches the requested Dreamztree black/navy + lime design.
+    st.markdown("""
+    <style>
+      .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
+        border-radius:28px; background:#080b16; border:1px solid rgba(255,255,255,.055);
+        box-shadow:0 22px 70px rgba(0,0,0,.24); isolation:isolate; }
+      .dt-landing:before {content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+        background:radial-gradient(ellipse at 50% 44%,rgba(178,255,0,.045),transparent 55%);}
+      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;}
+      .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
+      .dt-brand-icon {display:grid;place-items:center;width:58px;height:58px;border-radius:16px;background:#b6ff18;color:#07090e;font-size:29px;font-weight:900;}
+      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#b6ff18;letter-spacing:.035em;text-align:right;}
+      .dt-landing-kicker {text-align:center;color:#b6ff18;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;}
+      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;}
+      .dt-landing-copy {text-align:center;color:#aeb6c7;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;}
+      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;}
+      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:20px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
+      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(182,255,24,.15);}
+      .dt-landing-actions .primary {background:#b6ff18;color:#07090e!important;border:1px solid #b6ff18;font-weight:750;}
+      .dt-landing-actions .secondary {background:transparent;color:#f8f9fc!important;border:1px solid #596174;}
+      .dt-binary-line {text-align:center;color:#364255;font:500 1rem ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;margin-top:44px;animation:dt-binary-breathe 4s ease-in-out infinite;}
+      @keyframes dt-binary-breathe {0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(5,7,12,.72);}
+      .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
+      .dt-report-intro p {margin:0;color:#b9c0ce;font-size:1rem;}
+      .dt-landing + div {scroll-margin-top:24px;}
+      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand-icon{width:44px;height:44px;border-radius:12px}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}.dt-binary-line{margin-top:32px;font-size:.75rem}}
+      @media(prefers-reduced-motion:reduce){.dt-binary-line,.dt-landing-actions a{animation:none;transition:none}}
+    </style>
+    <section class="dt-landing">
+      <div class="dt-brand-row">
+        <div class="dt-brand"><span class="dt-brand-icon">↗</span><span>DREAMZTREE</span></div>
+        <div class="dt-brand-tag">MARKETING INTELLIGENCE</div>
+      </div>
+      <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
+      <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
+      <p class="dt-landing-copy">Track leads. Analyze ad spend. Discover winning campaigns.</p>
+      <div class="dt-landing-actions">
+        <a class="primary" href="#report-form">Explore Reports ↓</a>
+        <a class="secondary" href="#campaign-insights">Campaign Insights</a>
+      </div>
+      <div class="dt-binary-line">01001010 • 10110100 • 01101001 • 11001010</div>
+    </section>
+    <section class="dt-report-intro" id="report-form">
+      <h2>↓ Scroll down to create a report</h2>
+      <p>The existing report-making form and dashboard features remain below the landing page.</p>
+    </section>
+    """, unsafe_allow_html=True)
     header_left, chat_col, header_right = st.columns([4, 1, 1])
     with chat_col:
         if st.button("💬 Team Chat", use_container_width=True):
@@ -1465,6 +1482,7 @@ def main():
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
+    st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
