@@ -850,13 +850,16 @@ def require_login():
 
 
 def _ludo_default_state():
-    return {"players": [], "positions": {}, "turn": 0, "dice": None, "winner": None, "updated_at": datetime.utcnow().isoformat()}
+    return {
+        "players": [], "tokens": {}, "turn": 0, "dice": None,
+        "rolled": False, "winner": None, "updated_at": datetime.utcnow().isoformat()
+    }
 
 
 def render_ludo_online():
-    """Online shared Ludo room using the ludo_rooms Supabase table."""
-    st.markdown("### 🎲 Ludo Online · Play with colleagues")
-    st.caption("Create a room, share its 6-character code, and join from colleagues' accounts.")
+    'Classic-style four-token online Ludo using the existing Supabase room table.'
+    st.markdown("### 🎲 Ludo Online · Classic gameplay")
+    st.caption("Play with up to four colleagues: four tokens each, roll a 6 to leave base, capture opponents, and reach home.")
     client = get_supabase_client()
     if client is None:
         st.error("Supabase is not configured. Check the URL and publishable key in Streamlit Secrets.")
@@ -884,15 +887,15 @@ def render_ludo_online():
         return
     left, right = st.columns(2)
     with left:
-        if st.button("🎲 Create Ludo room", type="primary", use_container_width=True):
+        if st.button("🎲 Create classic Ludo room", type="primary", use_container_width=True):
             code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
             state = _ludo_default_state()
             state["players"] = [{"id": uid, "name": name, "color": "red"}]
-            state["positions"] = {uid: -1}
+            state["tokens"] = {uid: [-1, -1, -1, -1]}
             try:
                 client.table("ludo_rooms").insert({"room_code": code, "created_by": uid, "state": state}).execute()
                 st.session_state["ludo_room_code"] = code
-                st.success(f"Room created: {code}. Share it with colleagues.")
+                st.success(f"Room created: {code}. Share this code with colleagues.")
                 st.rerun()
             except Exception as exc:
                 st.error("Could not create room. Run the Ludo SQL setup first.")
@@ -907,16 +910,19 @@ def render_ludo_online():
                 else:
                     state = rows[0].get("state") or _ludo_default_state()
                     players = state.setdefault("players", [])
-                    if not any(str(p.get("id")) == uid for p in players):
+                    if not any(str(pl.get("id")) == uid for pl in players):
                         if len(players) >= 4:
-                            st.error("This room already has 4 players.")
-                        else:
-                            colors = ["red", "blue", "green", "yellow"]
-                            used = {p.get("color") for p in players}
-                            color = next(c for c in colors if c not in used)
-                            players.append({"id": uid, "name": name, "color": color})
-                            state.setdefault("positions", {})[uid] = -1
-                            client.table("ludo_rooms").update({"state": state}).eq("room_code", code_in).execute()
+                            st.error("This room already has four players.")
+                            return
+                        colors = ["red", "blue", "green", "yellow"]
+                        used = {pl.get("color") for pl in players}
+                        color = next(c for c in colors if c not in used)
+                        players.append({"id": uid, "name": name, "color": color})
+                        state.setdefault("tokens", {})[uid] = [-1, -1, -1, -1]
+                        state["turn"] = 0
+                        state["dice"] = None
+                        state["rolled"] = False
+                        client.table("ludo_rooms").update({"state": state}).eq("room_code", code_in).execute()
                     st.session_state["ludo_room_code"] = code_in
                     st.rerun()
             except Exception as exc:
@@ -931,32 +937,47 @@ def render_ludo_online():
         if not rows:
             st.warning("Room not found. Create or join another room.")
             return
-        players = (rows[0].get("state") or {}).get("players", [])
+        state = rows[0].get("state") or _ludo_default_state()
+        players = state.get("players", [])
         st.markdown(f"### Current room: `{room}`")
-        st.write("Players: " + (" · ".join(f"{p.get('name', 'Player')} ({p.get('color', '')})" for p in players) if players else "Waiting for players"))
+        st.write("Players: " + (" · ".join(f"{pl.get('name', 'Player')} ({pl.get('color', '')})" for pl in players) if players else "Waiting for players"))
         payload = json.dumps({"url": url, "key": key, "token": token, "room": room, "uid": uid}).replace("</", "<\\/")
         html = r'''<!doctype html><html><head><meta charset="utf-8"><style>
-body{margin:0;font-family:system-ui;background:#10182e;color:#fff}.panel{padding:12px;border:1px solid #64748b;border-radius:14px}canvas{width:100%;max-width:600px;display:block;margin:auto;background:#fff;border-radius:12px;touch-action:manipulation}.row{display:flex;gap:8px;justify-content:center;margin:10px;flex-wrap:wrap}.row button{padding:10px 18px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(100deg,#ec4899,#6366f1);color:white}#status{text-align:center;color:#6ee7b7;font-weight:700;margin:8px}.hint{text-align:center;color:#cbd5e1;font-size:13px}
-</style></head><body><div class="panel"><div id="status">Connecting…</div><canvas id="board" width="600" height="600"></canvas><div class="row"><button id="roll">🎲 Roll dice</button><button id="refresh">↻ Refresh board</button></div><div class="hint">Simplified online Ludo: roll a 6 to leave base, then click the board to move. Keep this page open.</div></div><script>
-const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('board'),ctx=cv.getContext('2d'),status=document.getElementById('status');let state=null,dice=null,busy=false;const colors={red:'#ef4444',blue:'#3b82f6',green:'#22c55e',yellow:'#eab308'};
-async function req(path,opt={}){let r=await fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw Error('Supabase '+r.status+' '+(await r.text()).slice(0,120));return r}
-function track(){let p=[];for(let x=1;x<=5;x++)p.push([x,7]);for(let y=6;y>=1;y--)p.push([6,y]);p.push([7,1]);for(let y=1;y<=5;y++)p.push([8,y]);p.push([8,6]);for(let x=9;x<=13;x++)p.push([x,6]);p.push([13,7]);for(let x=13;x>=9;x--)p.push([x,8]);p.push([8,8]);for(let y=9;y<=13;y++)p.push([8,y]);p.push([7,13]);for(let y=13;y>=9;y--)p.push([6,y]);p.push([6,8]);for(let x=5;x>=1;x--)p.push([x,8]);return p}const path=track();
-function draw(){if(!state)return;ctx.clearRect(0,0,600,600);ctx.fillStyle='#fff';ctx.fillRect(0,0,600,600);const S=36,O=30;function box(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(O+x*S,O+y*S,w*S,h*S)}box(0,0,6,6,'#fee2e2');box(9,0,6,6,'#dbeafe');box(0,9,6,6,'#dcfce7');box(9,9,6,6,'#fef9c3');for(let y=0;y<15;y++)for(let x=0;x<15;x++){ctx.strokeStyle='#cbd5e1';ctx.strokeRect(O+x*S,O+y*S,S,S)}path.forEach(p=>{ctx.fillStyle='#f1f5f9';ctx.fillRect(O+p[0]*S,O+p[1]*S,S,S)});const ps=state.players||[];ps.forEach(p=>{let pos=(state.positions||{})[p.id]??-1;let x,y;if(pos<0){let b={red:[2,2],blue:[11,2],green:[2,11],yellow:[11,11]};[x,y]=b[p.color]||[7,7]}else [x,y]=path[Math.min(pos,path.length-1)]||[7,7];ctx.beginPath();ctx.arc(O+x*S+S/2,O+y*S+S/2,13,0,Math.PI*2);ctx.fillStyle=colors[p.color]||'#7c3aed';ctx.fill();ctx.strokeStyle=p.id===C.uid?'#111827':'#fff';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText((p.name||'P').slice(0,3),O+x*S+S/2,O+y*S+S/2+4)});ctx.textAlign='left';ctx.fillStyle='#111827';ctx.font='bold 16px system-ui';ctx.fillText('DICE: '+(dice||state.dice||'—'),O+6*S,O+7.5*S)}
-async function load(){try{let r=await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room)+'&select=state'),a=await r.json();if(!a.length){status.textContent='Room not found';return}state=a[0].state;draw();let ps=state.players||[],cur=ps[state.turn||0];status.textContent='Room '+C.room+' · '+(cur?cur.name+' to play':'Waiting')+(state.winner?' · Winner: '+state.winner.name:'')}catch(e){status.textContent='Connection error: '+e.message}}
+body{margin:0;font-family:system-ui;background:#10182e;color:#fff}.panel{padding:12px;border:1px solid #64748b;border-radius:14px;background:#111b32}#status{text-align:center;color:#6ee7b7;font-weight:800;margin:8px}.boardwrap{max-width:650px;margin:auto}canvas{width:100%;height:auto;display:block;background:#fff;border-radius:12px;touch-action:manipulation}.row{display:flex;gap:8px;justify-content:center;margin:10px;flex-wrap:wrap}.row button{padding:10px 18px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(100deg,#ec4899,#6366f1);color:white;cursor:pointer}.row button:disabled{opacity:.45}.hint{text-align:center;color:#cbd5e1;font-size:13px}.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}.chip{padding:5px 9px;border-radius:999px;background:#26344f;font-size:12px}
+</style></head><body><div class="panel"><div id="status">Connecting…</div><div class="chips" id="players"></div><div class="boardwrap"><canvas id="board" width="600" height="600"></canvas></div><div class="row"><button id="roll">🎲 Roll dice</button><button id="refresh">↻ Refresh</button></div><div class="hint">Classic rules: roll a 6 to enter a token, click one of your glowing tokens to move, capture opponents, and reach home exactly. A 6 or capture earns another turn.</div></div><script>
+const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('board'),ctx=cv.getContext('2d'),status=document.getElementById('status'),playerBox=document.getElementById('players');let state=null,busy=false,localDice=null,canMove=[];const W=600,S=40,colors={red:'#e53935',blue:'#2585e8',green:'#22a65a',yellow:'#f3c623'},light={red:'#ffcdd2',blue:'#bbdefb',green:'#c8e6c9',yellow:'#fff3b0'};
+// 52-cell classic perimeter path, with separate six-cell home lanes.
+const ring=[[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0]];
+const order=['red','blue','yellow','green'],start={red:1,blue:14,yellow:27,green:40};
+const home={red:[[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],blue:[[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]],yellow:[[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],green:[[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]]};
+const base={red:[[1.7,1.7],[3.1,1.7],[1.7,3.1],[3.1,3.1]],blue:[[10.9,1.7],[12.3,1.7],[10.9,3.1],[12.3,3.1]],green:[[1.7,10.9],[3.1,10.9],[1.7,12.3],[3.1,12.3]],yellow:[[10.9,10.9],[12.3,10.9],[10.9,12.3],[12.3,12.3]]};
+const safe=[1,9,14,22,27,35,40,48];function xy(c){return [(c[0]+.5)*S,(c[1]+.5)*S]};function cur(){return (state?.players||[])[state?.turn||0]};function tokenPos(pl,i){let pos=(state.tokens?.[pl.id]||[-1,-1,-1,-1])[i];if(pos<0)return base[pl.color][i];if(pos<51){let ix=(start[pl.color]+pos)%52;return ring[ix]}if(pos<57)return home[pl.color][pos-51];return [7,7]}
+function cell(x,y,col){ctx.fillStyle=col;ctx.fillRect(x*S,y*S,S,S);ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;ctx.strokeRect(x*S,y*S,S,S)}
+function draw(){ctx.clearRect(0,0,W,W);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,W);[['red',0,0],['blue',9,0],['green',0,9],['yellow',9,9]].forEach(([c,x,y])=>{ctx.fillStyle=light[c];ctx.fillRect(x*S,y*S,6*S,6*S);ctx.fillStyle=colors[c];ctx.fillRect((x+1)*S,(y+1)*S,4*S,4*S);ctx.fillStyle='#fff';ctx.fillRect((x+1.5)*S,(y+1.5)*S,3*S,3*S)});
+ring.forEach((p,i)=>{let c='#fff';if(i===start.red)c=light.red;if(i===start.blue)c=light.blue;if(i===start.green)c=light.green;if(i===start.yellow)c=light.yellow;if(safe.includes(i))c='#fef3c7';cell(p[0],p[1],c)});
+Object.entries(home).forEach(([col,arr])=>arr.forEach(p=>cell(p[0],p[1],light[col])));for(let x=6;x<=8;x++)for(let y=6;y<=8;y++){ctx.fillStyle='#f8fafc';ctx.fillRect(x*S,y*S,S,S)}
+// Center four-colour finish triangle.
+ctx.beginPath();ctx.moveTo(6*S,6*S);ctx.lineTo(9*S,6*S);ctx.lineTo(7.5*S,7.5*S);ctx.closePath();ctx.fillStyle=colors.red;ctx.fill();ctx.beginPath();ctx.moveTo(9*S,6*S);ctx.lineTo(9*S,9*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.blue;ctx.fill();ctx.beginPath();ctx.moveTo(9*S,9*S);ctx.lineTo(6*S,9*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.yellow;ctx.fill();ctx.beginPath();ctx.moveTo(6*S,9*S);ctx.lineTo(6*S,6*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.green;ctx.fill();
+const ps=state?.players||[];ps.forEach(pl=>{for(let i=0;i<4;i++){let p=tokenPos(pl,i),[x,y]=xy(p),active=pl.id===C.uid&&canMove.includes(i);ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle=colors[pl.color];ctx.fill();ctx.lineWidth=active?5:2;ctx.strokeStyle=active?'#111827':'#fff';ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i+1),x,y)}});ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.fillStyle='#111827';ctx.font='bold 18px system-ui';ctx.fillText('DICE: '+(localDice||state?.dice||'—'),S*6.2,S*7.55);}
+async function req(path,opt={}){let r=await fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw Error('Supabase '+r.status+' '+(await r.text()).slice(0,150));return r}
+async function load(){try{let r=await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room)+'&select=state'),a=await r.json();if(!a.length){status.textContent='Room not found';return}state=a[0].state||{};if(!state.tokens){state.tokens={};(state.players||[]).forEach(p=>state.tokens[p.id]=[-1,-1,-1,-1]);state.dice=null;state.rolled=false}let ps=state.players||[],cp=cur();playerBox.innerHTML=ps.map(p=>'<span class="chip" style="border:1px solid '+colors[p.color]+'">● '+esc(p.name)+' · '+p.color+'</span>').join('');canMove=[];if(cp?.id===C.uid&&state.rolled&&state.dice)canMove=legalMoves(C.uid,state.dice);document.getElementById('roll').disabled=busy||!cp||cp.id!==C.uid||!!state.rolled||!!state.winner;status.textContent=state.winner?'🏆 Winner: '+state.winner.name:('Room '+C.room+' · '+(cp?cp.name+' to play':'Waiting for players')+(cp?.id===C.uid?' — your turn':''));draw()}catch(e){status.textContent='Connection error: '+e.message}}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function legalMoves(id,d){let a=state.tokens?.[id]||[-1,-1,-1,-1],out=[];a.forEach((p,i)=>{if(p===-1&&d===6)out.push(i);else if(p>=0&&p<57&&p+d<=57)out.push(i)});return out}
 async function save(){if(busy)return;busy=true;try{state.updated_at=new Date().toISOString();await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({state})})}catch(e){status.textContent='Save failed: '+e.message}finally{busy=false}}
-document.getElementById('roll').onclick=async()=>{if(!state||state.winner)return;let ps=state.players||[],cur=ps[state.turn||0];if(!cur||cur.id!==C.uid){status.textContent='Wait for your turn';return}dice=1+Math.floor(Math.random()*6);state.dice=dice;draw();await save();status.textContent='You rolled '+dice+'. Click the board to move.'};cv.addEventListener('click',async()=>{if(!state||state.winner)return;let ps=state.players||[],cur=ps[state.turn||0];if(!cur||cur.id!==C.uid){status.textContent='Wait for your turn';return}let d=dice||state.dice;if(!d){status.textContent='Roll the dice first';return}let pos=(state.positions||{})[C.uid]??-1;if(pos<0&&d!==6){status.textContent='You need a 6 to enter';state.turn=(state.turn+1)%ps.length;dice=null;state.dice=null;await save();return}pos=pos<0?0:pos+d;state.positions[C.uid]=Math.min(pos,path.length-1);if(pos>=path.length-1)state.winner=cur;state.turn=(state.turn+1)%Math.max(ps.length,1);dice=null;state.dice=null;draw();await save();await load()});document.getElementById('refresh').onclick=load;load();setInterval(load,1800);
+document.getElementById('roll').onclick=async()=>{if(!state||state.winner||busy)return;let cp=cur();if(!cp||cp.id!==C.uid){status.textContent='Wait for your turn';return}if(state.rolled){status.textContent='Select a highlighted token first';return}localDice=1+Math.floor(Math.random()*6);state.dice=localDice;state.rolled=true;canMove=legalMoves(C.uid,localDice);if(!canMove.length){state.rolled=false;state.dice=null;state.turn=(state.turn+1)%state.players.length;status.textContent='No legal move. Turn passes.'}else status.textContent='You rolled '+localDice+'. Click a highlighted token.';draw();await save();await load()};
+cv.addEventListener('click',async ev=>{if(!state||busy||state.winner)return;let cp=cur();if(!cp||cp.id!==C.uid||!state.rolled)return;const r=cv.getBoundingClientRect(),x=(ev.clientX-r.left)*600/r.width,y=(ev.clientY-r.top)*600/r.height;let picked=-1,bestD=1e9;for(let i of canMove){let [tx,ty]=xy(tokenPos(cp,i)),d=Math.hypot(x-tx,y-ty);if(d<25&&d<bestD){picked=i;bestD=d}}if(picked<0){status.textContent='Click one of your highlighted tokens.';return}let d=state.dice,arr=state.tokens[C.uid]||[-1,-1,-1,-1],old=arr[picked],next=old<0?0:old+d;if(old<0&&d!==6)return;if(next>57){status.textContent='Need an exact roll to reach home';return}arr[picked]=next;state.tokens[C.uid]=arr;let captured=false;if(next<51){let abs=(start[cp.color]+next)%52;if(!safe.includes(abs)){(state.players||[]).filter(p=>p.id!==C.uid).forEach(p=>{let pa=state.tokens[p.id]||[-1,-1,-1,-1];pa.forEach((pos,j)=>{if(pos>=0&&pos<51&&(start[p.color]+pos)%52===abs){pa[j]=-1;captured=true}});state.tokens[p.id]=pa})}}if(arr.every(v=>v===57)){state.winner=cp;status.textContent='🏆 You won!'}let bonus=d===6||captured||next===57;state.rolled=false;state.dice=null;localDice=null;if(!state.winner&&!bonus)state.turn=(state.turn+1)%state.players.length;canMove=[];draw();await save();await load()});
+document.getElementById('refresh').onclick=load;function refresh(){load()}load();setInterval(refresh,1600);
 </script></body></html>'''.replace('PAYLOAD', payload)
-        components.html(html, height=790, scrolling=False)
-        st.caption("This is a simplified Ludo prototype, not the full official four-token Ludo rules. The shared room requires the SQL table below.")
+        components.html(html, height=930, scrolling=False)
+        st.caption("Classic-style online Ludo: four tokens per player, dice-based moves, captures, safe squares, home lanes, and turn sharing. Keep the room open on each player's device.")
     except Exception as exc:
         st.error(f"Could not load Ludo room: {exc}")
-
 
 def render_snake_apple():
     st.markdown("### 🐍 Snake & Apple")
     st.caption("Use arrow keys or WASD to collect apples. Avoid the walls and your own tail.")
     html = r'''<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#10182e;color:white;font-family:system-ui}.wrap{padding:12px;background:linear-gradient(135deg,#172554,#14532d);border-radius:16px}.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:800}.game{display:block;width:100%;max-width:600px;margin:12px auto;border-radius:12px;background:#0b1220;touch-action:none}.buttons{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.buttons button{padding:10px 16px;border:0;border-radius:10px;background:#86efac;color:#052e16;font-weight:900}.hint{text-align:center;color:#d1fae5;font-size:13px}</style></head><body><div class="wrap"><div class="top"><span>🐍 SNAKE & APPLE</span><span>Score: <b id="score">0</b></span><span>Best: <b id="best">0</b></span></div><canvas id="c" class="game" width="600" height="420"></canvas><div class="buttons"><button id="up">⬆</button><button id="left">⬅</button><button id="down">⬇</button><button id="right">➡</button><button id="restart">Restart</button></div><p class="hint">Arrow keys / WASD or buttons to move. Eat apples to grow. Avoid walls and your tail.</p></div><script>
-const c=document.getElementById('c'),x=c.getContext('2d'),N=30,cols=20,rows=14;let snake,dir,next,apple,score,over,best=+(localStorage.getItem('dtSnakeBest')||0);document.getElementById('best').textContent=best;function place(){do{apple={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===apple.x&&p.y===apple.y))}function reset(){snake=[{x:7,y:7},{x:6,y:7},{x:5,y:7}];dir={x:1,y:0};next={x:1,y:0};score=0;over=false;place();document.getElementById('score').textContent=score}function turn(a,b){if(a!==-dir.x||b!==-dir.y)next={x:a,y:b}}window.addEventListener('keydown',e=>{let k=e.key.toLowerCase(),m={'arrowup':[0,-1],w:[0,-1],'arrowdown':[0,1],s:[0,1],'arrowleft':[-1,0],a:[-1,0],'arrowright':[1,0],d:[1,0]}[k];if(m){e.preventDefault();turn(...m)}});[['up',0,-1],['down',0,1],['left',-1,0],['right',1,0]].forEach(([id,a,b])=>document.getElementById(id).onclick=()=>turn(a,b));document.getElementById('restart').onclick=reset;function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1220';x.fillRect(0,0,c.width,c.height);for(let y=0;y<rows;y++)for(let xx=0;xx<cols;xx++){x.fillStyle=(xx+y)%2?'#142b2b':'#183737';x.fillRect(xx*N,y*N,N,N)}x.fillStyle='#ef4444';x.beginPath();x.arc(apple.x*N+N/2,apple.y*N+N/2,N*.36,0,Math.PI*2);x.fill();x.fillStyle='#86efac';x.fillRect(apple.x*N+N*.48,apple.y*N+2,4,8);snake.forEach((p,i)=>{x.fillStyle=i?'#22c55e':'#a3e635';x.beginPath();x.roundRect(p.x*N+2,p.y*N+2,N-4,N-4,6);x.fill()});if(over){x.fillStyle='#000a';x.fillRect(0,0,c.width,c.height);x.fillStyle='white';x.textAlign='center';x.font='bold 34px system-ui';x.fillText('GAME OVER',c.width/2,c.height/2);x.font='18px system-ui';x.fillText('Press Restart to play again',c.width/2,c.height/2+32)}}function step(){if(!over){dir=next;let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.x>=cols||h.y<0||h.y>=rows||snake.some(p=>p.x===h.x&&p.y===h.y)){over=true}else{snake.unshift(h);if(h.x===apple.x&&h.y===apple.y){score+=10;document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('dtSnakeBest',best);document.getElementById('best').textContent=best}place()}else snake.pop()}}draw()}reset();setInterval(step,115);
+const c=document.getElementById('c'),x=c.getContext('2d'),N=30,cols=20,rows=14;let snake,dir,next,apple,score,over,best=+(localStorage.getItem('dtSnakeBest')||0);document.getElementById('best').textContent=best;function place(){do{apple={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===apple.x&&p.y===apple.y))}function reset(){snake=[{x:7,y:7},{x:6,y:7},{x:5,y:7}];dir={x:1,y:0};next={x:1,y:0};score=0;over=false;place();document.getElementById('score').textContent=score}function turn(a,b){if(a!==-dir.x||b!==-dir.y)next={x:a,y:b}}window.addEventListener('keydown',e=>{let k=e.key.toLowerCase(),m={'arrowup':[0,-1],w:[0,-1],'arrowdown':[0,1],s:[0,1],'arrowleft':[-1,0],a:[-1,0],'arrowright':[1,0],d:[1,0]}[k];if(m){e.preventDefault();turn(...m)}});[['up',0,-1],['down',0,1],['left',-1,0],['right',1,0]].forEach(([id,a,b])=>document.getElementById(id).onclick=()=>turn(a,b));document.getElementById('restart').onclick=reset;function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1220';x.fillRect(0,0,c.width,c.height);for(let y=0;y<rows;y++)for(let xx=0;xx<cols;xx++){x.fillStyle=(xx+y)%2?'#142b2b':'#183737';x.fillRect(xx*N,y*N,N,N)}x.fillStyle='#ef4444';x.beginPath();x.arc(apple.x*N+N/2,apple.y*N+N/2,N*.36,0,Math.PI*2);x.fill();x.fillStyle='#86efac';x.fillRect(apple.x*N+N*.48,apple.y*N+2,4,8);snake.forEach((p,i)=>{x.fillStyle=i?'#22c55e':'#a3e635';x.beginPath();x.roundRect(p.x*N+2,p.y*N+2,N-4,N-4,6);x.fill()});if(over){x.fillStyle='#000a';x.fillRect(0,0,c.width,c.height);x.fillStyle='white';x.textAlign='center';x.font='bold 34px system-ui';x.fillText('GAME OVER',c.width/2,c.height/2);x.font='18px system-ui';x.fillText('Press Restart to play again',c.width/2,c.height/2+32)}}function step(){if(!over){dir=next;let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.x>=cols||h.y<0||h.y>=rows||snake.some(p=>p.x===h.x&&p.y===h.y)){over=true}else{snake.unshift(h);if(h.x===apple.x&&h.y===apple.y){score+=10;document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('dtSnakeBest',best);document.getElementById('best').textContent=best}place()}else snake.pop()}}draw()}reset();const SNAKE_STEP_MS=180;setInterval(step,SNAKE_STEP_MS);
 </script></body></html>'''
     components.html(html, height=610, scrolling=False)
 
