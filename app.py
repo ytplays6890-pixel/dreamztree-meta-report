@@ -495,24 +495,32 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
-    /* Animated binary layer: decorative only, never intercepts clicks. */
+    /* App-wide animated binary wave, shown behind every page and route. */
     .dt-binary-bg {
       position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-      opacity: .105; color: #b8c9ff; font: 600 13px/1.9 ui-monospace, SFMono-Regular, Consolas, monospace;
-      letter-spacing: .28em; white-space: pre-wrap; overflow-wrap: anywhere;
-      text-shadow: 0 0 8px rgba(96,165,250,.38);
-      mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 85%, transparent);
-      animation: dt-binary-drift 26s linear infinite;
+      opacity: .16; font: 600 12px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .24em; white-space: nowrap; user-select: none;
+      mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
     }
-    @keyframes dt-binary-drift {
-      from { transform: translateY(-8%); }
-      to { transform: translateY(8%); }
+    .dt-binary-bg .dt-binary-row {
+      position: absolute; left: -8%; width: 116%; height: 32px; white-space: nowrap;
+      color: #b8c9ff; text-shadow: 0 0 9px rgba(96,165,250,.32);
+      animation: dt-binary-wave 15s ease-in-out infinite alternate;
+    }
+    .dt-binary-bg .dt-binary-row:nth-child(2n) { color: #c4b5fd; animation-duration: 19s; animation-delay: -7s; }
+    .dt-binary-bg .dt-binary-row:nth-child(3n) { color: #5eead4; animation-duration: 17s; animation-delay: -10s; }
+    .dt-binary-bg .dt-binary-row:nth-child(4n) { color: #ff9bc6; animation-duration: 21s; animation-delay: -4s; }
+    @keyframes dt-binary-wave {
+      0% { transform: translate3d(-2.5%, -8px, 0) skewY(-1deg); opacity: .28; }
+      50% { transform: translate3d(1%, 10px, 0) skewY(1deg); opacity: .75; }
+      100% { transform: translate3d(3%, -4px, 0) skewY(-.5deg); opacity: .4; }
     }
     [data-testid="stAppViewContainer"] { isolation: isolate; }
     [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
-    @media (prefers-reduced-motion: reduce) { .dt-binary-bg { animation: none; } }
-    
-        .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
+    [data-testid="stSidebar"], [data-testid="stHeader"] { position: relative; z-index: 2; }
+    @media (prefers-reduced-motion: reduce) { .dt-binary-bg .dt-binary-row { animation: none !important; } }
+
+    .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
         .arcade-banner h2 { margin: .35rem 0; color: white; }
         .arcade-banner p { margin-bottom: 0; color: #f5f3ff; }
         .arcade-kicker { letter-spacing: .18em; font-size: .72rem; font-weight: 900; color: #fef08a; }
@@ -520,17 +528,19 @@ def inject_premium_theme():
         @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
 </style>""", unsafe_allow_html=True)
-    st.markdown(
-        """<div class="dt-binary-bg" aria-hidden="true">01001010 10110100 01010101 11001010 10101001 00110101 01101010 11010010
-10110101 01001101 11010100 00101011 10110010 01010110 01101001 10100101
-01011010 10100110 00101101 11010010 01101010 10010101 01001110 10110100
-10101001 01100101 11001010 00110110 01011010 10110101 00101101 11010010
-01101001 10100101 01011010 11010010 10110100 00101101 01101010 10100101
-01001110 11010010 10101001 00110101 01101010 11010010 10110101 01001101
-11010100 00101011 10110010 01010110 01101001 10100101 01011010 10100110
-00101101 11010010 01101010 10010101 01001110 10110100 10101001 01100101</div>""",
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <div class="dt-binary-bg" aria-hidden="true">
+      <div class="dt-binary-row" style="top:4%">01001010 10110100 01101001 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101</div>
+      <div class="dt-binary-row" style="top:15%">10110100 01001010 11001010 01101001 10100101 01011010 11010010 01101010 00110101 10100110 01011100</div>
+      <div class="dt-binary-row" style="top:26%">01101001 11010010 01011010 10110100 01001010 11001010 10100101 01101010 11001010 00110101</div>
+      <div class="dt-binary-row" style="top:37%">11001010 01101010 10110100 01001010 01101001 10100101 11010010 01011010 10110100 01101001</div>
+      <div class="dt-binary-row" style="top:48%">01011010 10100101 01101010 11010010 01001010 10110100 01101001 11001010 00110101 10100110</div>
+      <div class="dt-binary-row" style="top:59%">10100110 01011100 11001010 01101001 00110101 10110100 01001010 11001010 10100110 01100110</div>
+      <div class="dt-binary-row" style="top:70%">00110101 10100110 01011100 10101001 11001010 01101001 10110100 01001010 00110101 11001010</div>
+      <div class="dt-binary-row" style="top:81%">11010010 01101010 10110100 01001010 01101001 10100101 11001010 01011010 10100110 01101001</div>
+      <div class="dt-binary-row" style="top:92%">01101001 11001010 10110100 00110101 01001010 11100010 01100110 10100110 01011100 11001010</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def load_campaign_report(upload, mappings):
