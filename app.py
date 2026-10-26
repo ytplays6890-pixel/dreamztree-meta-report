@@ -1079,6 +1079,37 @@ def _show_login_header():
           body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-spaceship,
           body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-satellite { animation:none !important; }
         }
+
+        /* Robust trigger: fire when the pointer reaches any login control, or when a field is focused.
+           Only login content and spacecraft move; the universe and mountain layers are untouched. */
+        @keyframes dt-login-escape-fast-reliable {
+          0% {transform:translate3d(0,0,0) rotate(0);}
+          7% {transform:translate3d(6vw,-4vh,0) rotate(1deg);}
+          15% {transform:translate3d(-7vw,5vh,0) rotate(-1.2deg);}
+          24% {transform:translate3d(8vw,2vh,0) rotate(1deg);}
+          33% {transform:translate3d(-5vw,-6vh,0) rotate(-.8deg);}
+          43% {transform:translate3d(7vw,6vh,0) rotate(1.2deg);}
+          53% {transform:translate3d(-8vw,-2vh,0) rotate(-1deg);}
+          64% {transform:translate3d(5vw,5vh,0) rotate(.8deg);}
+          75% {transform:translate3d(-6vw,-5vh,0) rotate(-1deg);}
+          87% {transform:translate3d(7vw,2vh,0) rotate(1deg);}
+          100% {transform:translate3d(0,0,0) rotate(0);}
+        }
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) .dt-login-logo,
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) .login-panel,
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) div[data-testid="stTabs"],
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) [data-testid="stForm"] {
+          animation:dt-login-escape-fast-reliable 30s linear 1 both !important;
+          will-change:transform;
+        }
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) #dt-login-universe .dt-spaceship {
+          animation:dt-ship-escape 30s ease-in-out 1 both !important;
+          will-change:transform,opacity;
+        }
+        :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) #dt-login-universe .dt-satellite {
+          animation:dt-satellite-escape 30s ease-in-out 1 both !important;
+          will-change:transform,opacity;
+        }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
           <div class="dt-stars"></div>
