@@ -1027,30 +1027,30 @@ def _show_login_header():
         }
         /* Escape the login content when the pointer enters the login page area.
            Keep the Streamlit container itself fixed so hover does not instantly cancel the effect. */
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .dt-login-logo,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .login-panel,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) div[data-testid="stTabs"],
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) [data-testid="stForm"] {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .dt-login-logo,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .login-panel,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) div[data-testid="stTabs"],
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) [data-testid="stForm"] {
           animation: dt-login-escape-dodge 30s cubic-bezier(.65,0,.35,1) 1 both !important;
           will-change: transform;
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .dt-login-logo,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .login-panel,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) div[data-testid="stTabs"],
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) [data-testid="stForm"] { animation:none !important; }
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .dt-login-logo,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .login-panel,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) div[data-testid="stTabs"],
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) [data-testid="stForm"] { animation:none !important; }
         }
         /* The ship and satellite dodge at the same time as the login content. */
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-spaceship {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-spaceship {
           animation: dt-ship-escape 30s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-satellite {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-satellite {
           animation: dt-satellite-escape 30s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-ship-debris,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-sat-debris {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-ship-debris,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-sat-debris {
           animation-duration: 30s !important;
           animation-timing-function: ease-in-out !important;
         }
@@ -1076,8 +1076,8 @@ def _show_login_header():
           90% { transform: translate3d(34vw,5vh,0) rotate(320deg) scale(.92); }
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-spaceship,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-satellite { animation:none !important; }
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-spaceship,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-satellite { animation:none !important; }
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
