@@ -510,7 +510,7 @@ def inject_premium_theme():
 /* Global binary animation: CSS background is attached to the app root, not a single page card. */
     .stApp { position: relative; isolation: isolate; }
     .stApp::before {
-      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
       opacity: .035; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDEyMDAgMTUwIj48ZyBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBsZXR0ZXItc3BhY2luZz0iMi40IiBmaWxsPSIjOWFhOWQ4IiBvcGFjaXR5PSIwLjcyIj48dGV4dCB4PSIwIiB5PSIyMiI+MDEwMDEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTAgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTA8L3RleHQ+PHRleHQgeD0iLTQwIiB5PSI1NyIgZmlsbD0iI2I3YTZmNSI+MTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMDEwMTEwMTAgMTEwMTAwMTAgMDExMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDE8L3RleHQ+PHRleHQgeD0iMTAiIHk9IjkyIiBmaWxsPSIjNzdkOWQwIj4wMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMCAwMTAwMTAxMCAxMTAwMTAxMCAxMDEwMDEwMSAwMTEwMTAxMCAxMTAwMTAxMCAwMDExMDEwMSAwMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMDwvdGV4dD48dGV4dCB4PSItMjAiIHk9IjEyNyIgZmlsbD0iI2Q2OGViNyI+MTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDAgMDEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMTEwMTAwMTAgMDEwMTEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDA8L3RleHQ+PC9nPjwvc3ZnPg==");
       background-repeat: repeat; background-size: 1200px 150px;
       animation: dt-global-binary-drift 70s linear infinite;
@@ -519,6 +519,8 @@ def inject_premium_theme():
     [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stSidebar"],
     [data-testid="stMainBlockContainer"], .main { position: relative; z-index: 1; }
     [data-testid="stAppViewContainer"] { background: transparent; }
+    [data-testid="stStatusWidget"], [data-testid="stToast"], [data-testid="stNotification"],
+    [data-testid="stAlert"], .dt-game-toast { position: relative; z-index: 10000; }
     @keyframes dt-global-binary-drift {
       0% { background-position: 0 0; }
       50% { background-position: 90px 75px; }
@@ -1401,8 +1403,9 @@ def main():
     require_login()
     inject_premium_theme()
     page = st.query_params.get("page", "dashboard")
-    if page in {"game", "chat"}:
-        _game_zone_popup()
+    # Keep the Game Zone invitation/notification active on every non-game page.
+    # The fragment itself suppresses the popup while the Game Zone is open.
+    _game_zone_popup()
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
@@ -1455,9 +1458,13 @@ def main():
       <p>The existing report-making form and dashboard features remain below the landing page.</p>
     </section>
     """, unsafe_allow_html=True)
-    header_left, chat_col, header_right = st.columns([4, 1, 1])
+    header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
+    with game_col:
+        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
+            st.query_params["page"] = "game"
+            st.rerun()
     with chat_col:
-        if st.button("💬 Team Chat", use_container_width=True):
+        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
             st.query_params["page"] = "chat"
             st.rerun()
     with header_right:
