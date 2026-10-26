@@ -880,12 +880,18 @@ def _show_login_header():
           box-shadow:-17px 4px 0 -2px #64748b,17px 4px 0 -2px #64748b;
         }
         @keyframes dt-spaceship-flight {
-          0%,7% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72)}
-          12% {opacity:.95}
-          28% {opacity:1; transform:translate3d(25vw,-1vh,0) rotate(-3deg) scale(.9)}
-          52% {opacity:.9; transform:translate3d(53vw,4vh,0) rotate(4deg) scale(1)}
-          76% {opacity:.85; transform:translate3d(82vw,-2vh,0) rotate(-2deg) scale(.94)}
-          91%,100% {opacity:0; transform:translate3d(112vw,2vh,0) rotate(5deg) scale(.82)}
+          /* Cruise calmly, then occasionally malfunction and tumble out of the sky. */
+          0%,5% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72); filter:drop-shadow(0 0 7px rgba(125,211,252,.35))}
+          8% {opacity:.95}
+          22% {opacity:1; transform:translate3d(22vw,-1vh,0) rotate(-3deg) scale(.9)}
+          35% {opacity:1; transform:translate3d(43vw,2vh,0) rotate(2deg) scale(1)}
+          39% {opacity:1; transform:translate3d(47vw,2vh,0) rotate(-7deg) scale(1); filter:drop-shadow(0 0 12px rgba(125,211,252,.75))}
+          41% {opacity:1; transform:translate3d(49vw,3vh,0) rotate(13deg) scale(1.02)}
+          44% {opacity:1; transform:translate3d(50vw,7vh,0) rotate(-22deg) scale(1.02); filter:drop-shadow(0 0 18px rgba(251,146,60,.95))}
+          52% {opacity:.95; transform:translate3d(53vw,23vh,0) rotate(55deg) scale(.96); filter:drop-shadow(0 0 20px rgba(249,115,22,.9))}
+          61% {opacity:.72; transform:translate3d(57vw,53vh,0) rotate(145deg) scale(.78); filter:drop-shadow(0 0 14px rgba(249,115,22,.6))}
+          68% {opacity:0; transform:translate3d(61vw,85vh,0) rotate(250deg) scale(.55); filter:drop-shadow(0 0 0 transparent)}
+          69%,100% {opacity:0; transform:translate3d(112vw,2vh,0) rotate(5deg) scale(.82)}
         }
         #dt-login-universe .dt-satellite {
           position:absolute; top:24%; left:-70px; width:31px; height:13px;
@@ -902,11 +908,17 @@ def _show_login_header():
           box-shadow:23px 0 0 #2563eb,23px 0 0 1px #93c5fd;
         }
         @keyframes dt-satellite-orbit {
-          0%{transform:translate3d(-5vw,0,0) rotate(12deg)}
-          25%{transform:translate3d(28vw,9vh,0) rotate(4deg)}
-          50%{transform:translate3d(58vw,-2vh,0) rotate(-8deg)}
-          75%{transform:translate3d(88vw,7vh,0) rotate(3deg)}
-          100%{transform:translate3d(115vw,0,0) rotate(12deg)}
+          /* Slow orbital pass, a brief wobble, then a separate tumbling re-entry. */
+          0%,4% {opacity:0; transform:translate3d(-5vw,0,0) rotate(12deg)}
+          8% {opacity:.9; transform:translate3d(3vw,1vh,0) rotate(12deg)}
+          24% {opacity:.9; transform:translate3d(28vw,5vh,0) rotate(4deg)}
+          39% {opacity:.9; transform:translate3d(48vw,-2vh,0) rotate(-8deg)}
+          43% {opacity:1; transform:translate3d(52vw,-1vh,0) rotate(18deg)}
+          46% {opacity:1; transform:translate3d(54vw,2vh,0) rotate(-28deg); filter:drop-shadow(0 0 12px rgba(251,146,60,.95))}
+          53% {opacity:.9; transform:translate3d(58vw,16vh,0) rotate(55deg)}
+          63% {opacity:.68; transform:translate3d(63vw,44vh,0) rotate(150deg); filter:drop-shadow(0 0 9px rgba(249,115,22,.7))}
+          72% {opacity:0; transform:translate3d(69vw,82vh,0) rotate(270deg); filter:drop-shadow(0 0 0 transparent)}
+          73%,100% {opacity:0; transform:translate3d(115vw,0,0) rotate(360deg)}
         }
         /* Keep every Streamlit control above the decorative background. */
         [data-testid="stAppViewContainer"] {position:relative;isolation:isolate;}
