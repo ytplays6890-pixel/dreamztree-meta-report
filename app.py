@@ -857,38 +857,35 @@ def _show_login_header():
         @keyframes dt-mountain-drift-back {from{transform:translateX(-1.4%)}to{transform:translateX(1.4%)}}
         @keyframes dt-mountain-drift-mid {from{transform:translateX(1.8%)}to{transform:translateX(-1.8%)}}
         @keyframes dt-mountain-drift-front {from{transform:translateX(-.9%)}to{transform:translateX(.9%)}}
-        #dt-login-universe .dt-comet {
-          position:absolute; width:5px; height:5px; border-radius:50%;
-          background:#fff; box-shadow:0 0 7px 2px rgba(186,230,253,.9),0 0 18px 5px rgba(139,92,246,.5);
-          opacity:0; transform:translate3d(0,0,0) rotate(-28deg);
+        /* Small animated spacecraft gliding through the star field. */
+        #dt-login-universe .dt-spaceship {
+          position:absolute; top:18%; left:-90px; width:64px; height:30px;
+          opacity:0; transform:translate3d(0,0,0) rotate(-8deg);
+          filter:drop-shadow(0 0 9px rgba(125,211,252,.65));
+          animation:dt-spaceship-flight 34s ease-in-out 3s infinite;
           will-change:transform,opacity;
         }
-        #dt-login-universe .dt-comet::after {
-          content:""; position:absolute; width:clamp(90px,13vw,190px); height:2px;
-          right:2px; top:1px; transform:translateX(100%) rotate(180deg); transform-origin:right center;
-          background:linear-gradient(90deg,rgba(255,255,255,.95),rgba(125,211,252,.55),rgba(167,139,250,.2),transparent);
-          filter:blur(.35px); border-radius:100%;
+        #dt-login-universe .dt-spaceship::before {
+          content:""; position:absolute; left:12px; top:6px; width:36px; height:17px;
+          border-radius:55% 45% 48% 52%;
+          background:linear-gradient(180deg,#f8fafc 0%,#cbd5e1 48%,#64748b 100%);
+          border:1px solid rgba(191,219,254,.9);
+          box-shadow:inset 0 -3px 0 rgba(51,65,85,.45),0 0 12px rgba(125,211,252,.28);
+          clip-path:polygon(0 50%,18% 12%,76% 0,100% 50%,76% 100%,18% 88%);
         }
-        #dt-login-universe .dt-comet-a {top:13%; left:8%; animation:dt-comet-flight-a 13s cubic-bezier(.2,.65,.25,1) infinite;}
-        #dt-login-universe .dt-comet-b {top:25%; left:68%; animation:dt-comet-flight-b 17s cubic-bezier(.2,.65,.25,1) 4.5s infinite;}
-        #dt-login-universe .dt-comet-c {top:7%; left:48%; width:3px;height:3px; animation:dt-comet-flight-c 19s cubic-bezier(.2,.65,.25,1) 9s infinite;}
-        @keyframes dt-comet-flight-a {
-          0%,5%{opacity:0;transform:translate(0,0) rotate(-25deg)}
-          9%{opacity:.95} 18%{opacity:.8}
-          34%{opacity:0;transform:translate(44vw,34vh) rotate(-25deg)}
-          100%{opacity:0;transform:translate(44vw,34vh) rotate(-25deg)}
+        #dt-login-universe .dt-spaceship::after {
+          content:""; position:absolute; left:25px; top:9px; width:13px; height:8px;
+          border-radius:50%; background:linear-gradient(120deg,#67e8f9,#2563eb);
+          border:1px solid rgba(224,242,254,.85);
+          box-shadow:-17px 4px 0 -2px #64748b,17px 4px 0 -2px #64748b;
         }
-        @keyframes dt-comet-flight-b {
-          0%,8%{opacity:0;transform:translate(0,0) rotate(-30deg)}
-          12%{opacity:.9} 22%{opacity:.72}
-          39%{opacity:0;transform:translate(-43vw,31vh) rotate(-30deg)}
-          100%{opacity:0;transform:translate(-43vw,31vh) rotate(-30deg)}
-        }
-        @keyframes dt-comet-flight-c {
-          0%,7%{opacity:0;transform:translate(0,0) rotate(-22deg)}
-          11%{opacity:.8} 20%{opacity:.65}
-          35%{opacity:0;transform:translate(38vw,26vh) rotate(-22deg)}
-          100%{opacity:0;transform:translate(38vw,26vh) rotate(-22deg)}
+        @keyframes dt-spaceship-flight {
+          0%,7% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72)}
+          12% {opacity:.95}
+          28% {opacity:1; transform:translate3d(25vw,-1vh,0) rotate(-3deg) scale(.9)}
+          52% {opacity:.9; transform:translate3d(53vw,4vh,0) rotate(4deg) scale(1)}
+          76% {opacity:.85; transform:translate3d(82vw,-2vh,0) rotate(-2deg) scale(.94)}
+          91%,100% {opacity:0; transform:translate3d(112vw,2vh,0) rotate(5deg) scale(.82)}
         }
         #dt-login-universe .dt-satellite {
           position:absolute; top:24%; left:-70px; width:31px; height:13px;
@@ -925,10 +922,8 @@ def _show_login_header():
         </style>
         <div id="dt-login-universe" aria-hidden="true">
           <div class="dt-stars"></div>
-          <div class="dt-comet dt-comet-a"></div>
-          <div class="dt-comet dt-comet-b"></div>
-          <div class="dt-comet dt-comet-c"></div>
           <div class="dt-satellite"></div>
+          <div class="dt-spaceship"></div>
           <div class="dt-mountain dt-mountain-back"></div>
           <div class="dt-mountain dt-mountain-mid"></div>
           <div class="dt-mountain dt-mountain-front"></div>
