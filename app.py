@@ -660,10 +660,23 @@ def _show_login_header():
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
         @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
+        @keyframes dt-ambient-drift {0%,100% {background-position:0% 0%,100% 0%,0% 50%;} 50% {background-position:18% 22%,82% 18%,100% 50%;}}
+        @keyframes dt-card-shimmer {0% {transform:translateX(-130%) rotate(12deg); opacity:0;} 18% {opacity:.45;} 48% {opacity:0;} 100% {transform:translateX(240%) rotate(12deg); opacity:0;}}
+        @keyframes dt-orb-float {0%,100% {transform:translate3d(0,0,0) scale(1);} 50% {transform:translate3d(0,-16px,0) scale(1.06);}}
+        @keyframes dt-button-breathe {0%,100% {box-shadow:0 7px 20px rgba(124,58,237,.2);} 50% {box-shadow:0 9px 28px rgba(59,130,246,.34),0 0 16px rgba(94,234,212,.13);}}
+        @keyframes dt-tab-enter {from {opacity:0; transform:translateY(12px);} to {opacity:1; transform:translateY(0);}}
         [data-testid="stAppViewContainer"] {
           background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
             radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
             linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
+          background-size: 140% 140%, 140% 140%, 220% 220%;
+          animation: dt-ambient-drift 24s ease-in-out infinite;
+        }
+        [data-testid="stAppViewContainer"]::after {
+          content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+          background: radial-gradient(circle at 17% 72%, rgba(94,234,212,.075), transparent 18%),
+                      radial-gradient(circle at 82% 66%, rgba(168,85,247,.09), transparent 21%);
+          animation: dt-orb-float 12s ease-in-out infinite;
         }
         [data-testid="stHeader"] {background: transparent;}
         /* Limit the login page width without changing the dashboard after login. */
@@ -693,6 +706,26 @@ def _show_login_header():
         }
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
           border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
+        .login-panel:before {content:""; position:absolute; top:-45%; left:0; width:34%; height:190%;
+          background:linear-gradient(90deg,transparent,rgba(255,255,255,.085),rgba(94,234,212,.09),transparent);
+          transform:translateX(-130%) rotate(12deg); pointer-events:none; animation:dt-card-shimmer 9s ease-in-out 2s infinite;}
+        .login-panel > * {position:relative; z-index:1;}
+        /* Gentle hover feedback keeps the page lively without interfering with authentication. */
+        [data-testid="stFormSubmitButton"] button, [data-testid="stForm"] button[kind="primary"] {
+          border:1px solid rgba(167,139,250,.28) !important; border-radius:11px !important;
+          background:linear-gradient(105deg,#7c3aed,#3b82f6 58%,#0d9488) !important;
+          background-size:180% 180% !important; color:#fff !important; font-weight:750 !important;
+          transition:transform .22s ease, filter .22s ease, box-shadow .22s ease !important;
+          animation:dt-button-breathe 5s ease-in-out 2s infinite;
+        }
+        [data-testid="stFormSubmitButton"] button:hover, [data-testid="stForm"] button[kind="primary"]:hover {
+          transform:translateY(-2px); filter:brightness(1.12); box-shadow:0 12px 28px rgba(124,58,237,.28) !important;
+        }
+        [data-testid="stFormSubmitButton"] button:active {transform:translateY(0) scale(.99);}
+        [data-testid="stTabs"] [data-baseweb="tab"] {transition:color .2s ease, background .2s ease;}
+        [data-testid="stTabs"] [data-baseweb="tab"]:hover {color:#5eead4;}
+        [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input {transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;}
+        [data-testid="stTextInput"] input:focus {background:rgba(30,41,59,.92);}
         /* Keep tabs and forms centered and compact, and bring them into view after the logo. */
         div[data-testid="stTabs"] {
           max-width:620px; width:100%; margin:0 auto !important;
@@ -711,7 +744,8 @@ def _show_login_header():
           .login-panel {padding:1.3rem 1.2rem; margin-top:-8px;}
         }
         @media (prefers-reduced-motion: reduce) {
-          .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"] {animation:none !important; opacity:1 !important; transform:none !important;}
+          .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"],[data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"]::after,
+          [data-testid="stFormSubmitButton"] button,.login-panel:before,.login-panel:after {animation:none !important; opacity:1 !important; transform:none !important;}
         }
         /* Safety fallback: never leave login content invisible if animation timing is interrupted. */
         @media (max-width:700px) {
