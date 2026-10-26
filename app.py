@@ -364,6 +364,11 @@ def inject_premium_theme():
     @keyframes dt-shimmer {0% {background-position:-200% center} 100% {background-position:200% center}}
     @keyframes dt-orbit {from {transform:rotate(0deg) translateX(18px) rotate(0deg)} to {transform:rotate(360deg) translateX(18px) rotate(-360deg)}}
     @keyframes dt-pulse {0%,100% {opacity:.28; transform:scale(.88)} 50% {opacity:1; transform:scale(1.22)}}
+    @keyframes dt-particle-drift {
+      0% { background-position: 0 0, 35px 70px, 90px 20px; transform: translate3d(0,0,0); }
+      50% { background-position: 70px -55px, -25px 25px, 40px 95px; transform: translate3d(0,-8px,0); }
+      100% { background-position: 140px -110px, -85px -20px, -10px 170px; transform: translate3d(0,0,0); }
+    }
     @keyframes dt-chart-rise {from {opacity:0; transform:translateY(22px) scale(.985)} to {opacity:1; transform:translateY(0) scale(1)}}
     :root {
       --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
@@ -388,10 +393,17 @@ def inject_premium_theme():
       animation:dt-float 6s ease-in-out infinite;
     }
     [data-testid="stAppViewContainer"]:after {
-      content:""; position:fixed; z-index:-1; pointer-events:none; width:30rem; height:30rem;
-      right:-12rem; bottom:3%; border-radius:50%; filter:blur(75px);
-      background:radial-gradient(circle,rgba(236,72,153,.12),rgba(20,184,166,.05) 48%,transparent 72%);
-      animation:dt-float 7.5s ease-in-out infinite reverse;
+      content:""; position:fixed; z-index:-1; pointer-events:none; inset:0;
+      opacity:.34;
+      background-image:
+        radial-gradient(circle, rgba(167,139,250,.72) 0 1px, transparent 1.8px),
+        radial-gradient(circle, rgba(96,165,250,.62) 0 1px, transparent 1.8px),
+        radial-gradient(circle, rgba(94,234,212,.52) 0 1px, transparent 1.8px);
+      background-size: 180px 180px, 230px 230px, 290px 290px;
+      animation:dt-particle-drift 32s linear infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-testid="stAppViewContainer"]:after { animation:none; }
     }
     [data-testid="stHeader"] {background: rgba(11,16,32,.72); backdrop-filter: blur(14px);}
     [data-testid="stSidebar"] {
@@ -1422,8 +1434,7 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    # Landing-page hero: matches the requested Dreamztree black/navy + lime design.
-    # Landing page: retain Dreamztree's existing colorful theme with a wave-like binary background.
+    # Dreamztree landing page with a clean hero; global particle animation is applied in inject_premium_theme().
     st.markdown("""
     <style>
       .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
@@ -1431,19 +1442,6 @@ def main():
         border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
       .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
         background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
-      .dt-code-wave {position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;opacity:.20;
-        color:#9aa8c5;font:600 11px/2 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:5px;
-        white-space:pre;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);}
-      .dt-code-wave .dt-code-row {position:absolute;left:-5%;width:115%;height:26px;white-space:nowrap;
-        animation:dt-code-wave-motion 11s ease-in-out infinite alternate;}
-      .dt-code-wave .dt-code-row:nth-child(2n) {animation-duration:14s;animation-delay:-4s;}
-      .dt-code-wave .dt-code-row:nth-child(3n) {animation-duration:17s;animation-delay:-7s;}
-      @keyframes dt-code-wave-motion {
-        0% {transform:translate3d(-2%,0,0) skewY(-1deg);opacity:.35}
-        50% {transform:translate3d(1%,8px,0) skewY(1deg);opacity:1}
-        100% {transform:translate3d(3%,-4px,0) skewY(-.5deg);opacity:.55}
-      }
-      .dt-landing > :not(.dt-code-wave) {position:relative;z-index:1;}
       .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
       .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
       .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
@@ -1455,23 +1453,14 @@ def main():
       .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(96,165,250,.18);}
       .dt-landing-actions .primary {background:linear-gradient(100deg,#ec4899,#8b5cf6 55%,#2563eb);color:#fff!important;border:1px solid rgba(255,255,255,.18);font-weight:750;}
       .dt-landing-actions .secondary {background:rgba(15,23,42,.25);color:#f8f9fc!important;border:1px solid rgba(167,139,250,.55);}
-      .dt-binary-line {text-align:center;color:#a7b5d0;font:500 1rem ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;margin-top:44px;position:relative;animation:dt-binary-wave 5s ease-in-out infinite;}
-      @keyframes dt-binary-wave {0%,100%{opacity:.45;transform:translateY(0) skewX(0deg);letter-spacing:.08em}25%{opacity:.8;transform:translateY(-5px) skewX(-1deg)}50%{opacity:1;transform:translateY(2px) skewX(1deg);letter-spacing:.13em}75%{opacity:.75;transform:translateY(-3px) skewX(-.5deg)}}
       .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(167,139,250,.32);border-radius:24px;background:linear-gradient(120deg,rgba(99,102,241,.14),rgba(20,184,166,.08));}
       .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
       .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
       .dt-landing + div {scroll-margin-top:24px;}
-      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}.dt-binary-line{margin-top:32px;font-size:.75rem}}
-      @media(prefers-reduced-motion:reduce){.dt-binary-line,.dt-code-wave .dt-code-row,.dt-landing-actions a{animation:none;transition:none}}
+      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
+      @media(prefers-reduced-motion:reduce){.dt-landing-actions a{animation:none;transition:none}}
     </style>
     <section class="dt-landing">
-      <div class="dt-code-wave" aria-hidden="true">
-        <div class="dt-code-row" style="top:8%">01001010 10110100 01101001 11001010 01011010 10100101 01101010 11010010</div>
-        <div class="dt-code-row" style="top:24%">10110100 01001010 11001010 01101001 10100101 01011010 11010010 01101010</div>
-        <div class="dt-code-row" style="top:42%">01101001 11010010 01011010 10110100 01001010 11001010 10100101 01101010</div>
-        <div class="dt-code-row" style="top:61%">11001010 01101010 10110100 01001010 01101001 10100101 11010010 01011010</div>
-        <div class="dt-code-row" style="top:80%">01011010 10100101 01101010 11010010 01001010 10110100 01101001 11001010</div>
-      </div>
       <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
       <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
       <p class="dt-landing-copy">Track leads. Analyze ad spend. Discover winning campaigns.</p>
@@ -1479,7 +1468,6 @@ def main():
         <a class="primary" href="#report-form">Explore Reports ↓</a>
         <a class="secondary" href="#campaign-insights">Campaign Insights</a>
       </div>
-      <div class="dt-binary-line">01001010 • 10110100 • 01101001 • 11001010</div>
     </section>
     <section class="dt-report-intro" id="report-form">
       <h2>↓ Scroll down to create a report</h2>
