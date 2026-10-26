@@ -507,35 +507,24 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
-    /* App-wide animated binary wave, shown behind every page and route. */
-    .dt-binary-bg {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-      opacity: .065; font: 600 10px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
-      letter-spacing: .12em; white-space: nowrap; user-select: none;
-      mask-image: linear-gradient(to bottom, #000 0%, #000 100%);
+/* Global binary animation: CSS background is attached to the app root, not a single page card. */
+    .stApp { position: relative; isolation: isolate; }
+    .stApp::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: .035; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDEyMDAgMTUwIj48ZyBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBsZXR0ZXItc3BhY2luZz0iMi40IiBmaWxsPSIjOWFhOWQ4IiBvcGFjaXR5PSIwLjcyIj48dGV4dCB4PSIwIiB5PSIyMiI+MDEwMDEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTAgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTA8L3RleHQ+PHRleHQgeD0iLTQwIiB5PSI1NyIgZmlsbD0iI2I3YTZmNSI+MTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMDEwMTEwMTAgMTEwMTAwMTAgMDExMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDE8L3RleHQ+PHRleHQgeD0iMTAiIHk9IjkyIiBmaWxsPSIjNzdkOWQwIj4wMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMCAwMTAwMTAxMCAxMTAwMTAxMCAxMDEwMDEwMSAwMTEwMTAxMCAxMTAwMTAxMCAwMDExMDEwMSAwMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMDwvdGV4dD48dGV4dCB4PSItMjAiIHk9IjEyNyIgZmlsbD0iI2Q2OGViNyI+MTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDAgMDEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMTEwMTAwMTAgMDEwMTEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDA8L3RleHQ+PC9nPjwvc3ZnPg==");
+      background-repeat: repeat; background-size: 1200px 150px;
+      animation: dt-global-binary-drift 70s linear infinite;
+      will-change: background-position;
     }
-    .dt-binary-bg .dt-binary-row {
-      position: absolute; left: -35%; width: 170%; height: 3.8vh; white-space: nowrap; overflow: visible;
-      color: #b8c9ff; text-shadow: 0 0 5px rgba(96,165,250,.12);
-      animation: dt-binary-wave 28s linear infinite alternate;
+    [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stSidebar"],
+    [data-testid="stMainBlockContainer"], .main { position: relative; z-index: 1; }
+    [data-testid="stAppViewContainer"] { background: transparent; }
+    @keyframes dt-global-binary-drift {
+      0% { background-position: 0 0; }
+      50% { background-position: 90px 75px; }
+      100% { background-position: 180px 150px; }
     }
-    .dt-binary-bg .dt-binary-row:nth-child(2n) { color: #c4b5fd; animation-duration: 34s; animation-delay: -7s; }
-    .dt-binary-bg .dt-binary-row:nth-child(3n) { color: #5eead4; animation-duration: 31s; animation-delay: -10s; }
-    .dt-binary-bg .dt-binary-row:nth-child(4n) { color: #ff9bc6; animation-duration: 37s; animation-delay: -4s; }
-    @keyframes dt-binary-wave {
-      0% { transform: translate3d(-3%, 0, 0); opacity: .30; }
-      50% { transform: translate3d(2%, 0, 0); opacity: .48; }
-      100% { transform: translate3d(-1%, 0, 0); opacity: .34; }
-    }
-    /* Keep the animated binary overlay global to every route, including dashboard, chat and games. */
-    [data-testid="stAppViewContainer"] { position: relative; isolation: isolate; }
-    [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
-    [data-testid="stAppViewContainer"] > .main .dt-binary-bg {
-      position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important;
-      z-index: 0 !important; pointer-events: none !important;
-    }
-    [data-testid="stSidebar"], [data-testid="stHeader"] { position: relative; z-index: 2; }
-    @media (prefers-reduced-motion: reduce) { .dt-binary-bg .dt-binary-row { animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .stApp::before { animation: none !important; } }
 
     .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
         .arcade-banner h2 { margin: .35rem 0; color: white; }
@@ -545,14 +534,6 @@ def inject_premium_theme():
         @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
 </style>""", unsafe_allow_html=True)
-    binary_pattern = "01001010 10110100 01101001 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110"
-    binary_rows = "\\n".join(
-        f'<div class="dt-binary-row" style="top:{i * 3.7}vh; animation-delay:-{(i * 2.7) % 29}s">{binary_pattern} {binary_pattern}</div>'
-        for i in range(28)
-    )
-    st.markdown(f"""
-    <div class="dt-binary-bg" aria-hidden="true">{binary_rows}</div>
-    """, unsafe_allow_html=True)
 
 
 def load_campaign_report(upload, mappings):
