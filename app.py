@@ -1006,31 +1006,75 @@ def _show_login_header():
         @media (prefers-reduced-motion: reduce) {
           #dt-login-universe *,#dt-login-universe *::before,#dt-login-universe *::after {animation:none !important;}
         }
-        /* Playful login prank: the whole login page dodges for 10 seconds when a field is focused. */
+        /* Playful fast escape: the entire page dodges sharply for 30 seconds on hover. */
         @keyframes dt-login-escape-dodge {
           0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
-          8%   { transform: translate3d(12vw,-5vh,0) rotate(1.2deg) scale(.985); }
-          18%  { transform: translate3d(-13vw,7vh,0) rotate(-1.5deg) scale(.99); }
-          30%  { transform: translate3d(9vw,12vh,0) rotate(1deg) scale(.98); }
-          42%  { transform: translate3d(-8vw,-10vh,0) rotate(-1deg) scale(.99); }
-          55%  { transform: translate3d(14vw,3vh,0) rotate(1.3deg) scale(.985); }
-          68%  { transform: translate3d(-12vw,5vh,0) rotate(-1.2deg) scale(.99); }
-          80%  { transform: translate3d(6vw,-8vh,0) rotate(.8deg) scale(.99); }
-          91%  { transform: translate3d(-4vw,3vh,0) rotate(-.4deg) scale(1); }
+          4%   { transform: translate3d(7vw,-5vh,0) rotate(1deg) scale(.99); }
+          9%   { transform: translate3d(-8vw,4vh,0) rotate(-1.2deg) scale(.99); }
+          14%  { transform: translate3d(5vw,7vh,0) rotate(.8deg) scale(.985); }
+          20%  { transform: translate3d(-6vw,-6vh,0) rotate(-.9deg) scale(.99); }
+          27%  { transform: translate3d(8vw,2vh,0) rotate(1.1deg) scale(.985); }
+          34%  { transform: translate3d(-7vw,6vh,0) rotate(-1deg) scale(.99); }
+          42%  { transform: translate3d(4vw,-7vh,0) rotate(.7deg) scale(.985); }
+          50%  { transform: translate3d(-8vw,-2vh,0) rotate(-1.1deg) scale(.99); }
+          58%  { transform: translate3d(7vw,6vh,0) rotate(.9deg) scale(.985); }
+          66%  { transform: translate3d(-5vw,-5vh,0) rotate(-.8deg) scale(.99); }
+          74%  { transform: translate3d(8vw,4vh,0) rotate(1deg) scale(.985); }
+          82%  { transform: translate3d(-7vw,1vh,0) rotate(-1deg) scale(.99); }
+          90%  { transform: translate3d(5vw,-6vh,0) rotate(.7deg) scale(.99); }
+          96%  { transform: translate3d(-3vw,2vh,0) rotate(-.4deg) scale(.998); }
           100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
         }
-        /* Move the entire login scene — content, background, header and space layer — together. */
-        body:has(.login-panel):has([data-testid="stTextInput"] input:focus) [data-testid="stAppViewContainer"],
-        body:has(.login-panel):has([data-testid="stTextInput"] input:focus) [data-testid="stHeader"],
-        body:has(.login-panel):has([data-testid="stTextInput"] input:focus) #dt-login-universe {
+        /* Escape ONLY the login content area: heading, tabs, and sign-in/create-account forms.
+           The stars, mountains, and rest of the browser page stay fixed. */
+        body:has(.login-panel:hover) [data-testid="stAppViewContainer"] .block-container {
           transform-origin: center center;
-          animation: dt-login-escape-dodge 10s cubic-bezier(.45,0,.55,1) both !important;
+          animation: dt-login-escape-dodge 30s cubic-bezier(.65,0,.35,1) 1 both !important;
           will-change: transform;
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has(.login-panel):has([data-testid="stTextInput"] input:focus) [data-testid="stAppViewContainer"],
-          body:has(.login-panel):has([data-testid="stTextInput"] input:focus) [data-testid="stHeader"],
-          body:has(.login-panel):has([data-testid="stTextInput"] input:focus) #dt-login-universe { animation:none !important; }
+          body:has(.login-panel:hover) [data-testid="stAppViewContainer"] .block-container {
+            animation:none !important;
+          }
+        }
+        /* When the login area tries to escape, the spacecraft dodge too. */
+        body:has(.login-panel:hover) #dt-login-universe .dt-spaceship {
+          animation: dt-ship-escape 30s ease-in-out 1 both !important;
+          will-change: transform, opacity;
+        }
+        body:has(.login-panel:hover) #dt-login-universe .dt-satellite {
+          animation: dt-satellite-escape 30s ease-in-out 1 both !important;
+          will-change: transform, opacity;
+        }
+        body:has(.login-panel:hover) #dt-login-universe .dt-ship-debris,
+        body:has(.login-panel:hover) #dt-login-universe .dt-sat-debris {
+          animation-duration: 30s !important;
+          animation-timing-function: ease-in-out !important;
+        }
+        @keyframes dt-ship-escape {
+          0%,100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); opacity:1; }
+          8% { transform: translate3d(-18vw,8vh,0) rotate(-24deg) scale(.85); }
+          18% { transform: translate3d(24vw,-12vh,0) rotate(42deg) scale(1.15); }
+          29% { transform: translate3d(-32vw,16vh,0) rotate(-55deg) scale(.78); }
+          41% { transform: translate3d(38vw,6vh,0) rotate(72deg) scale(1.08); }
+          54% { transform: translate3d(-25vw,-18vh,0) rotate(-90deg) scale(.9); }
+          67% { transform: translate3d(31vw,18vh,0) rotate(135deg) scale(1.2); }
+          80% { transform: translate3d(-40vw,-7vh,0) rotate(210deg) scale(.82); }
+          92% { transform: translate3d(18vw,12vh,0) rotate(300deg) scale(1.05); }
+        }
+        @keyframes dt-satellite-escape {
+          0%,100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); opacity:1; }
+          10% { transform: translate3d(22vw,-12vh,0) rotate(38deg) scale(.9); }
+          23% { transform: translate3d(-28vw,15vh,0) rotate(-72deg) scale(1.12); }
+          36% { transform: translate3d(35vw,9vh,0) rotate(95deg) scale(.82); }
+          49% { transform: translate3d(-38vw,-16vh,0) rotate(-140deg) scale(1.08); }
+          63% { transform: translate3d(26vw,20vh,0) rotate(180deg) scale(.88); }
+          77% { transform: translate3d(-20vw,-10vh,0) rotate(245deg) scale(1.16); }
+          90% { transform: translate3d(34vw,5vh,0) rotate(320deg) scale(.92); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          body:has(.login-panel:hover) #dt-login-universe .dt-spaceship,
+          body:has(.login-panel:hover) #dt-login-universe .dt-satellite { animation:none !important; }
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
