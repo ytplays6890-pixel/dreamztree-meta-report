@@ -840,19 +840,19 @@ def _show_login_header():
           height:48%; opacity:.38;
           background:linear-gradient(155deg,#6d3db2,#34226f 68%,#251957);
           clip-path:polygon(0 78%,12% 42%,23% 72%,37% 28%,49% 65%,62% 18%,74% 62%,87% 34%,100% 73%,100% 100%,0 100%);
-          animation:dt-mountain-drift-back 34s ease-in-out infinite alternate;
+          animation:none !important;
         }
         #dt-login-universe .dt-mountain-mid {
           height:36%; opacity:.53;
           background:linear-gradient(160deg,#503092,#251b61 70%);
           clip-path:polygon(0 74%,14% 28%,26% 67%,40% 18%,54% 72%,68% 31%,82% 68%,93% 38%,100% 62%,100% 100%,0 100%);
-          animation:dt-mountain-drift-mid 25s ease-in-out infinite alternate;
+          animation:none !important;
         }
         #dt-login-universe .dt-mountain-front {
           height:25%; opacity:.72;
           background:linear-gradient(180deg,#2e225f,#151a39);
           clip-path:polygon(0 55%,12% 32%,24% 64%,38% 24%,53% 66%,68% 18%,82% 56%,93% 31%,100% 50%,100% 100%,0 100%);
-          animation:dt-mountain-drift-front 19s ease-in-out infinite alternate;
+          animation:none !important;
         }
         @keyframes dt-mountain-drift-back {from{transform:translateX(-1.4%)}to{transform:translateX(1.4%)}}
         @keyframes dt-mountain-drift-mid {from{transform:translateX(1.8%)}to{transform:translateX(-1.8%)}}
@@ -1006,7 +1006,7 @@ def _show_login_header():
         @media (prefers-reduced-motion: reduce) {
           #dt-login-universe *,#dt-login-universe *::before,#dt-login-universe *::after {animation:none !important;}
         }
-        /* Playful fast escape: the entire page dodges sharply for 30 seconds on hover. */
+        /* Playful fast escape: ONLY login content dodges for 30 seconds on hover. Background mountains stay fixed. */
         @keyframes dt-login-escape-dodge {
           0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
           4%   { transform: translate3d(7vw,-5vh,0) rotate(1deg) scale(.99); }
@@ -1025,29 +1025,32 @@ def _show_login_header():
           96%  { transform: translate3d(-3vw,2vh,0) rotate(-.4deg) scale(.998); }
           100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
         }
-        /* Escape ONLY the login content area: heading, tabs, and sign-in/create-account forms.
-           The stars, mountains, and rest of the browser page stay fixed. */
-        body:has(.login-panel:hover) [data-testid="stAppViewContainer"] .block-container {
-          transform-origin: center center;
+        /* Escape the login content when the pointer enters the login page area.
+           Keep the Streamlit container itself fixed so hover does not instantly cancel the effect. */
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .dt-login-logo,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .login-panel,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) div[data-testid="stTabs"],
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) [data-testid="stForm"] {
           animation: dt-login-escape-dodge 30s cubic-bezier(.65,0,.35,1) 1 both !important;
           will-change: transform;
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has(.login-panel:hover) [data-testid="stAppViewContainer"] .block-container {
-            animation:none !important;
-          }
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .dt-login-logo,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) .login-panel,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) div[data-testid="stTabs"],
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) [data-testid="stForm"] { animation:none !important; }
         }
-        /* When the login area tries to escape, the spacecraft dodge too. */
-        body:has(.login-panel:hover) #dt-login-universe .dt-spaceship {
+        /* The ship and satellite dodge at the same time as the login content. */
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-spaceship {
           animation: dt-ship-escape 30s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has(.login-panel:hover) #dt-login-universe .dt-satellite {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-satellite {
           animation: dt-satellite-escape 30s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has(.login-panel:hover) #dt-login-universe .dt-ship-debris,
-        body:has(.login-panel:hover) #dt-login-universe .dt-sat-debris {
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-ship-debris,
+        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-sat-debris {
           animation-duration: 30s !important;
           animation-timing-function: ease-in-out !important;
         }
@@ -1073,8 +1076,8 @@ def _show_login_header():
           90% { transform: translate3d(34vw,5vh,0) rotate(320deg) scale(.92); }
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has(.login-panel:hover) #dt-login-universe .dt-spaceship,
-          body:has(.login-panel:hover) #dt-login-universe .dt-satellite { animation:none !important; }
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-spaceship,
+          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):hover) #dt-login-universe .dt-satellite { animation:none !important; }
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
