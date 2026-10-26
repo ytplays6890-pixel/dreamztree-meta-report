@@ -920,6 +920,37 @@ def _show_login_header():
           88%,100% {opacity:0;transform:translate(8vw,11vh) scale(.1)}
         }
 
+        /* When the user starts entering login details, trigger a one-time 10-second space fly-by. */
+        body:has(input:focus) #dt-login-universe .dt-spaceship {
+          animation:dt-login-focus-flight 10s ease-in-out 1 both !important;
+        }
+        body:has(input:focus) #dt-login-universe .dt-satellite {
+          animation:dt-login-focus-satellite 10s ease-in-out 1 both !important;
+        }
+        body:has(input:focus) #dt-login-universe .dt-stars {
+          animation:dt-login-focus-stars 10s ease-in-out 1 both !important;
+        }
+        @keyframes dt-login-focus-flight {
+          0% {opacity:0; transform:translate3d(-8vw,0,0) rotate(-12deg) scale(.72)}
+          12% {opacity:1; transform:translate3d(8vw,-2vh,0) rotate(0) scale(.95)}
+          38% {opacity:1; transform:translate3d(42vw,2vh,0) rotate(5deg) scale(1.08)}
+          62% {opacity:1; transform:translate3d(68vw,-1vh,0) rotate(-5deg) scale(1)}
+          82% {opacity:1; transform:translate3d(88vw,3vh,0) rotate(12deg) scale(.9)}
+          100% {opacity:0; transform:translate3d(108vw,8vh,0) rotate(22deg) scale(.7)}
+        }
+        @keyframes dt-login-focus-satellite {
+          0% {opacity:0; transform:translate3d(-5vw,0,0) rotate(0)}
+          15% {opacity:.95}
+          50% {opacity:.95; transform:translate3d(45vw,5vh,0) rotate(140deg)}
+          82% {opacity:.9; transform:translate3d(85vw,-2vh,0) rotate(260deg)}
+          100% {opacity:0; transform:translate3d(110vw,4vh,0) rotate(360deg)}
+        }
+        @keyframes dt-login-focus-stars {
+          0% {opacity:.72; background-position:0 0,47px 31px,83px 109px}
+          50% {opacity:1; background-position:45px 85px,-55px 60px,75px -65px}
+          100% {opacity:.72; background-position:90px 170px,-110px 120px,150px -130px}
+        }
+
         @keyframes dt-spaceship-flight {
           /* Cruise calmly, then occasionally malfunction and tumble out of the sky. */
           0%,3% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72); filter:drop-shadow(0 0 7px rgba(125,211,252,.35))}
@@ -974,6 +1005,27 @@ def _show_login_header():
         #dt-login-universe {z-index:0;}
         @media (prefers-reduced-motion: reduce) {
           #dt-login-universe *,#dt-login-universe *::before,#dt-login-universe *::after {animation:none !important;}
+        }
+        /* Playful login prank: the whole login page dodges for 10 seconds when a field is focused. */
+        @keyframes dt-login-escape-dodge {
+          0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+          8%   { transform: translate3d(12vw,-5vh,0) rotate(1.2deg) scale(.985); }
+          18%  { transform: translate3d(-13vw,7vh,0) rotate(-1.5deg) scale(.99); }
+          30%  { transform: translate3d(9vw,12vh,0) rotate(1deg) scale(.98); }
+          42%  { transform: translate3d(-8vw,-10vh,0) rotate(-1deg) scale(.99); }
+          55%  { transform: translate3d(14vw,3vh,0) rotate(1.3deg) scale(.985); }
+          68%  { transform: translate3d(-12vw,5vh,0) rotate(-1.2deg) scale(.99); }
+          80%  { transform: translate3d(6vw,-8vh,0) rotate(.8deg) scale(.99); }
+          91%  { transform: translate3d(-4vw,3vh,0) rotate(-.4deg) scale(1); }
+          100% { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+        }
+        .block-container:has(.login-panel):has([data-testid="stTextInput"] input:focus) {
+          transform-origin: center center;
+          animation: dt-login-escape-dodge 10s cubic-bezier(.45,0,.55,1) both !important;
+          will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .block-container:has(.login-panel):has([data-testid="stTextInput"] input:focus) { animation:none !important; }
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
