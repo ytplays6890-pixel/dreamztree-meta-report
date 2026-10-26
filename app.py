@@ -510,22 +510,22 @@ def inject_premium_theme():
     /* App-wide animated binary wave, shown behind every page and route. */
     .dt-binary-bg {
       position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-      opacity: .16; font: 600 12px/1.8 ui-monospace, SFMono-Regular, Consolas, monospace;
-      letter-spacing: .24em; white-space: nowrap; user-select: none;
-      mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+      opacity: .20; font: 600 10px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .12em; white-space: nowrap; user-select: none;
+      mask-image: linear-gradient(to bottom, #000 0%, #000 100%);
     }
     .dt-binary-bg .dt-binary-row {
-      position: absolute; left: -8%; width: 116%; height: 32px; white-space: nowrap;
+      position: absolute; left: -35%; width: 170%; height: 3.8vh; white-space: nowrap; overflow: visible;
       color: #b8c9ff; text-shadow: 0 0 9px rgba(96,165,250,.32);
-      animation: dt-binary-wave 15s ease-in-out infinite alternate;
+      animation: dt-binary-wave 28s linear infinite alternate;
     }
-    .dt-binary-bg .dt-binary-row:nth-child(2n) { color: #c4b5fd; animation-duration: 19s; animation-delay: -7s; }
-    .dt-binary-bg .dt-binary-row:nth-child(3n) { color: #5eead4; animation-duration: 17s; animation-delay: -10s; }
-    .dt-binary-bg .dt-binary-row:nth-child(4n) { color: #ff9bc6; animation-duration: 21s; animation-delay: -4s; }
+    .dt-binary-bg .dt-binary-row:nth-child(2n) { color: #c4b5fd; animation-duration: 34s; animation-delay: -7s; }
+    .dt-binary-bg .dt-binary-row:nth-child(3n) { color: #5eead4; animation-duration: 31s; animation-delay: -10s; }
+    .dt-binary-bg .dt-binary-row:nth-child(4n) { color: #ff9bc6; animation-duration: 37s; animation-delay: -4s; }
     @keyframes dt-binary-wave {
-      0% { transform: translate3d(-2.5%, -8px, 0) skewY(-1deg); opacity: .28; }
-      50% { transform: translate3d(1%, 10px, 0) skewY(1deg); opacity: .75; }
-      100% { transform: translate3d(3%, -4px, 0) skewY(-.5deg); opacity: .4; }
+      0% { transform: translate3d(-3%, 0, 0); opacity: .48; }
+      50% { transform: translate3d(2%, 0, 0); opacity: .82; }
+      100% { transform: translate3d(-1%, 0, 0); opacity: .58; }
     }
     [data-testid="stAppViewContainer"] { isolation: isolate; }
     [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
@@ -540,18 +540,13 @@ def inject_premium_theme():
         @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
 </style>""", unsafe_allow_html=True)
-    st.markdown("""
-    <div class="dt-binary-bg" aria-hidden="true">
-      <div class="dt-binary-row" style="top:4%">01001010 10110100 01101001 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101</div>
-      <div class="dt-binary-row" style="top:15%">10110100 01001010 11001010 01101001 10100101 01011010 11010010 01101010 00110101 10100110 01011100</div>
-      <div class="dt-binary-row" style="top:26%">01101001 11010010 01011010 10110100 01001010 11001010 10100101 01101010 11001010 00110101</div>
-      <div class="dt-binary-row" style="top:37%">11001010 01101010 10110100 01001010 01101001 10100101 11010010 01011010 10110100 01101001</div>
-      <div class="dt-binary-row" style="top:48%">01011010 10100101 01101010 11010010 01001010 10110100 01101001 11001010 00110101 10100110</div>
-      <div class="dt-binary-row" style="top:59%">10100110 01011100 11001010 01101001 00110101 10110100 01001010 11001010 10100110 01100110</div>
-      <div class="dt-binary-row" style="top:70%">00110101 10100110 01011100 10101001 11001010 01101001 10110100 01001010 00110101 11001010</div>
-      <div class="dt-binary-row" style="top:81%">11010010 01101010 10110100 01001010 01101001 10100101 11001010 01011010 10100110 01101001</div>
-      <div class="dt-binary-row" style="top:92%">01101001 11001010 10110100 00110101 01001010 11100010 01100110 10100110 01011100 11001010</div>
-    </div>
+    binary_pattern = "01001010 10110100 01101001 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110 01011100 10101001 01100110 11001010 00110101 10100110"
+    binary_rows = "\\n".join(
+        f'<div class="dt-binary-row" style="top:{i * 3.7}vh; animation-delay:-{(i * 2.7) % 29}s">{binary_pattern} {binary_pattern}</div>'
+        for i in range(28)
+    )
+    st.markdown(f"""
+    <div class="dt-binary-bg" aria-hidden="true">{binary_rows}</div>
     """, unsafe_allow_html=True)
 
 
