@@ -1027,31 +1027,31 @@ def _show_login_header():
         }
         /* Escape the login content when the pointer enters the login page area.
            Keep the Streamlit container itself fixed so hover does not instantly cancel the effect. */
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .dt-login-logo,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .login-panel,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) div[data-testid="stTabs"],
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) [data-testid="stForm"] {
-          animation: dt-login-escape-dodge 30s cubic-bezier(.65,0,.35,1) 1 both !important;
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) .dt-login-logo,
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) .login-panel,
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) div[data-testid="stTabs"],
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) [data-testid="stForm"] {
+          animation: dt-login-escape-dodge 20s cubic-bezier(.65,0,.35,1) 1 both !important;
           will-change: transform;
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .dt-login-logo,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) .login-panel,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) div[data-testid="stTabs"],
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) [data-testid="stForm"] { animation:none !important; }
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) .dt-login-logo,
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) .login-panel,
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) div[data-testid="stTabs"],
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) [data-testid="stForm"] { animation:none !important; }
         }
         /* The ship and satellite dodge at the same time as the login content. */
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-spaceship {
-          animation: dt-ship-escape 30s ease-in-out 1 both !important;
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-spaceship {
+          animation: dt-ship-escape 20s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-satellite {
-          animation: dt-satellite-escape 30s ease-in-out 1 both !important;
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-satellite {
+          animation: dt-satellite-escape 20s ease-in-out 1 both !important;
           will-change: transform, opacity;
         }
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-ship-debris,
-        body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-sat-debris {
-          animation-duration: 30s !important;
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-ship-debris,
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-sat-debris {
+          animation-duration: 20s !important;
           animation-timing-function: ease-in-out !important;
         }
         @keyframes dt-ship-escape {
@@ -1076,8 +1076,8 @@ def _show_login_header():
           90% { transform: translate3d(34vw,5vh,0) rotate(320deg) scale(.92); }
         }
         @media (prefers-reduced-motion: reduce) {
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-spaceship,
-          body:has([data-testid="stAppViewContainer"] .block-container:has(.login-panel):is(:hover, :focus-within)) #dt-login-universe .dt-satellite { animation:none !important; }
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-spaceship,
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-satellite { animation:none !important; }
         }
 
         /* Robust trigger: fire when the pointer reaches any login control, or when a field is focused.
@@ -1099,16 +1099,20 @@ def _show_login_header():
         :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) .login-panel,
         :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) div[data-testid="stTabs"],
         :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) [data-testid="stForm"] {
-          animation:dt-login-escape-fast-reliable 30s linear 1 both !important;
+          animation:dt-login-escape-fast-reliable 20s linear 1 both !important;
           will-change:transform;
         }
         :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) #dt-login-universe .dt-spaceship {
-          animation:dt-ship-escape 30s ease-in-out 1 both !important;
+          animation:dt-ship-escape 20s ease-in-out 1 both !important;
           will-change:transform,opacity;
         }
         :is(body:has(.login-panel:hover), body:has(div[data-testid="stTabs"]:hover), body:has([data-testid="stForm"]:hover), body:has(input:hover), body:has(input:focus), body:has([data-testid="stFormSubmitButton"] button:hover)) #dt-login-universe .dt-satellite {
-          animation:dt-satellite-escape 30s ease-in-out 1 both !important;
+          animation:dt-satellite-escape 20s ease-in-out 1 both !important;
           will-change:transform,opacity;
+        }
+        /* Keep the login content visible when the pointer is away; escape only on login interaction. */
+        .dt-login-logo, .login-panel, div[data-testid="stTabs"], [data-testid="stForm"] {
+          visibility: visible;
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
@@ -1629,7 +1633,7 @@ restartBtn.addEventListener('click',e=>{e.preventDefault();reset()});window.addE
         </script></body></html>""", height=560, scrolling=False)
 
 
-@st.fragment(run_every="30s")
+@st.fragment(run_every="20s")
 def _game_zone_popup():
     """Show a compact bottom-right Game Zone invitation every 30 seconds."""
     import time
