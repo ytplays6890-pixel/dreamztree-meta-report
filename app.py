@@ -849,68 +849,116 @@ def require_login():
     st.stop()
 
 
-def render_multiplayer_dino():
-    """Live shared Dino race for authenticated teammates."""
-    st.markdown("### 🦖 Multiplayer Dino · Live Team Race")
-    st.write("Create a room and share its code. Teammates join the same race, jump over obstacles, and see live player scores.")
+def _ludo_default_state():
+    return {"players": [], "positions": {}, "turn": 0, "dice": None, "winner": None, "updated_at": datetime.utcnow().isoformat()}
+
+
+def render_ludo_online():
+    """Online shared Ludo room using the ludo_rooms Supabase table."""
+    st.markdown("### 🎲 Ludo Online · Play with colleagues")
+    st.caption("Create a room, share its 6-character code, and join from colleagues' accounts.")
     client = get_supabase_client()
     if client is None:
-        st.error("Supabase is not configured."); return
+        st.error("Supabase is not configured. Check the URL and publishable key in Streamlit Secrets.")
+        return
     try:
         user = client.auth.get_user().user
-        if not user: raise ValueError("No user")
+        if not user:
+            raise ValueError("No authenticated user")
     except Exception:
-        st.warning("Please sign in with your Supabase work email and password to play live multiplayer."); return
-    uid, email = str(user.id), str(user.email or "")
+        st.warning("Please sign in with your Supabase email and password to play online.")
+        return
+    uid = str(user.id)
+    email = str(user.email or "")
     meta = getattr(user, "user_metadata", None) or {}
-    name = str(meta.get("username") or meta.get("name") or email.split("@")[0] or "Player")[:40]
+    name = str(meta.get("username") or meta.get("name") or email.split("@")[0] or "Player")[:30]
     token = st.session_state.get("supabase_access_token", "")
     try:
         cfg = st.secrets["supabase"]
         url, key = str(cfg["url"]).rstrip("/"), str(cfg["publishable_key"])
     except Exception:
-        st.error("Missing Supabase URL or publishable key in Streamlit Secrets."); return
+        st.error("Missing Supabase URL or publishable key in Streamlit Secrets.")
+        return
     if not token:
-        st.warning("This login has no Supabase session. Sign in using your Supabase email/password, not the legacy admin login."); return
-    with st.expander("How to play", expanded=True):
-        st.markdown("1. Create a room or enter a colleague's room code.\n2. Share the 6-character code.\n3. Press **Start live race for everyone**.\n4. Press **Space**, **↑**, or tap the game to jump. Keep this page open.")
-    a,b=st.columns(2)
-    with a:
-        if st.button("🎮 Create live race room", type="primary", use_container_width=True):
-            code=''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+        st.warning("No active Supabase session token. Sign out and sign in with your Supabase email/password.")
+        return
+    left, right = st.columns(2)
+    with left:
+        if st.button("🎲 Create Ludo room", type="primary", use_container_width=True):
+            code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+            state = _ludo_default_state()
+            state["players"] = [{"id": uid, "name": name, "color": "red"}]
+            state["positions"] = {uid: -1}
             try:
-                client.table("dino_rooms").insert({"room_code":code,"created_by":uid,"created_by_email":email}).execute()
-                st.session_state["dino_room_code"]=code
-            except Exception as e: st.error(f"Could not create room: {e}")
-    with b:
-        entered=st.text_input("Room code from colleague",max_chars=6,key="dino_join_code").strip().upper()
-        if st.button("Join room",use_container_width=True):
+                client.table("ludo_rooms").insert({"room_code": code, "created_by": uid, "state": state}).execute()
+                st.session_state["ludo_room_code"] = code
+                st.success(f"Room created: {code}. Share it with colleagues.")
+                st.rerun()
+            except Exception as exc:
+                st.error("Could not create room. Run the Ludo SQL setup first.")
+                st.caption(str(exc))
+    with right:
+        code_in = st.text_input("Colleague's room code", max_chars=6, key="ludo_join_code").strip().upper()
+        if st.button("Join Ludo room", use_container_width=True):
             try:
-                rows=client.table("dino_rooms").select("room_code").eq("room_code",entered).limit(1).execute().data or []
-                if rows: st.session_state["dino_room_code"]=entered
-                else: st.error("Room not found. Check the code.")
-            except Exception as e: st.error(f"Could not join room: {e}")
-    room=st.session_state.get("dino_room_code","")
-    if not room: st.info("Create or join a room to begin."); return
-    st.markdown(f"### Current room: `{room}`")
-    if st.button("🏁 Start live race for everyone",type="primary"):
-        try:
-            client.table("dino_race_starts").insert({"room_code":room,"started_by":uid}).execute()
-            st.success("Race start sent. Everyone in the room should keep this page open.")
-        except Exception as e: st.error(f"Live-race tables are missing. Run the new SQL migration first. Details: {e}")
-    payload=json.dumps({"url":url,"key":key,"token":token,"room":room,"uid":uid,"name":name}).replace("</","<\\/")
-    html='''<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#10182e;color:white;font:14px Arial}.box{padding:12px;border:1px solid #53617c;border-radius:12px}canvas{width:100%;background:#f8fafc;border-radius:8px}.muted{color:#a7f3d0;margin:5px}</style></head><body><div class="box"><div id="s" class="muted">Connecting…</div><canvas id="c" width="900" height="320"></canvas><p>Press SPACE/↑ or tap the track to jump. Keep this page open to stay in the race.</p></div><script>
-const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('c'),x=cv.getContext('2d'),st=document.getElementById('s');let y=0,v=0,score=0,alive=true,run=false,starts=0,players=[],obs=[],lastObs=0,lastSync=0,lastFrame=performance.now();
-let apiError='';
-async function call(path,opt={}){const r=await fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok){const t=await r.text();throw new Error('Supabase '+r.status+': '+t.slice(0,180))}return r}
-async function poll(){try{let r=await call('dino_race_starts?room_code=eq.'+encodeURIComponent(C.room)+'&select=id,created_at&order=id.desc&limit=1'),d=await r.json();if(d.length&&Number(d[0].id)>starts){starts=Number(d[0].id);run=true;y=0;v=0;score=0;alive=true;obs=[];lastObs=0}}catch(e){apiError=e.message}try{let r=await call('dino_race_presence?room_code=eq.'+encodeURIComponent(C.room)+'&select=player_id,player_name,score,alive,last_seen&order=last_seen.desc');let d=await r.json();players=Array.isArray(d)?d.filter(p=>p.last_seen && Date.now()-Date.parse(p.last_seen)<30000):[]}catch(e){apiError=e.message}}
-async function sync(){try{await call('dino_race_presence?on_conflict=room_code,player_id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({room_code:C.room,player_id:C.uid,player_name:C.name,score:Math.floor(score),alive,last_seen:new Date().toISOString()})});apiError=''}catch(e){apiError=e.message}}
-function jump(){if(run&&alive&&y===0)v=-12}addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}});cv.addEventListener('pointerdown',jump);
-function dino(px,base,col,label,jump=0){x.fillStyle=col;x.fillRect(px,base-27-jump,23,27);x.fillRect(px+12,base-38-jump,19,17);x.fillStyle='#fff';x.fillRect(px+25,base-33-jump,4,4);x.fillStyle=col;x.fillRect(px+2,base-2-jump,6,7);x.fillRect(px+15,base-2-jump,6,7);x.fillStyle='#1e293b';x.font='12px Arial';x.fillText(label.slice(0,14),px-5,base+20)}
-function frame(now){let dt=Math.min((now-lastFrame)/16.7,2);lastFrame=now;x.clearRect(0,0,900,320);x.fillStyle='#cbd5e1';x.fillRect(0,265,900,2);x.fillStyle='#334155';x.font='bold 15px Arial';x.fillText('ROOM '+C.room+' · LIVE TEAM RACE',15,23);if(run&&alive){v+=.7*dt;y+=v*dt;if(y>0){y=0;v=0}score+=.18*dt;if(now-lastObs>1250){obs.push({px:920,h:20+Math.random()*25});lastObs=now}obs.forEach(o=>o.px-=5*dt);obs=obs.filter(o=>o.px>-25);for(let o of obs){x.fillStyle='#16a34a';x.fillRect(o.px,265-o.h,13,o.h);if(o.px<88&&o.px+13>65&&y>-o.h+25)alive=false}}dino(65,265,'#7c3aed',C.name,-y);let n=0;for(let p of players){if(p.player_id===C.uid||n>=6)continue;let px=180+n*110;dino(px,265,['#0284c7','#db2777','#ea580c','#059669','#4f46e5','#0891b2'][n],p.player_name,0);x.fillStyle='#334155';x.font='12px Arial';x.fillText('Score '+p.score+(p.alive?'':' · OUT'),px-8,310);n++}x.fillStyle='#0f172a';x.font='bold 18px Arial';x.fillText('Your score: '+Math.floor(score),700,25);if(!run){x.fillStyle='#334155';x.font='bold 22px Arial';x.fillText('Waiting for host to start…',280,145)}else if(!alive){x.fillStyle='#b91c1c';x.font='bold 22px Arial';x.fillText('RUN OVER — wait for next race',260,145)}st.textContent='Live room '+C.room+' · '+players.length+' active player(s)'+(apiError?' · '+apiError:'');if(now-lastSync>700){lastSync=now;sync();poll()}requestAnimationFrame(frame)}poll();requestAnimationFrame(frame);
-</script></body></html>'''.replace('PAYLOAD',payload)
-    components.html(html,height=420,scrolling=False)
-    st.caption("All teammates must sign in with their own Supabase email/password, join this exact room code, and keep this page open. If sync fails, the game status above will show the Supabase error. This prototype shares player status and scores; obstacles are still local to each browser.")
+                rows = client.table("ludo_rooms").select("room_code,state").eq("room_code", code_in).limit(1).execute().data or []
+                if not rows:
+                    st.error("Room not found. Check the code.")
+                else:
+                    state = rows[0].get("state") or _ludo_default_state()
+                    players = state.setdefault("players", [])
+                    if not any(str(p.get("id")) == uid for p in players):
+                        if len(players) >= 4:
+                            st.error("This room already has 4 players.")
+                        else:
+                            colors = ["red", "blue", "green", "yellow"]
+                            used = {p.get("color") for p in players}
+                            color = next(c for c in colors if c not in used)
+                            players.append({"id": uid, "name": name, "color": color})
+                            state.setdefault("positions", {})[uid] = -1
+                            client.table("ludo_rooms").update({"state": state}).eq("room_code", code_in).execute()
+                    st.session_state["ludo_room_code"] = code_in
+                    st.rerun()
+            except Exception as exc:
+                st.error("Could not join room. Check the SQL setup and table policies.")
+                st.caption(str(exc))
+    room = st.session_state.get("ludo_room_code", "")
+    if not room:
+        st.info("Create a room or enter a colleague's room code to start.")
+        return
+    try:
+        rows = client.table("ludo_rooms").select("state").eq("room_code", room).limit(1).execute().data or []
+        if not rows:
+            st.warning("Room not found. Create or join another room.")
+            return
+        players = (rows[0].get("state") or {}).get("players", [])
+        st.markdown(f"### Current room: `{room}`")
+        st.write("Players: " + (" · ".join(f"{p.get('name', 'Player')} ({p.get('color', '')})" for p in players) if players else "Waiting for players"))
+        payload = json.dumps({"url": url, "key": key, "token": token, "room": room, "uid": uid}).replace("</", "<\\/")
+        html = r'''<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;font-family:system-ui;background:#10182e;color:#fff}.panel{padding:12px;border:1px solid #64748b;border-radius:14px}canvas{width:100%;max-width:600px;display:block;margin:auto;background:#fff;border-radius:12px;touch-action:manipulation}.row{display:flex;gap:8px;justify-content:center;margin:10px;flex-wrap:wrap}.row button{padding:10px 18px;border:0;border-radius:10px;font-weight:800;background:linear-gradient(100deg,#ec4899,#6366f1);color:white}#status{text-align:center;color:#6ee7b7;font-weight:700;margin:8px}.hint{text-align:center;color:#cbd5e1;font-size:13px}
+</style></head><body><div class="panel"><div id="status">Connecting…</div><canvas id="board" width="600" height="600"></canvas><div class="row"><button id="roll">🎲 Roll dice</button><button id="refresh">↻ Refresh board</button></div><div class="hint">Simplified online Ludo: roll a 6 to leave base, then click the board to move. Keep this page open.</div></div><script>
+const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('board'),ctx=cv.getContext('2d'),status=document.getElementById('status');let state=null,dice=null,busy=false;const colors={red:'#ef4444',blue:'#3b82f6',green:'#22c55e',yellow:'#eab308'};
+async function req(path,opt={}){let r=await fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw Error('Supabase '+r.status+' '+(await r.text()).slice(0,120));return r}
+function track(){let p=[];for(let x=1;x<=5;x++)p.push([x,7]);for(let y=6;y>=1;y--)p.push([6,y]);p.push([7,1]);for(let y=1;y<=5;y++)p.push([8,y]);p.push([8,6]);for(let x=9;x<=13;x++)p.push([x,6]);p.push([13,7]);for(let x=13;x>=9;x--)p.push([x,8]);p.push([8,8]);for(let y=9;y<=13;y++)p.push([8,y]);p.push([7,13]);for(let y=13;y>=9;y--)p.push([6,y]);p.push([6,8]);for(let x=5;x>=1;x--)p.push([x,8]);return p}const path=track();
+function draw(){if(!state)return;ctx.clearRect(0,0,600,600);ctx.fillStyle='#fff';ctx.fillRect(0,0,600,600);const S=36,O=30;function box(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(O+x*S,O+y*S,w*S,h*S)}box(0,0,6,6,'#fee2e2');box(9,0,6,6,'#dbeafe');box(0,9,6,6,'#dcfce7');box(9,9,6,6,'#fef9c3');for(let y=0;y<15;y++)for(let x=0;x<15;x++){ctx.strokeStyle='#cbd5e1';ctx.strokeRect(O+x*S,O+y*S,S,S)}path.forEach(p=>{ctx.fillStyle='#f1f5f9';ctx.fillRect(O+p[0]*S,O+p[1]*S,S,S)});const ps=state.players||[];ps.forEach(p=>{let pos=(state.positions||{})[p.id]??-1;let x,y;if(pos<0){let b={red:[2,2],blue:[11,2],green:[2,11],yellow:[11,11]};[x,y]=b[p.color]||[7,7]}else [x,y]=path[Math.min(pos,path.length-1)]||[7,7];ctx.beginPath();ctx.arc(O+x*S+S/2,O+y*S+S/2,13,0,Math.PI*2);ctx.fillStyle=colors[p.color]||'#7c3aed';ctx.fill();ctx.strokeStyle=p.id===C.uid?'#111827':'#fff';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText((p.name||'P').slice(0,3),O+x*S+S/2,O+y*S+S/2+4)});ctx.textAlign='left';ctx.fillStyle='#111827';ctx.font='bold 16px system-ui';ctx.fillText('DICE: '+(dice||state.dice||'—'),O+6*S,O+7.5*S)}
+async function load(){try{let r=await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room)+'&select=state'),a=await r.json();if(!a.length){status.textContent='Room not found';return}state=a[0].state;draw();let ps=state.players||[],cur=ps[state.turn||0];status.textContent='Room '+C.room+' · '+(cur?cur.name+' to play':'Waiting')+(state.winner?' · Winner: '+state.winner.name:'')}catch(e){status.textContent='Connection error: '+e.message}}
+async function save(){if(busy)return;busy=true;try{state.updated_at=new Date().toISOString();await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({state})})}catch(e){status.textContent='Save failed: '+e.message}finally{busy=false}}
+document.getElementById('roll').onclick=async()=>{if(!state||state.winner)return;let ps=state.players||[],cur=ps[state.turn||0];if(!cur||cur.id!==C.uid){status.textContent='Wait for your turn';return}dice=1+Math.floor(Math.random()*6);state.dice=dice;draw();await save();status.textContent='You rolled '+dice+'. Click the board to move.'};cv.addEventListener('click',async()=>{if(!state||state.winner)return;let ps=state.players||[],cur=ps[state.turn||0];if(!cur||cur.id!==C.uid){status.textContent='Wait for your turn';return}let d=dice||state.dice;if(!d){status.textContent='Roll the dice first';return}let pos=(state.positions||{})[C.uid]??-1;if(pos<0&&d!==6){status.textContent='You need a 6 to enter';state.turn=(state.turn+1)%ps.length;dice=null;state.dice=null;await save();return}pos=pos<0?0:pos+d;state.positions[C.uid]=Math.min(pos,path.length-1);if(pos>=path.length-1)state.winner=cur;state.turn=(state.turn+1)%Math.max(ps.length,1);dice=null;state.dice=null;draw();await save();await load()});document.getElementById('refresh').onclick=load;load();setInterval(load,1800);
+</script></body></html>'''.replace('PAYLOAD', payload)
+        components.html(html, height=790, scrolling=False)
+        st.caption("This is a simplified Ludo prototype, not the full official four-token Ludo rules. The shared room requires the SQL table below.")
+    except Exception as exc:
+        st.error(f"Could not load Ludo room: {exc}")
+
+
+def render_snake_apple():
+    st.markdown("### 🐍 Snake & Apple")
+    st.caption("Use arrow keys or WASD to collect apples. Avoid the walls and your own tail.")
+    html = r'''<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#10182e;color:white;font-family:system-ui}.wrap{padding:12px;background:linear-gradient(135deg,#172554,#14532d);border-radius:16px}.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:800}.game{display:block;width:100%;max-width:600px;margin:12px auto;border-radius:12px;background:#0b1220;touch-action:none}.buttons{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.buttons button{padding:10px 16px;border:0;border-radius:10px;background:#86efac;color:#052e16;font-weight:900}.hint{text-align:center;color:#d1fae5;font-size:13px}</style></head><body><div class="wrap"><div class="top"><span>🐍 SNAKE & APPLE</span><span>Score: <b id="score">0</b></span><span>Best: <b id="best">0</b></span></div><canvas id="c" class="game" width="600" height="420"></canvas><div class="buttons"><button id="up">⬆</button><button id="left">⬅</button><button id="down">⬇</button><button id="right">➡</button><button id="restart">Restart</button></div><p class="hint">Arrow keys / WASD or buttons to move. Eat apples to grow. Avoid walls and your tail.</p></div><script>
+const c=document.getElementById('c'),x=c.getContext('2d'),N=30,cols=20,rows=14;let snake,dir,next,apple,score,over,best=+(localStorage.getItem('dtSnakeBest')||0);document.getElementById('best').textContent=best;function place(){do{apple={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===apple.x&&p.y===apple.y))}function reset(){snake=[{x:7,y:7},{x:6,y:7},{x:5,y:7}];dir={x:1,y:0};next={x:1,y:0};score=0;over=false;place();document.getElementById('score').textContent=score}function turn(a,b){if(a!==-dir.x||b!==-dir.y)next={x:a,y:b}}window.addEventListener('keydown',e=>{let k=e.key.toLowerCase(),m={'arrowup':[0,-1],w:[0,-1],'arrowdown':[0,1],s:[0,1],'arrowleft':[-1,0],a:[-1,0],'arrowright':[1,0],d:[1,0]}[k];if(m){e.preventDefault();turn(...m)}});[['up',0,-1],['down',0,1],['left',-1,0],['right',1,0]].forEach(([id,a,b])=>document.getElementById(id).onclick=()=>turn(a,b));document.getElementById('restart').onclick=reset;function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1220';x.fillRect(0,0,c.width,c.height);for(let y=0;y<rows;y++)for(let xx=0;xx<cols;xx++){x.fillStyle=(xx+y)%2?'#142b2b':'#183737';x.fillRect(xx*N,y*N,N,N)}x.fillStyle='#ef4444';x.beginPath();x.arc(apple.x*N+N/2,apple.y*N+N/2,N*.36,0,Math.PI*2);x.fill();x.fillStyle='#86efac';x.fillRect(apple.x*N+N*.48,apple.y*N+2,4,8);snake.forEach((p,i)=>{x.fillStyle=i?'#22c55e':'#a3e635';x.beginPath();x.roundRect(p.x*N+2,p.y*N+2,N-4,N-4,6);x.fill()});if(over){x.fillStyle='#000a';x.fillRect(0,0,c.width,c.height);x.fillStyle='white';x.textAlign='center';x.font='bold 34px system-ui';x.fillText('GAME OVER',c.width/2,c.height/2);x.font='18px system-ui';x.fillText('Press Restart to play again',c.width/2,c.height/2+32)}}function step(){if(!over){dir=next;let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.x>=cols||h.y<0||h.y>=rows||snake.some(p=>p.x===h.x&&p.y===h.y)){over=true}else{snake.unshift(h);if(h.x===apple.x&&h.y===apple.y){score+=10;document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('dtSnakeBest',best);document.getElementById('best').textContent=best}place()}else snake.pop()}}draw()}reset();setInterval(step,115);
+</script></body></html>'''
+    components.html(html, height=610, scrolling=False)
 
 
 def render_games_page():
@@ -920,9 +968,12 @@ def render_games_page():
     .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
     </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
     """, unsafe_allow_html=True)
-    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner", "🦖 Multiplayer Dino"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
-    if game == "🦖 Multiplayer Dino":
-        render_multiplayer_dino()
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner", "🎲 Ludo Online", "🐍 Snake & Apple"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    if game == "🎲 Ludo Online":
+        render_ludo_online()
+        return
+    if game == "🐍 Snake & Apple":
+        render_snake_apple()
         return
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
