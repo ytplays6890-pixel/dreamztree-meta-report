@@ -735,7 +735,18 @@ def _show_login_header():
           max-width:620px; margin-left:auto; margin-right:auto;
           opacity:0; animation:dt-login-panel-rise 1.0s cubic-bezier(.2,.75,.25,1) 1.4s forwards;
         }
-        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
+        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {
+          box-shadow:0 0 0 1px rgba(94,234,212,.72),0 0 20px rgba(96,165,250,.2);
+          border-color:rgba(94,234,212,.8) !important;
+        }
+        @keyframes dt-field-arrive {from {transform:translateY(5px);opacity:.72;} to {transform:translateY(0);opacity:1;}}
+        @keyframes dt-login-error-shake {0%,100% {transform:translateX(0)} 25% {transform:translateX(-4px)} 50% {transform:translateX(4px)} 75% {transform:translateX(-2px)}}
+        @keyframes dt-auth-pulse {0%,100% {filter:brightness(1);box-shadow:0 7px 20px rgba(124,58,237,.22)} 50% {filter:brightness(1.12);box-shadow:0 0 30px rgba(94,234,212,.24),0 9px 28px rgba(59,130,246,.34)}}
+        [data-testid="stTextInput"] input:focus {animation:dt-field-arrive .22s ease-out;}
+        [data-testid="stTextInput"]:focus-within label {color:#5eead4 !important;transition:color .2s ease;}
+        [data-testid="stFormSubmitButton"] button:focus-visible {outline:2px solid #5eead4 !important;outline-offset:3px;}
+        [data-testid="stFormSubmitButton"] button:disabled {opacity:.8;cursor:wait;}
+        [data-testid="stAlert"] {animation:dt-login-panel-rise .28s ease-out both;}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df; font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18); font-size:clamp(1.7rem,3vw,2.25rem); line-height:1.12;}
         .login-panel p {color: #d6def0;}
@@ -745,7 +756,8 @@ def _show_login_header():
         }
         @media (prefers-reduced-motion: reduce) {
           .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"],[data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"]::after,
-          [data-testid="stFormSubmitButton"] button,.login-panel:before,.login-panel:after {animation:none !important; opacity:1 !important; transform:none !important;}
+          [data-testid="stFormSubmitButton"] button,.login-panel:before,.login-panel:after,
+          [data-testid="stTextInput"] input:focus,[data-testid="stAlert"] {animation:none !important; opacity:1 !important; transform:none !important;}
         }
         /* Safety fallback: never leave login content invisible if animation timing is interrupted. */
         @media (max-width:700px) {
@@ -822,12 +834,14 @@ def require_login():
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
+                    st.session_state["login_just_succeeded"] = True
                     st.rerun()
                 elif "@" in login_id:
                     try:
-                        response = client.auth.sign_in_with_password(
-                            {"email": login_id, "password": password}
-                        )
+                        with st.spinner("Authenticating securely…"):
+                            response = client.auth.sign_in_with_password(
+                                {"email": login_id, "password": password}
+                            )
                         if response and response.user:
                             if getattr(response, "session", None):
                                 st.session_state["supabase_access_token"] = response.session.access_token
@@ -837,6 +851,7 @@ def require_login():
                                 response.user.email or login_id
                             )
                             st.session_state["auth_method"] = "supabase"
+                            st.session_state["login_just_succeeded"] = True
                             st.rerun()
                         else:
                             st.error("Sign-in failed. Check your email and password.")
@@ -876,13 +891,14 @@ def require_login():
                 st.error("The passwords do not match.")
             else:
                 try:
-                    response = client.auth.sign_up(
-                        {
-                            "email": new_email,
-                            "password": new_password,
-                            "options": {"data": {"username": new_username}},
-                        }
-                    )
+                    with st.spinner("Creating your secure account…"):
+                        response = client.auth.sign_up(
+                            {
+                                "email": new_email,
+                                "password": new_password,
+                                "options": {"data": {"username": new_username}},
+                            }
+                        )
                     if response and response.session and response.user:
                         st.session_state["supabase_access_token"] = response.session.access_token
                         st.session_state["supabase_refresh_token"] = response.session.refresh_token
@@ -891,6 +907,7 @@ def require_login():
                             response.user.email or new_email
                         )
                         st.session_state["auth_method"] = "supabase"
+                        st.session_state["login_just_succeeded"] = True
                         # Profile details are optional; Auth remains the source of truth.
                         try:
                             client.table("profiles").upsert(
@@ -1435,6 +1452,8 @@ def render_team_chat():
 
 def main():
     require_login()
+    if st.session_state.pop("login_just_succeeded", False):
+        st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
     page = st.query_params.get("page", "dashboard")
     # Keep the Game Zone invitation/notification active on every non-game page.
