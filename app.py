@@ -862,7 +862,7 @@ def _show_login_header():
           position:absolute; top:18%; left:-90px; width:64px; height:30px;
           opacity:0; transform:translate3d(0,0,0) rotate(-8deg);
           filter:drop-shadow(0 0 9px rgba(125,211,252,.65));
-          animation:dt-spaceship-flight 34s ease-in-out 3s infinite;
+          animation:dt-spaceship-flight 90s ease-in-out 3s infinite;
           will-change:transform,opacity;
         }
         #dt-login-universe .dt-spaceship::before {
@@ -879,23 +879,65 @@ def _show_login_header():
           border:1px solid rgba(224,242,254,.85);
           box-shadow:-17px 4px 0 -2px #64748b,17px 4px 0 -2px #64748b;
         }
+        /* Detached ship panels and sparks appear only during the rare crash window. */
+        #dt-login-universe .dt-ship-debris,
+        #dt-login-universe .dt-sat-debris {
+          position:absolute; width:7px; height:4px; opacity:0; pointer-events:none;
+          background:linear-gradient(135deg,#f8fafc,#64748b); border:1px solid #cbd5e1;
+          box-shadow:0 0 7px rgba(251,146,60,.9); border-radius:1px;
+        }
+        #dt-login-universe .dt-ship-debris {top:18%; left:74%; animation:dt-ship-debris-flight 90s ease-in-out 3s infinite;}
+        #dt-login-universe .dt-ship-debris.d2 {width:5px;height:5px;animation-delay:3s;}
+        #dt-login-universe .dt-ship-debris.d3 {width:3px;height:3px;background:#fb923c;box-shadow:0 0 9px #fb923c;animation:dt-ship-sparks 90s ease-in-out 3s infinite;}
+        #dt-login-universe .dt-ship-debris.d4 {width:10px;height:3px;animation:dt-ship-debris-flight 90s ease-in-out 3s infinite;}
+        @keyframes dt-ship-debris-flight {
+          0%,74% {opacity:0;transform:translate(0,0) rotate(0)}
+          76% {opacity:1;transform:translate(2vw,2vh) rotate(70deg)}
+          82% {opacity:.95;transform:translate(5vw,11vh) rotate(230deg)}
+          89% {opacity:0;transform:translate(9vw,24vh) rotate(520deg)}
+          100% {opacity:0;transform:translate(9vw,24vh) rotate(520deg)}
+        }
+        @keyframes dt-ship-sparks {
+          0%,74% {opacity:0;transform:translate(0,0) scale(.3)}
+          76% {opacity:1;transform:translate(1vw,1vh) scale(1.8)}
+          79% {opacity:.9;transform:translate(4vw,5vh) scale(.8)}
+          83%,100% {opacity:0;transform:translate(7vw,12vh) scale(.1)}
+        }
+        #dt-login-universe .dt-sat-debris {top:24%; left:77%; width:8px;height:5px;animation:dt-sat-debris-flight 120s linear 2s infinite;}
+        #dt-login-universe .dt-sat-debris.panel {width:12px;height:5px;background:repeating-linear-gradient(90deg,#2563eb 0 2px,#93c5fd 2px 3px);}
+        #dt-login-universe .dt-sat-debris.spark {width:3px;height:3px;border:0;background:#fb923c;box-shadow:0 0 8px #fb923c;animation-name:dt-sat-sparks;}
+        @keyframes dt-sat-debris-flight {
+          0%,77% {opacity:0;transform:translate(0,0) rotate(0)}
+          80% {opacity:1;transform:translate(2vw,2vh) rotate(80deg)}
+          86% {opacity:.85;transform:translate(6vw,10vh) rotate(300deg)}
+          93% {opacity:0;transform:translate(11vw,21vh) rotate(600deg)}
+          100% {opacity:0;transform:translate(11vw,21vh) rotate(600deg)}
+        }
+        @keyframes dt-sat-sparks {
+          0%,77% {opacity:0;transform:translate(0,0) scale(.2)}
+          80% {opacity:1;transform:translate(2vw,2vh) scale(1.7)}
+          84% {opacity:.7;transform:translate(5vw,6vh) scale(.7)}
+          88%,100% {opacity:0;transform:translate(8vw,11vh) scale(.1)}
+        }
+
         @keyframes dt-spaceship-flight {
           /* Cruise calmly, then occasionally malfunction and tumble out of the sky. */
-          0%,5% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72); filter:drop-shadow(0 0 7px rgba(125,211,252,.35))}
-          8% {opacity:.95}
-          22% {opacity:1; transform:translate3d(22vw,-1vh,0) rotate(-3deg) scale(.9)}
-          35% {opacity:1; transform:translate3d(43vw,2vh,0) rotate(2deg) scale(1)}
-          39% {opacity:1; transform:translate3d(47vw,2vh,0) rotate(-7deg) scale(1); filter:drop-shadow(0 0 12px rgba(125,211,252,.75))}
-          41% {opacity:1; transform:translate3d(49vw,3vh,0) rotate(13deg) scale(1.02)}
-          44% {opacity:1; transform:translate3d(50vw,7vh,0) rotate(-22deg) scale(1.02); filter:drop-shadow(0 0 18px rgba(251,146,60,.95))}
-          52% {opacity:.95; transform:translate3d(53vw,23vh,0) rotate(55deg) scale(.96); filter:drop-shadow(0 0 20px rgba(249,115,22,.9))}
-          61% {opacity:.72; transform:translate3d(57vw,53vh,0) rotate(145deg) scale(.78); filter:drop-shadow(0 0 14px rgba(249,115,22,.6))}
-          68% {opacity:0; transform:translate3d(61vw,85vh,0) rotate(250deg) scale(.55); filter:drop-shadow(0 0 0 transparent)}
-          69%,100% {opacity:0; transform:translate3d(112vw,2vh,0) rotate(5deg) scale(.82)}
+          0%,3% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72); filter:drop-shadow(0 0 7px rgba(125,211,252,.35))}
+          5% {opacity:.95}
+          18% {opacity:1; transform:translate3d(22vw,-1vh,0) rotate(-3deg) scale(.9)}
+          34% {opacity:1; transform:translate3d(43vw,2vh,0) rotate(2deg) scale(1)}
+          52% {opacity:1; transform:translate3d(66vw,-1vh,0) rotate(-4deg) scale(1.02); filter:drop-shadow(0 0 12px rgba(125,211,252,.75))}
+          68% {opacity:1; transform:translate3d(87vw,2vh,0) rotate(2deg) scale(.96)}
+          74% {opacity:1; transform:translate3d(91vw,3vh,0) rotate(12deg) scale(1); filter:drop-shadow(0 0 12px rgba(125,211,252,.75))}
+          76% {opacity:1; transform:translate3d(92vw,5vh,0) rotate(-18deg) scale(1.02); filter:drop-shadow(0 0 18px rgba(251,146,60,.95))}
+          80% {opacity:.95; transform:translate3d(94vw,18vh,0) rotate(58deg) scale(.96); filter:drop-shadow(0 0 20px rgba(249,115,22,.9))}
+          85% {opacity:.72; transform:translate3d(97vw,48vh,0) rotate(155deg) scale(.78); filter:drop-shadow(0 0 14px rgba(249,115,22,.6))}
+          89% {opacity:0; transform:translate3d(101vw,82vh,0) rotate(250deg) scale(.55); filter:drop-shadow(0 0 0 transparent)}
+          90%,100% {opacity:0; transform:translate3d(112vw,2vh,0) rotate(5deg) scale(.82)}
         }
         #dt-login-universe .dt-satellite {
           position:absolute; top:24%; left:-70px; width:31px; height:13px;
-          animation:dt-satellite-orbit 42s linear 2s infinite;
+          animation:dt-satellite-orbit 120s linear 2s infinite;
           filter:drop-shadow(0 0 7px rgba(125,211,252,.5)); opacity:.9;
         }
         #dt-login-universe .dt-satellite::before {
@@ -910,15 +952,17 @@ def _show_login_header():
         @keyframes dt-satellite-orbit {
           /* Slow orbital pass, a brief wobble, then a separate tumbling re-entry. */
           0%,4% {opacity:0; transform:translate3d(-5vw,0,0) rotate(12deg)}
-          8% {opacity:.9; transform:translate3d(3vw,1vh,0) rotate(12deg)}
+          7% {opacity:.9; transform:translate3d(3vw,1vh,0) rotate(12deg)}
           24% {opacity:.9; transform:translate3d(28vw,5vh,0) rotate(4deg)}
-          39% {opacity:.9; transform:translate3d(48vw,-2vh,0) rotate(-8deg)}
-          43% {opacity:1; transform:translate3d(52vw,-1vh,0) rotate(18deg)}
-          46% {opacity:1; transform:translate3d(54vw,2vh,0) rotate(-28deg); filter:drop-shadow(0 0 12px rgba(251,146,60,.95))}
-          53% {opacity:.9; transform:translate3d(58vw,16vh,0) rotate(55deg)}
-          63% {opacity:.68; transform:translate3d(63vw,44vh,0) rotate(150deg); filter:drop-shadow(0 0 9px rgba(249,115,22,.7))}
-          72% {opacity:0; transform:translate3d(69vw,82vh,0) rotate(270deg); filter:drop-shadow(0 0 0 transparent)}
-          73%,100% {opacity:0; transform:translate3d(115vw,0,0) rotate(360deg)}
+          42% {opacity:.9; transform:translate3d(48vw,-2vh,0) rotate(-8deg)}
+          60% {opacity:.9; transform:translate3d(70vw,1vh,0) rotate(4deg)}
+          74% {opacity:.9; transform:translate3d(86vw,-1vh,0) rotate(-8deg)}
+          78% {opacity:1; transform:translate3d(90vw,0,0) rotate(18deg)}
+          80% {opacity:1; transform:translate3d(92vw,3vh,0) rotate(-28deg); filter:drop-shadow(0 0 12px rgba(251,146,60,.95))}
+          84% {opacity:.9; transform:translate3d(95vw,16vh,0) rotate(55deg)}
+          89% {opacity:.68; transform:translate3d(99vw,44vh,0) rotate(150deg); filter:drop-shadow(0 0 9px rgba(249,115,22,.7))}
+          93% {opacity:0; transform:translate3d(103vw,82vh,0) rotate(270deg); filter:drop-shadow(0 0 0 transparent)}
+          94%,100% {opacity:0; transform:translate3d(115vw,0,0) rotate(360deg)}
         }
         /* Keep every Streamlit control above the decorative background. */
         [data-testid="stAppViewContainer"] {position:relative;isolation:isolate;}
@@ -935,7 +979,9 @@ def _show_login_header():
         <div id="dt-login-universe" aria-hidden="true">
           <div class="dt-stars"></div>
           <div class="dt-satellite"></div>
+          <div class="dt-sat-debris panel"></div><div class="dt-sat-debris"></div><div class="dt-sat-debris spark"></div>
           <div class="dt-spaceship"></div>
+          <div class="dt-ship-debris d1"></div><div class="dt-ship-debris d2"></div><div class="dt-ship-debris d3"></div><div class="dt-ship-debris d4"></div>
           <div class="dt-mountain dt-mountain-back"></div>
           <div class="dt-mountain dt-mountain-mid"></div>
           <div class="dt-mountain dt-mountain-front"></div>
