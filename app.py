@@ -495,6 +495,22 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
+    /* Animated binary layer: decorative only, never intercepts clicks. */
+    .dt-binary-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+      opacity: .105; color: #b8c9ff; font: 600 13px/1.9 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .28em; white-space: pre-wrap; overflow-wrap: anywhere;
+      text-shadow: 0 0 8px rgba(96,165,250,.38);
+      mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 85%, transparent);
+      animation: dt-binary-drift 26s linear infinite;
+    }
+    @keyframes dt-binary-drift {
+      from { transform: translateY(-8%); }
+      to { transform: translateY(8%); }
+    }
+    [data-testid="stAppViewContainer"] { isolation: isolate; }
+    [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
+    @media (prefers-reduced-motion: reduce) { .dt-binary-bg { animation: none; } }
     
         .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
         .arcade-banner h2 { margin: .35rem 0; color: white; }
@@ -504,6 +520,17 @@ def inject_premium_theme():
         @keyframes arcade-pop { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (prefers-reduced-motion: reduce) { .arcade-banner { animation: none; } }
 </style>""", unsafe_allow_html=True)
+    st.markdown(
+        """<div class="dt-binary-bg" aria-hidden="true">01001010 10110100 01010101 11001010 10101001 00110101 01101010 11010010
+10110101 01001101 11010100 00101011 10110010 01010110 01101001 10100101
+01011010 10100110 00101101 11010010 01101010 10010101 01001110 10110100
+10101001 01100101 11001010 00110110 01011010 10110101 00101101 11010010
+01101001 10100101 01011010 11010010 10110100 00101101 01101010 10100101
+01001110 11010010 10101001 00110101 01101010 11010010 10110101 01001101
+11010100 00101011 10110010 01010110 01101001 10100101 01011010 10100110
+00101101 11010010 01101010 10010101 01001110 10110100 10101001 01100101</div>""",
+        unsafe_allow_html=True,
+    )
 
 
 def load_campaign_report(upload, mappings):
