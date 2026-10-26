@@ -510,25 +510,30 @@ def inject_premium_theme():
     /* App-wide animated binary wave, shown behind every page and route. */
     .dt-binary-bg {
       position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-      opacity: .20; font: 600 10px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+      opacity: .065; font: 600 10px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
       letter-spacing: .12em; white-space: nowrap; user-select: none;
       mask-image: linear-gradient(to bottom, #000 0%, #000 100%);
     }
     .dt-binary-bg .dt-binary-row {
       position: absolute; left: -35%; width: 170%; height: 3.8vh; white-space: nowrap; overflow: visible;
-      color: #b8c9ff; text-shadow: 0 0 9px rgba(96,165,250,.32);
+      color: #b8c9ff; text-shadow: 0 0 5px rgba(96,165,250,.12);
       animation: dt-binary-wave 28s linear infinite alternate;
     }
     .dt-binary-bg .dt-binary-row:nth-child(2n) { color: #c4b5fd; animation-duration: 34s; animation-delay: -7s; }
     .dt-binary-bg .dt-binary-row:nth-child(3n) { color: #5eead4; animation-duration: 31s; animation-delay: -10s; }
     .dt-binary-bg .dt-binary-row:nth-child(4n) { color: #ff9bc6; animation-duration: 37s; animation-delay: -4s; }
     @keyframes dt-binary-wave {
-      0% { transform: translate3d(-3%, 0, 0); opacity: .48; }
-      50% { transform: translate3d(2%, 0, 0); opacity: .82; }
-      100% { transform: translate3d(-1%, 0, 0); opacity: .58; }
+      0% { transform: translate3d(-3%, 0, 0); opacity: .30; }
+      50% { transform: translate3d(2%, 0, 0); opacity: .48; }
+      100% { transform: translate3d(-1%, 0, 0); opacity: .34; }
     }
-    [data-testid="stAppViewContainer"] { isolation: isolate; }
+    /* Keep the animated binary overlay global to every route, including dashboard, chat and games. */
+    [data-testid="stAppViewContainer"] { position: relative; isolation: isolate; }
     [data-testid="stAppViewContainer"] > .main { position: relative; z-index: 1; background: transparent; }
+    [data-testid="stAppViewContainer"] > .main .dt-binary-bg {
+      position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important;
+      z-index: 0 !important; pointer-events: none !important;
+    }
     [data-testid="stSidebar"], [data-testid="stHeader"] { position: relative; z-index: 2; }
     @media (prefers-reduced-motion: reduce) { .dt-binary-bg .dt-binary-row { animation: none !important; } }
 
