@@ -1397,9 +1397,9 @@ def render_team_chat():
 def main():
     require_login()
     inject_premium_theme()
-    _game_zone_popup()
-
     page = st.query_params.get("page", "dashboard")
+    if page in {"game", "chat"}:
+        _game_zone_popup()
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
@@ -1413,37 +1413,37 @@ def main():
         render_team_chat()
         return
     # Landing-page hero: matches the requested Dreamztree black/navy + lime design.
+    # Landing page: retain Dreamztree's existing colorful theme with a wave-like binary background.
     st.markdown("""
     <style>
       .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
-        border-radius:28px; background:#080b16; border:1px solid rgba(255,255,255,.055);
-        box-shadow:0 22px 70px rgba(0,0,0,.24); isolation:isolate; }
-      .dt-landing:before {content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-        background:radial-gradient(ellipse at 50% 44%,rgba(178,255,0,.045),transparent 55%);}
-      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;}
+        border-radius:28px; background:linear-gradient(125deg,rgba(124,58,237,.25),rgba(37,99,235,.18) 48%,rgba(13,148,136,.20));
+        border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
+      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;
+        background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
+      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
       .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
-      .dt-brand-icon {display:grid;place-items:center;width:58px;height:58px;border-radius:16px;background:#b6ff18;color:#07090e;font-size:29px;font-weight:900;}
-      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#b6ff18;letter-spacing:.035em;text-align:right;}
-      .dt-landing-kicker {text-align:center;color:#b6ff18;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;}
-      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;}
-      .dt-landing-copy {text-align:center;color:#aeb6c7;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;}
-      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;}
-      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:20px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
-      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(182,255,24,.15);}
-      .dt-landing-actions .primary {background:#b6ff18;color:#07090e!important;border:1px solid #b6ff18;font-weight:750;}
-      .dt-landing-actions .secondary {background:transparent;color:#f8f9fc!important;border:1px solid #596174;}
-      .dt-binary-line {text-align:center;color:#364255;font:500 1rem ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;margin-top:44px;animation:dt-binary-breathe 4s ease-in-out infinite;}
-      @keyframes dt-binary-breathe {0%,100%{opacity:.55;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
-      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(5,7,12,.72);}
+      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
+      .dt-landing-kicker {text-align:center;color:#77f3df;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;position:relative;}
+      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;position:relative;}
+      .dt-landing-copy {text-align:center;color:#d2def2;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;position:relative;}
+      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;position:relative;}
+      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:16px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
+      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(96,165,250,.18);}
+      .dt-landing-actions .primary {background:linear-gradient(100deg,#ec4899,#8b5cf6 55%,#2563eb);color:#fff!important;border:1px solid rgba(255,255,255,.18);font-weight:750;}
+      .dt-landing-actions .secondary {background:rgba(15,23,42,.25);color:#f8f9fc!important;border:1px solid rgba(167,139,250,.55);}
+      .dt-binary-line {text-align:center;color:#a7b5d0;font:500 1rem ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.08em;margin-top:44px;position:relative;animation:dt-binary-wave 5s ease-in-out infinite;}
+      @keyframes dt-binary-wave {0%,100%{opacity:.45;transform:translateY(0) skewX(0deg);letter-spacing:.08em}25%{opacity:.8;transform:translateY(-5px) skewX(-1deg)}50%{opacity:1;transform:translateY(2px) skewX(1deg);letter-spacing:.13em}75%{opacity:.75;transform:translateY(-3px) skewX(-.5deg)}}
+      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(167,139,250,.32);border-radius:24px;background:linear-gradient(120deg,rgba(99,102,241,.14),rgba(20,184,166,.08));}
       .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
-      .dt-report-intro p {margin:0;color:#b9c0ce;font-size:1rem;}
+      .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
       .dt-landing + div {scroll-margin-top:24px;}
-      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand-icon{width:44px;height:44px;border-radius:12px}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}.dt-binary-line{margin-top:32px;font-size:.75rem}}
+      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}.dt-binary-line{margin-top:32px;font-size:.75rem}}
       @media(prefers-reduced-motion:reduce){.dt-binary-line,.dt-landing-actions a{animation:none;transition:none}}
     </style>
     <section class="dt-landing">
       <div class="dt-brand-row">
-        <div class="dt-brand"><span class="dt-brand-icon">↗</span><span>DREAMZTREE</span></div>
+        <div class="dt-brand">DREAMZTREE</div>
         <div class="dt-brand-tag">MARKETING INTELLIGENCE</div>
       </div>
       <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
