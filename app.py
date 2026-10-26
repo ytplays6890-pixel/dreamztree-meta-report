@@ -3,6 +3,8 @@ import random
 import hmac
 import hashlib
 import os
+import json
+import time
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -12,7 +14,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from supabase import create_client
 
-st.set_page_config(page_title="Dreamztree Meta Report", page_icon="🌴", layout="wide")
+st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
@@ -362,6 +364,11 @@ def inject_premium_theme():
     @keyframes dt-shimmer {0% {background-position:-200% center} 100% {background-position:200% center}}
     @keyframes dt-orbit {from {transform:rotate(0deg) translateX(18px) rotate(0deg)} to {transform:rotate(360deg) translateX(18px) rotate(-360deg)}}
     @keyframes dt-pulse {0%,100% {opacity:.28; transform:scale(.88)} 50% {opacity:1; transform:scale(1.22)}}
+    @keyframes dt-particle-drift {
+      0% { background-position: 0 0, 35px 70px, 90px 20px; transform: translate3d(0,0,0); }
+      50% { background-position: 70px -55px, -25px 25px, 40px 95px; transform: translate3d(0,-8px,0); }
+      100% { background-position: 140px -110px, -85px -20px, -10px 170px; transform: translate3d(0,0,0); }
+    }
     @keyframes dt-chart-rise {from {opacity:0; transform:translateY(22px) scale(.985)} to {opacity:1; transform:translateY(0) scale(1)}}
     :root {
       --dt-ink: #f8faff; --dt-muted: #c0cce0; --dt-pink: #ff6ba8;
@@ -386,10 +393,17 @@ def inject_premium_theme():
       animation:dt-float 6s ease-in-out infinite;
     }
     [data-testid="stAppViewContainer"]:after {
-      content:""; position:fixed; z-index:-1; pointer-events:none; width:30rem; height:30rem;
-      right:-12rem; bottom:3%; border-radius:50%; filter:blur(75px);
-      background:radial-gradient(circle,rgba(236,72,153,.12),rgba(20,184,166,.05) 48%,transparent 72%);
-      animation:dt-float 7.5s ease-in-out infinite reverse;
+      content:""; position:fixed; z-index:-1; pointer-events:none; inset:0;
+      opacity:.34;
+      background-image:
+        radial-gradient(circle, rgba(167,139,250,.72) 0 1px, transparent 1.8px),
+        radial-gradient(circle, rgba(96,165,250,.62) 0 1px, transparent 1.8px),
+        radial-gradient(circle, rgba(94,234,212,.52) 0 1px, transparent 1.8px);
+      background-size: 180px 180px, 230px 230px, 290px 290px;
+      animation:dt-particle-drift 32s linear infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-testid="stAppViewContainer"]:after { animation:none; }
     }
     [data-testid="stHeader"] {background: rgba(11,16,32,.72); backdrop-filter: blur(14px);}
     [data-testid="stSidebar"] {
@@ -493,8 +507,28 @@ def inject_premium_theme():
       .hero {padding: 22px 20px; border-radius: 18px;}
       [data-testid="stMetric"] {padding: 14px;}
     }
-    
-        .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
+/* Global binary animation: CSS background is attached to the app root, not a single page card. */
+    .stApp { position: relative; isolation: isolate; }
+    .stApp::before {
+      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      opacity: .035; background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDEyMDAgMTUwIj48ZyBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iNjAwIiBsZXR0ZXItc3BhY2luZz0iMi40IiBmaWxsPSIjOWFhOWQ4IiBvcGFjaXR5PSIwLjcyIj48dGV4dCB4PSIwIiB5PSIyMiI+MDEwMDEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTAgMTEwMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMDEwMDEgMDExMDAxMTA8L3RleHQ+PHRleHQgeD0iLTQwIiB5PSI1NyIgZmlsbD0iI2I3YTZmNSI+MTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMDEwMTEwMTAgMTEwMTAwMTAgMDExMDEwMTAgMDAxMTAxMDEgMTAxMDAxMTAgMDEwMTExMDAgMTAxMTAxMDAgMDEwMDEwMTAgMTEwMDEwMTAgMDExMDEwMDE8L3RleHQ+PHRleHQgeD0iMTAiIHk9IjkyIiBmaWxsPSIjNzdkOWQwIj4wMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMCAwMTAwMTAxMCAxMTAwMTAxMCAxMDEwMDEwMSAwMTEwMTAxMCAxMTAwMTAxMCAwMDExMDEwMSAwMTEwMTAwMSAxMTAxMDAxMCAwMTAxMTAxMCAxMDExMDEwMDwvdGV4dD48dGV4dCB4PSItMjAiIHk9IjEyNyIgZmlsbD0iI2Q2OGViNyI+MTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDAgMDEwMDEwMTAgMDExMDEwMDEgMTAxMDAxMDEgMTEwMTAwMTAgMDEwMTEwMTAgMTAxMTAxMDAgMDExMDEwMDEgMTEwMDEwMTAgMDExMDEwMTAgMTAxMTAxMDA8L3RleHQ+PC9nPjwvc3ZnPg==");
+      background-repeat: repeat; background-size: 1200px 150px;
+      animation: dt-global-binary-drift 70s linear infinite;
+      will-change: background-position;
+    }
+    [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stSidebar"],
+    [data-testid="stMainBlockContainer"], .main { position: relative; z-index: 1; }
+    [data-testid="stAppViewContainer"] { background: transparent; }
+    [data-testid="stStatusWidget"], [data-testid="stToast"], [data-testid="stNotification"],
+    [data-testid="stAlert"], .dt-game-toast { position: relative; z-index: 10000; }
+    @keyframes dt-global-binary-drift {
+      0% { background-position: 0 0; }
+      50% { background-position: 90px 75px; }
+      100% { background-position: 180px 150px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .stApp::before { animation: none !important; } }
+
+    .arcade-banner { margin: 1rem 0; padding: 1.4rem 1.6rem; border-radius: 22px; border: 1px solid rgba(232,121,249,.65); background: linear-gradient(120deg, rgba(91,33,182,.82), rgba(14,165,233,.68), rgba(236,72,153,.72)); background-size: 220% 220%; animation: arcade-gradient 5s ease infinite, arcade-pop .55s ease both; box-shadow: 0 0 28px rgba(168,85,247,.28); }
         .arcade-banner h2 { margin: .35rem 0; color: white; }
         .arcade-banner p { margin-bottom: 0; color: #f5f3ff; }
         .arcade-kicker { letter-spacing: .18em; font-size: .72rem; font-weight: 900; color: #fef08a; }
@@ -567,9 +601,18 @@ def summarize_campaign_performance(frame, exchange_rate):
 
 
 def get_supabase_client():
-    """Create one Supabase client per Streamlit browser session."""
+    """Create or restore the Supabase client for this Streamlit session."""
     if "supabase_client" in st.session_state:
-        return st.session_state["supabase_client"]
+        client = st.session_state["supabase_client"]
+        access_token = st.session_state.get("supabase_access_token")
+        refresh_token = st.session_state.get("supabase_refresh_token")
+        if access_token and refresh_token:
+            try:
+                client.auth.set_session(access_token, refresh_token)
+            except Exception:
+                # Keep the existing client; the login screen can request a fresh sign-in.
+                pass
+        return client
 
     # Render uses environment variables; Streamlit Cloud can still use secrets.toml.
     supabase_url = str(os.environ.get("SUPABASE_URL", "")).strip()
@@ -588,6 +631,13 @@ def get_supabase_client():
     try:
         client = create_client(supabase_url, publishable_key)
         st.session_state["supabase_client"] = client
+        access_token = st.session_state.get("supabase_access_token")
+        refresh_token = st.session_state.get("supabase_refresh_token")
+        if access_token and refresh_token:
+            try:
+                client.auth.set_session(access_token, refresh_token)
+            except Exception:
+                pass
         return client
     except Exception as exc:
         st.session_state["supabase_setup_error"] = str(exc)
@@ -610,53 +660,24 @@ def _show_login_header():
         @keyframes dt-login-shift {0%,100% {background-position:0% 50%;} 50% {background-position:100% 50%;}}
         @keyframes dt-login-glow {0%,100% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 10px rgba(124,58,237,.08),inset 0 1px rgba(255,255,255,.08)} 50% {box-shadow:0 22px 60px rgba(0,0,0,.3),0 0 34px rgba(96,165,250,.2),inset 0 1px rgba(255,255,255,.08)}}
         @keyframes dt-login-orbit {from {transform:rotate(0deg) translateX(15px) rotate(0deg)} to {transform:rotate(360deg) translateX(15px) rotate(-360deg)}}
-        /* Full-screen animated space + mountain scene, login page only. */
+        @keyframes dt-ambient-drift {0%,100% {background-position:0% 0%,100% 0%,0% 50%;} 50% {background-position:18% 22%,82% 18%,100% 50%;}}
+        @keyframes dt-card-shimmer {0% {transform:translateX(-130%) rotate(12deg); opacity:0;} 18% {opacity:.45;} 48% {opacity:0;} 100% {transform:translateX(240%) rotate(12deg); opacity:0;}}
+        @keyframes dt-orb-float {0%,100% {transform:translate3d(0,0,0) scale(1);} 50% {transform:translate3d(0,-16px,0) scale(1.06);}}
+        @keyframes dt-button-breathe {0%,100% {box-shadow:0 7px 20px rgba(124,58,237,.2);} 50% {box-shadow:0 9px 28px rgba(59,130,246,.34),0 0 16px rgba(94,234,212,.13);}}
+        @keyframes dt-tab-enter {from {opacity:0; transform:translateY(12px);} to {opacity:1; transform:translateY(0);}}
         [data-testid="stAppViewContainer"] {
-          background: #100b2c !important;
-          position: relative;
-          isolation: isolate;
+          background: radial-gradient(circle at 12% 5%, rgba(124,58,237,.36), transparent 32%),
+            radial-gradient(circle at 90% 12%, rgba(236,72,153,.22), transparent 28%),
+            linear-gradient(135deg, #0b1020, #11152b 55%, #101827);
+          background-size: 140% 140%, 140% 140%, 220% 220%;
+          animation: dt-ambient-drift 24s ease-in-out infinite;
         }
-        [data-testid="stAppViewContainer"]:has(.login-panel)::before {
-          content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
-          background:
-            radial-gradient(1.5px 1.5px at 8% 17%, #fff 98%, transparent),
-            radial-gradient(1px 1px at 19% 67%, #e9d5ff 98%, transparent),
-            radial-gradient(2px 2px at 31% 23%, #fff 98%, transparent),
-            radial-gradient(1px 1px at 47% 12%, #fff 98%, transparent),
-            radial-gradient(1.5px 1.5px at 61% 35%, #e9d5ff 98%, transparent),
-            radial-gradient(1px 1px at 72% 16%, #fff 98%, transparent),
-            radial-gradient(2px 2px at 86% 28%, #fff 98%, transparent),
-            radial-gradient(1px 1px at 93% 61%, #e9d5ff 98%, transparent),
-            radial-gradient(1px 1px at 13% 43%, #fff 98%, transparent),
-            radial-gradient(1.5px 1.5px at 39% 54%, #fff 98%, transparent),
-            radial-gradient(1px 1px at 55% 72%, #fff 98%, transparent),
-            radial-gradient(1.5px 1.5px at 78% 52%, #fff 98%, transparent),
-            linear-gradient(180deg, #140b36 0%, #38206c 56%, #171038 100%);
-          background-size: 100% 100%; animation: dt-star-drift 48s linear infinite;
+        [data-testid="stAppViewContainer"]::after {
+          content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+          background: radial-gradient(circle at 17% 72%, rgba(94,234,212,.075), transparent 18%),
+                      radial-gradient(circle at 82% 66%, rgba(168,85,247,.09), transparent 21%);
+          animation: dt-orb-float 12s ease-in-out infinite;
         }
-        [data-testid="stAppViewContainer"]:has(.login-panel)::after {
-          content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900' preserveAspectRatio='none'%3E%3Cpath fill='%233d2479' d='M0 580L180 400 330 530 520 310 710 535 910 355 1100 520 1310 300 1600 560V900H0Z'/%3E%3Cpath fill='%232b185e' d='M0 700L240 490 410 650 660 420 860 640 1090 450 1320 660 1490 500 1600 590V900H0Z'/%3E%3Cpath fill='%231c1645' d='M0 790L240 640 430 750 650 600 840 760 1080 620 1280 770 1480 630 1600 710V900H0Z'/%3E%3C/svg%3E");
-          background-size: 115% 100%; background-position: center bottom; background-repeat: no-repeat;
-          animation: dt-mountain-drift 32s ease-in-out infinite alternate;
-        }
-        @keyframes dt-star-drift {0%{background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,center;}100%{background-position:30px -90px,-25px -60px,20px -110px,-20px -70px,35px -90px,-30px -80px,25px -100px,-15px -75px,30px -60px,-20px -90px,15px -70px,-30px -95px,center;}}
-        @keyframes dt-mountain-drift {0%{transform:scale(1); background-position:48% bottom;}100%{transform:scale(1.07);background-position:54% bottom;}}
-        .dt-space-comet {position:fixed; z-index:0; top:14%; left:-24vw; width:170px; height:2px; pointer-events:none;
-          background:linear-gradient(90deg,transparent,rgba(167,139,250,.25),#fff,#c4b5fd); box-shadow:0 0 12px #c4b5fd;
-          transform:rotate(-19deg); animation:dt-comet-flight 13s linear infinite;}
-        .dt-space-comet:after {content:""; position:absolute; right:-3px; top:-3px; width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 14px 4px #c4b5fd;}
-        @keyframes dt-comet-flight {0%{left:-24vw;top:18%;opacity:0}8%{opacity:1}28%{left:110vw;top:4%;opacity:0}100%{left:110vw;top:4%;opacity:0}}
-        .dt-space-satellite {position:fixed; z-index:0; top:24%; left:-80px; width:22px;height:10px; pointer-events:none;
-          border-radius:3px; background:linear-gradient(90deg,#a5b4fc 0 25%,#e2e8f0 25% 75%,#a5b4fc 75%);
-          box-shadow:0 0 10px rgba(165,180,252,.7); animation:dt-satellite-flight 29s linear infinite;}
-        .dt-space-satellite:before,.dt-space-satellite:after {content:"";position:absolute;top:1px;width:13px;height:8px;background:repeating-linear-gradient(90deg,#2563eb 0 3px,#93c5fd 3px 4px);border:1px solid #c4b5fd;}
-        .dt-space-satellite:before{right:100%;margin-right:2px}.dt-space-satellite:after{left:100%;margin-left:2px}
-        @keyframes dt-satellite-flight {0%{transform:translate(-10vw,0) rotate(12deg)}100%{transform:translate(115vw,22vh) rotate(12deg)}}
-        .dt-space-spark {position:fixed;z-index:0;left:68%;top:8%;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 12px 3px #c4b5fd;pointer-events:none;animation:dt-sparkle 2.8s ease-in-out infinite;}
-        @keyframes dt-sparkle {0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:1;transform:scale(1.8)}}
-        [data-testid="stHeader"] {background: transparent;}
-        [data-testid="stAppViewContainer"]:has(.login-panel) .block-container {position:relative;z-index:2;}
         [data-testid="stHeader"] {background: transparent;}
         /* Limit the login page width without changing the dashboard after login. */
         .block-container:has(.login-panel) {
@@ -685,6 +706,26 @@ def _show_login_header():
         }
         .login-panel:after {content:""; position:absolute; width:145px; height:145px; right:9%; bottom:-112px; border-radius:50%;
           border:1px solid rgba(94,234,212,.3); box-shadow:0 0 28px rgba(96,165,250,.13); pointer-events:none; animation:dt-login-orbit 16s linear infinite;}
+        .login-panel:before {content:""; position:absolute; top:-45%; left:0; width:34%; height:190%;
+          background:linear-gradient(90deg,transparent,rgba(255,255,255,.085),rgba(94,234,212,.09),transparent);
+          transform:translateX(-130%) rotate(12deg); pointer-events:none; animation:dt-card-shimmer 9s ease-in-out 2s infinite;}
+        .login-panel > * {position:relative; z-index:1;}
+        /* Gentle hover feedback keeps the page lively without interfering with authentication. */
+        [data-testid="stFormSubmitButton"] button, [data-testid="stForm"] button[kind="primary"] {
+          border:1px solid rgba(167,139,250,.28) !important; border-radius:11px !important;
+          background:linear-gradient(105deg,#7c3aed,#3b82f6 58%,#0d9488) !important;
+          background-size:180% 180% !important; color:#fff !important; font-weight:750 !important;
+          transition:transform .22s ease, filter .22s ease, box-shadow .22s ease !important;
+          animation:dt-button-breathe 5s ease-in-out 2s infinite;
+        }
+        [data-testid="stFormSubmitButton"] button:hover, [data-testid="stForm"] button[kind="primary"]:hover {
+          transform:translateY(-2px); filter:brightness(1.12); box-shadow:0 12px 28px rgba(124,58,237,.28) !important;
+        }
+        [data-testid="stFormSubmitButton"] button:active {transform:translateY(0) scale(.99);}
+        [data-testid="stTabs"] [data-baseweb="tab"] {transition:color .2s ease, background .2s ease;}
+        [data-testid="stTabs"] [data-baseweb="tab"]:hover {color:#5eead4;}
+        [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input {transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;}
+        [data-testid="stTextInput"] input:focus {background:rgba(30,41,59,.92);}
         /* Keep tabs and forms centered and compact, and bring them into view after the logo. */
         div[data-testid="stTabs"] {
           max-width:620px; width:100%; margin:0 auto !important;
@@ -694,7 +735,18 @@ def _show_login_header():
           max-width:620px; margin-left:auto; margin-right:auto;
           opacity:0; animation:dt-login-panel-rise 1.0s cubic-bezier(.2,.75,.25,1) 1.4s forwards;
         }
-        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {box-shadow:0 0 0 1px rgba(94,234,212,.6),0 0 18px rgba(96,165,250,.14);}
+        [data-testid="stTextInput"] input:focus, [data-testid="stNumberInput"] input:focus {
+          box-shadow:0 0 0 1px rgba(94,234,212,.72),0 0 20px rgba(96,165,250,.2);
+          border-color:rgba(94,234,212,.8) !important;
+        }
+        @keyframes dt-field-arrive {from {transform:translateY(5px);opacity:.72;} to {transform:translateY(0);opacity:1;}}
+        @keyframes dt-login-error-shake {0%,100% {transform:translateX(0)} 25% {transform:translateX(-4px)} 50% {transform:translateX(4px)} 75% {transform:translateX(-2px)}}
+        @keyframes dt-auth-pulse {0%,100% {filter:brightness(1);box-shadow:0 7px 20px rgba(124,58,237,.22)} 50% {filter:brightness(1.12);box-shadow:0 0 30px rgba(94,234,212,.24),0 9px 28px rgba(59,130,246,.34)}}
+        [data-testid="stTextInput"] input:focus {animation:dt-field-arrive .22s ease-out;}
+        [data-testid="stTextInput"]:focus-within label {color:#5eead4 !important;transition:color .2s ease;}
+        [data-testid="stFormSubmitButton"] button:focus-visible {outline:2px solid #5eead4 !important;outline-offset:3px;}
+        [data-testid="stFormSubmitButton"] button:disabled {opacity:.8;cursor:wait;}
+        [data-testid="stAlert"] {animation:dt-login-panel-rise .28s ease-out both;}
         .login-kicker {letter-spacing: .18em; text-transform: uppercase; color: #77f3df; font-size: .75rem; font-weight: 900;}
         .login-panel h1 {color: #fff; text-shadow: 0 4px 25px rgba(96,165,250,.18); font-size:clamp(1.7rem,3vw,2.25rem); line-height:1.12;}
         .login-panel p {color: #d6def0;}
@@ -703,7 +755,9 @@ def _show_login_header():
           .login-panel {padding:1.3rem 1.2rem; margin-top:-8px;}
         }
         @media (prefers-reduced-motion: reduce) {
-          .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"] {animation:none !important; opacity:1 !important; transform:none !important;}
+          .dt-login-logo,.login-panel,div[data-testid="stTabs"],[data-testid="stForm"],[data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"]::after,
+          [data-testid="stFormSubmitButton"] button,.login-panel:before,.login-panel:after,
+          [data-testid="stTextInput"] input:focus,[data-testid="stAlert"] {animation:none !important; opacity:1 !important; transform:none !important;}
         }
         /* Safety fallback: never leave login content invisible if animation timing is interrupted. */
         @media (max-width:700px) {
@@ -712,10 +766,50 @@ def _show_login_header():
           .login-panel {max-width:100%;}
           div[data-testid="stTabs"],[data-testid="stForm"] {max-width:100%;}
         }
+        /* Stronger, browser-side interactions: these work even inside st.form. */
+        [data-testid="stTextInput"] { transition: transform .22s ease, filter .22s ease; }
+        [data-testid="stTextInput"]:focus-within { transform: translateY(-2px); filter: drop-shadow(0 0 10px rgba(94,234,212,.13)); }
+        [data-testid="stTextInput"] input {
+          border: 1px solid rgba(148,163,184,.38) !important;
+          border-radius: 12px !important;
+          background: rgba(10,16,32,.68) !important;
+          transition: border-color .25s ease, box-shadow .25s ease, background .25s ease, transform .25s ease !important;
+        }
+        [data-testid="stTextInput"] input:hover { border-color: rgba(167,139,250,.8) !important; }
+        [data-testid="stTextInput"] input:focus {
+          border-color: #5eead4 !important;
+          background: rgba(18,29,48,.96) !important;
+          box-shadow: 0 0 0 1px rgba(94,234,212,.45), 0 0 0 5px rgba(59,130,246,.10), 0 0 24px rgba(94,234,212,.18) !important;
+          transform: translateY(-1px);
+        }
+        [data-testid="stForm"] {
+          border: 1px solid rgba(167,139,250,.28) !important;
+          border-radius: 18px !important;
+          padding: 1.25rem !important;
+          background: rgba(12,18,35,.56) !important;
+          backdrop-filter: blur(14px);
+          box-shadow: 0 18px 48px rgba(0,0,0,.18);
+        }
+        [data-testid="stFormSubmitButton"] button {
+          min-height: 48px !important;
+          background: linear-gradient(110deg,#7c3aed,#3b82f6,#0d9488,#7c3aed) !important;
+          background-size: 260% 260% !important;
+          animation: dt-login-shift 5s ease-in-out infinite, dt-button-breathe 3.5s ease-in-out infinite !important;
+          box-shadow: 0 8px 24px rgba(124,58,237,.24) !important;
+        }
+        [data-testid="stFormSubmitButton"] button:hover {
+          transform: translateY(-2px) scale(1.01) !important;
+          filter: brightness(1.13) saturate(1.12) !important;
+          box-shadow: 0 12px 32px rgba(59,130,246,.32), 0 0 18px rgba(94,234,212,.18) !important;
+        }
+        [data-testid="stFormSubmitButton"] button:active { transform: scale(.985) !important; }
+        [data-testid="stTabs"] button[role="tab"] { transition: color .2s ease, background .2s ease, box-shadow .2s ease; }
+        [data-testid="stTabs"] button[role="tab"]:hover { color:#5eead4 !important; }
+        @media (prefers-reduced-motion: reduce) {
+          [data-testid="stTextInput"], [data-testid="stTextInput"] input,
+          [data-testid="stFormSubmitButton"] button { animation:none !important; transition:none !important; }
+        }
         </style>
-        <div class="dt-space-comet" aria-hidden="true"></div>
-        <div class="dt-space-satellite" aria-hidden="true"></div>
-        <div class="dt-space-spark" aria-hidden="true"></div>
         <div class="dt-login-logo">
           <img class="dt-login-logo-image" alt="Dreamztree logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABT4AAAW3CAYAAABpEW6xAAAgAElEQVR4nOzdyXLbRhiFUSnl939lZuHIkWgOGBrd/3BOlXfJIgSiUF9uAx8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC0BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALQHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC0BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0MntdvsXjqmbVHamOtwAAAAASUVORK5CYII=" />
         </div>
@@ -783,27 +877,24 @@ def require_login():
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
+                    st.session_state["login_just_succeeded"] = True
                     st.rerun()
                 elif "@" in login_id:
                     try:
-                        response = client.auth.sign_in_with_password(
-                            {"email": login_id, "password": password}
-                        )
+                        with st.spinner("Authenticating securely…"):
+                            response = client.auth.sign_in_with_password(
+                                {"email": login_id, "password": password}
+                            )
                         if response and response.user:
+                            if getattr(response, "session", None):
+                                st.session_state["supabase_access_token"] = response.session.access_token
+                                st.session_state["supabase_refresh_token"] = response.session.refresh_token
                             st.session_state["authenticated"] = True
                             st.session_state["authenticated_user"] = (
                                 response.user.email or login_id
                             )
                             st.session_state["auth_method"] = "supabase"
-                            st.session_state["auth_user_id"] = str(response.user.id)
-                            try:
-                                client.table("profiles").upsert({
-                                    "id": str(response.user.id),
-                                    "username": (response.user.user_metadata or {}).get("username") or (response.user.email or login_id).split("@")[0],
-                                    "email": response.user.email or login_id,
-                                }).execute()
-                            except Exception:
-                                pass
+                            st.session_state["login_just_succeeded"] = True
                             st.rerun()
                         else:
                             st.error("Sign-in failed. Check your email and password.")
@@ -843,27 +934,29 @@ def require_login():
                 st.error("The passwords do not match.")
             else:
                 try:
-                    response = client.auth.sign_up(
-                        {
-                            "email": new_email,
-                            "password": new_password,
-                            "options": {"data": {"username": new_username}},
-                        }
-                    )
+                    with st.spinner("Creating your secure account…"):
+                        response = client.auth.sign_up(
+                            {
+                                "email": new_email,
+                                "password": new_password,
+                                "options": {"data": {"username": new_username}},
+                            }
+                        )
                     if response and response.session and response.user:
+                        st.session_state["supabase_access_token"] = response.session.access_token
+                        st.session_state["supabase_refresh_token"] = response.session.refresh_token
                         st.session_state["authenticated"] = True
                         st.session_state["authenticated_user"] = (
                             response.user.email or new_email
                         )
                         st.session_state["auth_method"] = "supabase"
-                        st.session_state["auth_user_id"] = str(response.user.id)
-                        # Store a small public profile for the colleague list.
+                        st.session_state["login_just_succeeded"] = True
+                        # Profile details are optional; Auth remains the source of truth.
                         try:
                             client.table("profiles").upsert(
                                 {
-                                    "id": str(response.user.id),
+                                    "id": response.user.id,
                                     "username": new_username,
-                                    "email": new_email,
                                 }
                             ).execute()
                         except Exception:
@@ -883,6 +976,160 @@ def require_login():
     st.stop()
 
 
+def _ludo_default_state():
+    return {
+        "players": [], "tokens": {}, "turn": 0, "dice": None,
+        "rolled": False, "winner": None, "updated_at": datetime.utcnow().isoformat()
+    }
+
+
+def render_ludo_online():
+    'Classic-style four-token online Ludo using the existing Supabase room table.'
+    st.markdown("### 🎲 Ludo Online · Classic gameplay")
+    st.caption("Play online with colleagues, or choose Play Ludo with 3 bots when nobody is available. Four tokens each, roll a 6 to leave base, capture opponents, and reach home.")
+    client = get_supabase_client()
+    if client is None:
+        st.error("Supabase is not configured. Check the URL and publishable key in Streamlit Secrets.")
+        return
+    try:
+        user = client.auth.get_user().user
+        if not user:
+            raise ValueError("No authenticated user")
+    except Exception:
+        st.warning("Please sign in with your Supabase email and password to play online.")
+        return
+    uid = str(user.id)
+    email = str(user.email or "")
+    meta = getattr(user, "user_metadata", None) or {}
+    name = str(meta.get("username") or meta.get("name") or email.split("@")[0] or "Player")[:30]
+    token = st.session_state.get("supabase_access_token", "")
+    try:
+        cfg = st.secrets["supabase"]
+        url, key = str(cfg["url"]).rstrip("/"), str(cfg["publishable_key"])
+    except Exception:
+        st.error("Missing Supabase URL or publishable key in Streamlit Secrets.")
+        return
+    if not token:
+        st.warning("No active Supabase session token. Sign out and sign in with your Supabase email/password.")
+        return
+    left, right = st.columns(2)
+    with left:
+        if st.button("🎲 Create classic Ludo room", type="primary", use_container_width=True):
+            code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+            state = _ludo_default_state()
+            state["players"] = [{"id": uid, "name": name, "color": "red"}]
+            state["tokens"] = {uid: [-1, -1, -1, -1]}
+            try:
+                client.table("ludo_rooms").insert({"room_code": code, "created_by": uid, "state": state}).execute()
+                st.session_state["ludo_room_code"] = code
+                st.success(f"Room created: {code}. Share this code with colleagues.")
+                st.rerun()
+            except Exception as exc:
+                st.error("Could not create room. Run the Ludo SQL setup first.")
+                st.caption(str(exc))
+    with left:
+        if st.button("🤖 Play Ludo with 3 bots", use_container_width=True, key="ludo_vs_bots"):
+            code = ''.join(random.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+            state = _ludo_default_state()
+            state["players"] = [
+                {"id": uid, "name": name, "color": "red"},
+                {"id": "bot-blue", "name": "Blue Bot", "color": "blue", "is_bot": True},
+                {"id": "bot-yellow", "name": "Yellow Bot", "color": "yellow", "is_bot": True},
+                {"id": "bot-green", "name": "Green Bot", "color": "green", "is_bot": True},
+            ]
+            state["tokens"] = {uid: [-1, -1, -1, -1], "bot-blue": [-1, -1, -1, -1], "bot-yellow": [-1, -1, -1, -1], "bot-green": [-1, -1, -1, -1]}
+            try:
+                client.table("ludo_rooms").insert({"room_code": code, "created_by": uid, "state": state}).execute()
+                st.session_state["ludo_room_code"] = code
+                st.success(f"Bot game created: {code}. You are Red; play against three bots.")
+                st.rerun()
+            except Exception as exc:
+                st.error("Could not create bot game. Check the Ludo SQL setup.")
+                st.caption(str(exc))
+    with right:
+        code_in = st.text_input("Colleague's room code", max_chars=6, key="ludo_join_code").strip().upper()
+        if st.button("Join Ludo room", use_container_width=True):
+            try:
+                rows = client.table("ludo_rooms").select("room_code,state").eq("room_code", code_in).limit(1).execute().data or []
+                if not rows:
+                    st.error("Room not found. Check the code.")
+                else:
+                    state = rows[0].get("state") or _ludo_default_state()
+                    players = state.setdefault("players", [])
+                    if not any(str(pl.get("id")) == uid for pl in players):
+                        if len(players) >= 4:
+                            st.error("This room already has four players.")
+                            return
+                        colors = ["red", "blue", "green", "yellow"]
+                        used = {pl.get("color") for pl in players}
+                        color = next(c for c in colors if c not in used)
+                        players.append({"id": uid, "name": name, "color": color})
+                        state.setdefault("tokens", {})[uid] = [-1, -1, -1, -1]
+                        state["turn"] = 0
+                        state["dice"] = None
+                        state["rolled"] = False
+                        client.table("ludo_rooms").update({"state": state}).eq("room_code", code_in).execute()
+                    st.session_state["ludo_room_code"] = code_in
+                    st.rerun()
+            except Exception as exc:
+                st.error("Could not join room. Check the SQL setup and table policies.")
+                st.caption(str(exc))
+    room = st.session_state.get("ludo_room_code", "")
+    if not room:
+        st.info("Create a room or enter a colleague's room code to start.")
+        return
+    try:
+        rows = client.table("ludo_rooms").select("state").eq("room_code", room).limit(1).execute().data or []
+        if not rows:
+            st.warning("Room not found. Create or join another room.")
+            return
+        state = rows[0].get("state") or _ludo_default_state()
+        players = state.get("players", [])
+        st.markdown(f"### Current room: `{room}`")
+        st.write("Players: " + (" · ".join(f"{pl.get('name', 'Player')} ({pl.get('color', '')})" for pl in players) if players else "Waiting for players"))
+        payload = json.dumps({"url": url, "key": key, "token": token, "room": room, "uid": uid}).replace("</", "<\\/")
+        html = r'''<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% 0%,#253b68 0%,#10182e 62%);color:#f8fafc}.panel{padding:clamp(12px,2.2vw,22px);border:1px solid #ffffff20;border-radius:22px;background:linear-gradient(145deg,#17233d,#0c1428);box-shadow:0 22px 60px #02061780,inset 0 1px #ffffff12}#status{text-align:center;color:#a7f3d0;font-weight:800;margin:8px 0 14px;font-size:clamp(14px,2vw,17px);letter-spacing:.01em;min-height:24px}.boardwrap{max-width:680px;margin:16px auto 10px;padding:10px;border-radius:22px;background:linear-gradient(145deg,#f8fafc,#cbd5e1 52%,#94a3b8);box-shadow:0 14px 32px #02061770,inset 0 2px 2px #fff}.boardwrap canvas{width:100%;height:auto;display:block;border-radius:14px;touch-action:manipulation;filter:drop-shadow(0 4px 6px #0f172a30)}.row{display:flex;gap:10px;justify-content:center;margin:14px;flex-wrap:wrap}.row button{padding:12px 20px;border:1px solid #ffffff28;border-radius:13px;font-weight:800;background:linear-gradient(135deg,#f472b6,#8b5cf6 55%,#3b82f6);color:white;cursor:pointer;box-shadow:0 7px 18px #6366f155;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}.row button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 10px 24px #6366f177}.row button:active:not(:disabled){transform:translateY(1px) scale(.99)}.row button:disabled{opacity:.42;filter:grayscale(.35);box-shadow:none}.hint{text-align:center;color:#cbd5e1;font-size:13px;line-height:1.6;max-width:680px;margin:12px auto 2px}.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px}.chip{padding:7px 11px;border-radius:999px;background:#ffffff0c;border:1px solid #ffffff18;font-size:12px;font-weight:700;box-shadow:inset 0 1px #ffffff0c}
+</style></head><body><div class="panel"><div id="status">Connecting…</div><div class="chips" id="players"></div><div class="boardwrap"><canvas id="board" width="600" height="600"></canvas></div><div class="row"><button id="roll">🎲 Roll dice</button><button id="refresh">↻ Refresh</button></div><div class="hint">Classic rules: roll a 6 to enter a token, click one of your glowing tokens to move, capture opponents, and reach home exactly. A 6 or capture earns another turn.</div></div><script>
+const C=PAYLOAD,api=C.url+'/rest/v1/',H={'apikey':C.key,'Authorization':'Bearer '+C.token,'Content-Type':'application/json'};const cv=document.getElementById('board'),ctx=cv.getContext('2d'),status=document.getElementById('status'),playerBox=document.getElementById('players');let state=null,busy=false,localDice=null,canMove=[];const W=600,S=40,colors={red:'#e53935',blue:'#2585e8',green:'#22a65a',yellow:'#f3c623'},light={red:'#ffcdd2',blue:'#bbdefb',green:'#c8e6c9',yellow:'#fff3b0'};
+// 52-cell classic perimeter path, with separate six-cell home lanes.
+const ring=[[6,0],[6,1],[6,2],[6,3],[6,4],[6,5],[5,6],[4,6],[3,6],[2,6],[1,6],[0,6],[0,7],[0,8],[1,8],[2,8],[3,8],[4,8],[5,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[7,14],[8,14],[8,13],[8,12],[8,11],[8,10],[8,9],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[14,7],[14,6],[13,6],[12,6],[11,6],[10,6],[9,6],[8,5],[8,4],[8,3],[8,2],[8,1],[8,0],[7,0]];
+const order=['red','blue','yellow','green'],start={red:1,blue:14,yellow:27,green:40};
+const home={red:[[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],blue:[[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]],yellow:[[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],green:[[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]]};
+const base={red:[[1.7,1.7],[3.1,1.7],[1.7,3.1],[3.1,3.1]],blue:[[10.9,1.7],[12.3,1.7],[10.9,3.1],[12.3,3.1]],green:[[1.7,10.9],[3.1,10.9],[1.7,12.3],[3.1,12.3]],yellow:[[10.9,10.9],[12.3,10.9],[10.9,12.3],[12.3,12.3]]};
+const safe=[1,9,14,22,27,35,40,48];function xy(c){return [(c[0]+.5)*S,(c[1]+.5)*S]};function cur(){return (state?.players||[])[state?.turn||0]};function tokenPos(pl,i){let pos=(state.tokens?.[pl.id]||[-1,-1,-1,-1])[i];if(pos<0)return base[pl.color][i];if(pos<51){let ix=(start[pl.color]+pos)%52;return ring[ix]}if(pos<57)return home[pl.color][pos-51];return [7,7]}
+function rounded(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.2;ctx.stroke()}}
+function cell(x,y,col){let px=x*S,py=y*S;ctx.fillStyle=col;ctx.fillRect(px,py,S,S);ctx.strokeStyle='#94a3b8';ctx.lineWidth=1.1;ctx.strokeRect(px+.5,py+.5,S-1,S-1);ctx.strokeStyle='#ffffffaa';ctx.beginPath();ctx.moveTo(px+2,py+2);ctx.lineTo(px+S-2,py+2);ctx.stroke()}
+function draw(){ctx.clearRect(0,0,W,W);let bg=ctx.createLinearGradient(0,0,W,W);bg.addColorStop(0,'#ffffff');bg.addColorStop(1,'#e2e8f0');ctx.fillStyle=bg;ctx.fillRect(0,0,W,W);ctx.save();ctx.shadowColor='#0f172a28';ctx.shadowBlur=8;ctx.shadowOffsetY=3;[['red',0,0],['blue',9,0],['green',0,9],['yellow',9,9]].forEach(([c,x,y])=>{let baseGrad=ctx.createLinearGradient(x*S,y*S,(x+6)*S,(y+6)*S);baseGrad.addColorStop(0,light[c]);baseGrad.addColorStop(1,colors[c]+'22');rounded(x*S+1,y*S+1,6*S-2,6*S-2,10,baseGrad,'#ffffff');let g=ctx.createLinearGradient((x+1)*S,(y+1)*S,(x+5)*S,(y+5)*S);g.addColorStop(0,colors[c]);g.addColorStop(1,light[c]);rounded((x+1)*S+1,(y+1)*S+1,4*S-2,4*S-2,8,g,'#ffffffaa');rounded((x+1.5)*S,(y+1.5)*S,3*S,3*S,24,'#ffffff','#e2e8f0');});ctx.restore();
+ring.forEach((p,i)=>{let c='#fff';if(i===start.red)c=light.red;if(i===start.blue)c=light.blue;if(i===start.green)c=light.green;if(i===start.yellow)c=light.yellow;if(safe.includes(i))c='#fef3c7';cell(p[0],p[1],c)});
+Object.entries(home).forEach(([col,arr])=>arr.forEach(p=>cell(p[0],p[1],light[col])));for(let x=6;x<=8;x++)for(let y=6;y<=8;y++){ctx.fillStyle='#f8fafc';ctx.fillRect(x*S,y*S,S,S)}
+// Center four-colour finish triangle.
+ctx.beginPath();ctx.moveTo(6*S,6*S);ctx.lineTo(9*S,6*S);ctx.lineTo(7.5*S,7.5*S);ctx.closePath();ctx.fillStyle=colors.red;ctx.fill();ctx.beginPath();ctx.moveTo(9*S,6*S);ctx.lineTo(9*S,9*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.blue;ctx.fill();ctx.beginPath();ctx.moveTo(9*S,9*S);ctx.lineTo(6*S,9*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.yellow;ctx.fill();ctx.beginPath();ctx.moveTo(6*S,9*S);ctx.lineTo(6*S,6*S);ctx.lineTo(7.5*S,7.5*S);ctx.fillStyle=colors.green;ctx.fill();
+const ps=state?.players||[];ps.forEach(pl=>{for(let i=0;i<4;i++){let p=tokenPos(pl,i),[x,y]=xy(p),active=pl.id===C.uid&&canMove.includes(i),r=13;ctx.save();ctx.shadowColor='#0f172a55';ctx.shadowBlur=active?17:7;ctx.shadowOffsetY=active?3:4;let grad=ctx.createRadialGradient(x-r*.38,y-r*.45,2,x,y,r*1.25);let baseColor=colors[pl.color];grad.addColorStop(0,'#ffffff');grad.addColorStop(.18,light[pl.color]);grad.addColorStop(.52,baseColor);grad.addColorStop(1,'#172033');ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.restore();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.lineWidth=active?3.5:1.8;ctx.strokeStyle=active?'#fef08a':'#ffffff';ctx.stroke();ctx.beginPath();ctx.arc(x-r*.32,y-r*.34,3.4,0,Math.PI*2);ctx.fillStyle='#ffffffcc';ctx.fill();ctx.fillStyle='#fff';ctx.font='900 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#00000055';ctx.shadowBlur=2;ctx.fillText(String(i+1),x,y+1);ctx.shadowBlur=0;if(active){let pulse=3+Math.sin(Date.now()/180)*2;ctx.beginPath();ctx.arc(x,y,r+pulse,0,Math.PI*2);ctx.strokeStyle='#fef08a';ctx.lineWidth=2;ctx.stroke()}}});ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.save();ctx.shadowColor='#ffffff';ctx.shadowBlur=5;ctx.fillStyle='#0f172a';ctx.font='900 17px system-ui';ctx.fillText('DICE',S*6.05,S*7.55);ctx.restore();let dice=localDice||state?.dice||'—';rounded(S*7.05,S*7.08,S*.95,S*.95,8,'#ffffff','#94a3b8');ctx.fillStyle='#111827';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 24px system-ui';ctx.fillText(String(dice),S*7.525,S*7.55);ctx.textAlign='left';ctx.textBaseline='alphabetic';}
+async function req(path,opt={}){let r=await fetch(api+path,{...opt,headers:{...H,...(opt.headers||{})}});if(!r.ok)throw Error('Supabase '+r.status+' '+(await r.text()).slice(0,150));return r}
+async function load(){try{let r=await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room)+'&select=state'),a=await r.json();if(!a.length){status.textContent='Room not found';return}state=a[0].state||{};if(!state.tokens){state.tokens={};(state.players||[]).forEach(p=>state.tokens[p.id]=[-1,-1,-1,-1]);state.dice=null;state.rolled=false}let ps=state.players||[],cp=cur();playerBox.innerHTML=ps.map(p=>'<span class="chip" style="border:1px solid '+colors[p.color]+'">● '+esc(p.name)+' · '+p.color+'</span>').join('');canMove=[];if(cp?.id===C.uid&&state.rolled&&state.dice)canMove=legalMoves(C.uid,state.dice);document.getElementById('roll').disabled=busy||!cp||cp.id!==C.uid||!!state.rolled||!!state.winner;status.textContent=state.winner?'🏆 Winner: '+state.winner.name:('Room '+C.room+' · '+(cp?cp.name+' to play':'Waiting for players')+(cp?.id===C.uid?' — your turn':''));draw();if(cp?.is_bot&&!state.winner&&!busy)setTimeout(runBotTurn,700)}catch(e){status.textContent='Connection error: '+e.message}}
+async function runBotTurn(){if(!state||busy||state.winner)return;let cp=cur();if(!cp?.is_bot||cp.id===C.uid)return;busy=true;try{let d=1+Math.floor(Math.random()*6),arr=state.tokens[cp.id]||[-1,-1,-1,-1],moves=[];arr.forEach((p,i)=>{if((p===-1&&d===6)||(p>=0&&p<57&&p+d<=57))moves.push(i)});if(!moves.length){state.turn=(state.turn+1)%state.players.length;state.dice=null;state.rolled=false;await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({state})});}else{let choices=moves.map(i=>({i,p:arr[i],next:arr[i]<0?0:arr[i]+d}));choices.sort((a,b)=>{let av=(a.p<0?10:0)+(a.next===57?100:0)+(a.next>0&&a.next<51?3:0);let bv=(b.p<0?10:0)+(b.next===57?100:0)+(b.next>0&&b.next<51?3:0);return bv-av});let pick=choices[0],old=arr[pick.i],next=pick.next;arr[pick.i]=next;state.tokens[cp.id]=arr;let captured=false;if(next<51){let abs=(start[cp.color]+next)%52;if(!safe.includes(abs)){state.players.filter(p=>p.id!==cp.id).forEach(p=>{let pa=state.tokens[p.id]||[-1,-1,-1,-1];pa.forEach((pos,j)=>{if(pos>=0&&pos<51&&(start[p.color]+pos)%52===abs){pa[j]=-1;captured=true}});state.tokens[p.id]=pa})}}if(arr.every(v=>v===57))state.winner=cp;let bonus=d===6||captured||next===57;state.dice=null;state.rolled=false;if(!state.winner&&!bonus)state.turn=(state.turn+1)%state.players.length;await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({state})})}}catch(e){status.textContent='Bot move failed: '+e.message}finally{busy=false;await load()}}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function legalMoves(id,d){let a=state.tokens?.[id]||[-1,-1,-1,-1],out=[];a.forEach((p,i)=>{if(p===-1&&d===6)out.push(i);else if(p>=0&&p<57&&p+d<=57)out.push(i)});return out}
+async function save(){if(busy)return;busy=true;try{state.updated_at=new Date().toISOString();await req('ludo_rooms?room_code=eq.'+encodeURIComponent(C.room),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({state})})}catch(e){status.textContent='Save failed: '+e.message}finally{busy=false}}
+document.getElementById('roll').onclick=async()=>{if(!state||state.winner||busy)return;let cp=cur();if(!cp||cp.id!==C.uid){status.textContent='Wait for your turn';return}if(state.rolled){status.textContent='Select a highlighted token first';return}localDice=1+Math.floor(Math.random()*6);state.dice=localDice;state.rolled=true;canMove=legalMoves(C.uid,localDice);if(!canMove.length){state.rolled=false;state.dice=null;state.turn=(state.turn+1)%state.players.length;status.textContent='No legal move. Turn passes.'}else status.textContent='You rolled '+localDice+'. Click a highlighted token.';draw();await save();await load()};
+cv.addEventListener('click',async ev=>{if(!state||busy||state.winner)return;let cp=cur();if(!cp||cp.id!==C.uid||!state.rolled)return;const r=cv.getBoundingClientRect(),x=(ev.clientX-r.left)*600/r.width,y=(ev.clientY-r.top)*600/r.height;let picked=-1,bestD=1e9;for(let i of canMove){let [tx,ty]=xy(tokenPos(cp,i)),d=Math.hypot(x-tx,y-ty);if(d<25&&d<bestD){picked=i;bestD=d}}if(picked<0){status.textContent='Click one of your highlighted tokens.';return}let d=state.dice,arr=state.tokens[C.uid]||[-1,-1,-1,-1],old=arr[picked],next=old<0?0:old+d;if(old<0&&d!==6)return;if(next>57){status.textContent='Need an exact roll to reach home';return}arr[picked]=next;state.tokens[C.uid]=arr;let captured=false;if(next<51){let abs=(start[cp.color]+next)%52;if(!safe.includes(abs)){(state.players||[]).filter(p=>p.id!==C.uid).forEach(p=>{let pa=state.tokens[p.id]||[-1,-1,-1,-1];pa.forEach((pos,j)=>{if(pos>=0&&pos<51&&(start[p.color]+pos)%52===abs){pa[j]=-1;captured=true}});state.tokens[p.id]=pa})}}if(arr.every(v=>v===57)){state.winner=cp;status.textContent='🏆 You won!'}let bonus=d===6||captured||next===57;state.rolled=false;state.dice=null;localDice=null;if(!state.winner&&!bonus)state.turn=(state.turn+1)%state.players.length;canMove=[];draw();await save();await load()});
+document.getElementById('refresh').onclick=load;function refresh(){load()}function animateTokens(){if(state)draw();requestAnimationFrame(animateTokens)}load();requestAnimationFrame(animateTokens);setInterval(refresh,1600);
+</script></body></html>'''.replace('PAYLOAD', payload)
+        components.html(html, height=930, scrolling=False)
+        st.caption("Classic-style online Ludo: four tokens per player, dice-based moves, captures, safe squares, home lanes, and turn sharing. Keep the room open on each player's device.")
+    except Exception as exc:
+        st.error(f"Could not load Ludo room: {exc}")
+
+def render_snake_apple():
+    st.markdown("### 🐍 Snake & Apple")
+    st.caption("Use arrow keys or WASD to collect apples. Avoid the walls and your own tail.")
+    html = r'''<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#10182e;color:white;font-family:system-ui}.wrap{padding:12px;background:linear-gradient(135deg,#172554,#14532d);border-radius:16px}.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:800}.game{display:block;width:100%;max-width:600px;margin:12px auto;border-radius:12px;background:#0b1220;touch-action:none}.buttons{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.buttons button{padding:10px 16px;border:0;border-radius:10px;background:#86efac;color:#052e16;font-weight:900}.hint{text-align:center;color:#d1fae5;font-size:13px}</style></head><body><div class="wrap"><div class="top"><span>🐍 SNAKE & APPLE</span><span>Score: <b id="score">0</b></span><span>Best: <b id="best">0</b></span></div><canvas id="c" class="game" width="600" height="420"></canvas><div class="buttons"><button id="up">⬆</button><button id="left">⬅</button><button id="down">⬇</button><button id="right">➡</button><button id="restart">Restart</button></div><p class="hint">Arrow keys / WASD or buttons to move. Eat apples to grow. Avoid walls and your tail.</p></div><script>
+const c=document.getElementById('c'),x=c.getContext('2d'),N=30,cols=20,rows=14;let snake,dir,next,apple,score,over,best=+(localStorage.getItem('dtSnakeBest')||0);document.getElementById('best').textContent=best;function place(){do{apple={x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)}}while(snake.some(p=>p.x===apple.x&&p.y===apple.y))}function reset(){snake=[{x:7,y:7},{x:6,y:7},{x:5,y:7}];dir={x:1,y:0};next={x:1,y:0};score=0;over=false;place();document.getElementById('score').textContent=score}function turn(a,b){if(a!==-dir.x||b!==-dir.y)next={x:a,y:b}}window.addEventListener('keydown',e=>{let k=e.key.toLowerCase(),m={'arrowup':[0,-1],w:[0,-1],'arrowdown':[0,1],s:[0,1],'arrowleft':[-1,0],a:[-1,0],'arrowright':[1,0],d:[1,0]}[k];if(m){e.preventDefault();turn(...m)}});[['up',0,-1],['down',0,1],['left',-1,0],['right',1,0]].forEach(([id,a,b])=>document.getElementById(id).onclick=()=>turn(a,b));document.getElementById('restart').onclick=reset;function draw(){x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1220';x.fillRect(0,0,c.width,c.height);for(let y=0;y<rows;y++)for(let xx=0;xx<cols;xx++){x.fillStyle=(xx+y)%2?'#142b2b':'#183737';x.fillRect(xx*N,y*N,N,N)}x.fillStyle='#ef4444';x.beginPath();x.arc(apple.x*N+N/2,apple.y*N+N/2,N*.36,0,Math.PI*2);x.fill();x.fillStyle='#86efac';x.fillRect(apple.x*N+N*.48,apple.y*N+2,4,8);snake.forEach((p,i)=>{x.fillStyle=i?'#22c55e':'#a3e635';x.beginPath();x.roundRect(p.x*N+2,p.y*N+2,N-4,N-4,6);x.fill()});if(over){x.fillStyle='#000a';x.fillRect(0,0,c.width,c.height);x.fillStyle='white';x.textAlign='center';x.font='bold 34px system-ui';x.fillText('GAME OVER',c.width/2,c.height/2);x.font='18px system-ui';x.fillText('Press Restart to play again',c.width/2,c.height/2+32)}}function step(){if(!over){dir=next;let h={x:snake[0].x+dir.x,y:snake[0].y+dir.y};if(h.x<0||h.x>=cols||h.y<0||h.y>=rows||snake.some(p=>p.x===h.x&&p.y===h.y)){over=true}else{snake.unshift(h);if(h.x===apple.x&&h.y===apple.y){score+=10;document.getElementById('score').textContent=score;if(score>best){best=score;localStorage.setItem('dtSnakeBest',best);document.getElementById('best').textContent=best}place()}else snake.pop()}}draw()}reset();const SNAKE_STEP_MS=180;setInterval(step,SNAKE_STEP_MS);
+</script></body></html>'''
+    components.html(html, height=610, scrolling=False)
+
+
 def render_games_page():
     st.markdown("""
     <style>
@@ -890,7 +1137,13 @@ def render_games_page():
     .games-hero h1{margin:0;font-size:2.2rem}.games-hero p{margin:6px 0 0;color:#fffde8}
     </style><div class="games-hero"><h1>🎮 Dreamztree Game Zone</h1><p>Think fast, solve the puzzle, and beat your best score.</p></div>
     """, unsafe_allow_html=True)
-    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    game = st.radio("Choose a game", ["🧠 Brain Test", "🔢 Mini Sudoku", "🧠 Memory Match", "🎯 Number Hunt", "🦖 Dino Runner", "🎲 Ludo Online", "🐍 Snake & Apple"], horizontal=True, label_visibility="collapsed", key="games_page_choice")
+    if game == "🎲 Ludo Online":
+        render_ludo_online()
+        return
+    if game == "🐍 Snake & Apple":
+        render_snake_apple()
+        return
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
         questions = [
@@ -1129,141 +1382,126 @@ def _game_zone_popup():
             st.rerun()
 
 
-
-def _chat_current_user_id(client):
-    """Return the current Supabase Auth user UUID, if available."""
-    user_id = st.session_state.get("auth_user_id")
-    if user_id:
-        return str(user_id)
-    try:
-        response = client.auth.get_user()
-        user = getattr(response, "user", None)
-        if user:
-            st.session_state["auth_user_id"] = str(user.id)
-            return str(user.id)
-    except Exception:
-        pass
-    return None
-
-
 def render_team_chat():
-    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Team workspace</div><div class="hero-title">Team Chat</div><p class="hero-copy">Group conversations and private messages for colleagues with dashboard accounts.</p></div>', unsafe_allow_html=True)
-    if st.session_state.get("auth_method") != "supabase":
-        st.warning("Team Chat is available to colleagues signed in with their existing Supabase dashboard account. The legacy admin login does not have a Supabase user ID, so it cannot securely send messages.")
-        if st.button("Back to Dashboard", key="chat_legacy_back"):
-            st.query_params["page"] = "dashboard"
-            st.rerun()
-        return
+    """Render authenticated group chat and one-to-one private messages."""
+    st.title("💬 Dreamztree Team Chat")
+    st.caption("Group messages and private messages for signed-in team members.")
 
     client = get_supabase_client()
-    user_id = _chat_current_user_id(client) if client else None
-    if not client or not user_id:
-        st.error("Your Supabase session could not be verified. Please sign out and sign in again.")
+    if client is None:
+        st.error("Supabase is not configured. Check the app's Supabase settings.")
         return
 
-    # Ensure the signed-in colleague is listed in the directory.
+    # Chat requires a real Supabase Auth session. Legacy-only admin logins do not
+    # have a database user identity and therefore cannot safely use private chat.
     try:
-        client.table("profiles").upsert({
-            "id": user_id,
-            "username": st.session_state.get("authenticated_user", "Colleague").split("@")[0],
-            "email": st.session_state.get("authenticated_user", ""),
-        }).execute()
+        auth_response = client.auth.get_user()
+        user = auth_response.user
+        if not user:
+            st.warning("Team Chat requires a Supabase account session. Please sign out and sign in with your work email account.")
+            return
     except Exception:
-        pass
-
-    try:
-        profiles_response = client.table("profiles").select("id, username, email").order("username").execute()
-        colleagues = [row for row in (profiles_response.data or []) if str(row.get("id")) != user_id]
-    except Exception as exc:
-        st.error("Could not load the colleague list. Please apply the Supabase SQL setup file included with this update.")
-        st.caption(f"Details: {exc}")
+        st.warning("Team Chat requires a Supabase account session. Please sign out and sign in with your work email account.")
         return
 
-    group_tab, private_tab = st.tabs(["👥 Group chat", "✉️ Private messages"])
-    with group_tab:
-        st.caption("Messages here are visible to all signed-in dashboard colleagues.")
-        if st.button("↻ Refresh group messages", key="refresh_group_chat"):
-            st.rerun()
-        try:
-            response = (client.table("team_messages").select("id, sender_id, recipient_id, sender_name, body, created_at")
-                        .is_("recipient_id", "null").order("created_at").limit(200).execute())
-            messages = response.data or []
-            for msg in messages:
-                with st.chat_message("user" if str(msg.get("sender_id")) == user_id else "assistant"):
-                    st.markdown(f"**{msg.get('sender_name') or 'Colleague'}** · {str(msg.get('created_at') or '')[:16].replace('T', ' ')}")
-                    st.write(msg.get("body", ""))
-        except Exception as exc:
-            st.error("Could not load group messages. Check that the Supabase SQL setup has been applied.")
-            st.caption(str(exc))
-        with st.form("group_chat_send_form", clear_on_submit=True):
-            body = st.text_area("Message the team", max_chars=4000, key="group_chat_message", placeholder="Write a message for everyone…")
-            send = st.form_submit_button("Send to group", type="primary", use_container_width=True)
-        if send:
-            clean = body.strip()
-            if not clean:
-                st.warning("Type a message before sending.")
-            else:
-                try:
-                    client.table("team_messages").insert({
-                        "sender_id": user_id,
-                        "recipient_id": None,
-                        "sender_name": st.session_state.get("authenticated_user", "Colleague"),
-                        "body": clean,
-                    }).execute()
-                    st.rerun()
-                except Exception as exc:
-                    st.error("Message could not be sent. Please check the SQL setup and access policies.")
-                    st.caption(str(exc))
+    user_id = str(user.id)
+    email = user.email or ""
+    metadata = getattr(user, "user_metadata", None) or {}
+    display_name = str(metadata.get("username") or metadata.get("name") or email or "Team member").strip()
 
-    with private_tab:
-        if not colleagues:
-            st.info("No other colleague profiles are available yet. Each colleague should sign in once using their existing dashboard account.")
+    try:
+        client.table("team_chat_profiles").upsert({
+            "id": user_id,
+            "username": display_name,
+            "email": email,
+            "updated_at": datetime.now().isoformat(),
+        }).execute()
+        people_response = (
+            client.table("team_chat_profiles")
+            .select("id, username, email")
+            .neq("id", user_id)
+            .order("username")
+            .execute()
+        )
+        people = people_response.data or []
+    except Exception as exc:
+        st.error("Could not load chat members. Confirm that the Team Chat SQL setup completed successfully.")
+        st.caption(f"Technical detail: {exc}")
+        return
+
+    mode = st.radio("Chat type", ["Group Chat", "Private Message"], horizontal=True, key="team_chat_mode")
+    recipient_id = None
+    if mode == "Private Message":
+        if not people:
+            st.info("No other team members have opened Team Chat yet. Ask each colleague to sign in and open Team Chat once.")
+            return
+        options = {}
+        for person in people:
+            label = f"{person.get('username') or person.get('email') or 'Team member'} ({person.get('email') or 'No email'})"
+            options[label] = person["id"]
+        selected_person = st.selectbox("Send a private message to", list(options.keys()), key="team_chat_recipient")
+        recipient_id = options[selected_person]
+
+    try:
+        query = (
+            client.table("team_chat_messages")
+            .select("id, sender_id, recipient_id, message, created_at")
+            .order("created_at")
+            .limit(100)
+        )
+        if mode == "Group Chat":
+            query = query.is_("recipient_id", "null")
         else:
-            options = {f"{r.get('username') or 'Colleague'} ({r.get('email') or 'no email'})": str(r.get("id")) for r in colleagues}
-            chosen_label = st.selectbox("Message a colleague", list(options.keys()), key="private_chat_colleague")
-            recipient_id = options[chosen_label]
-            if st.button("↻ Refresh private messages", key="refresh_private_chat"):
-                st.rerun()
-            try:
-                response = (client.table("team_messages").select("id, sender_id, recipient_id, sender_name, body, created_at")
-                    .or_(f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})")
-                    .order("created_at").limit(200).execute())
-                for msg in (response.data or []):
-                    with st.chat_message("user" if str(msg.get("sender_id")) == user_id else "assistant"):
-                        st.markdown(f"**{msg.get('sender_name') or 'Colleague'}** · {str(msg.get('created_at') or '')[:16].replace('T', ' ')}")
-                        st.write(msg.get("body", ""))
-            except Exception as exc:
-                st.error("Could not load private messages. Check that the Supabase SQL setup has been applied.")
-                st.caption(str(exc))
-            with st.form("private_chat_send_form", clear_on_submit=True):
-                body = st.text_area("Your private message", max_chars=4000, key="private_chat_message", placeholder="Only you and the selected colleague can see this…")
-                send = st.form_submit_button("Send private message", type="primary", use_container_width=True)
-            if send:
-                clean = body.strip()
-                if not clean:
-                    st.warning("Type a message before sending.")
-                else:
-                    try:
-                        client.table("team_messages").insert({
-                            "sender_id": user_id,
-                            "recipient_id": recipient_id,
-                            "sender_name": st.session_state.get("authenticated_user", "Colleague"),
-                            "body": clean,
-                        }).execute()
-                        st.rerun()
-                    except Exception as exc:
-                        st.error("Private message could not be sent. Please check the SQL setup and access policies.")
-                        st.caption(str(exc))
+            query = query.or_(
+                f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),"
+                f"and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})"
+            )
+        messages = query.execute().data or []
+    except Exception as exc:
+        st.error("Could not load messages. Confirm the database tables and access policies are set up.")
+        st.caption(f"Technical detail: {exc}")
+        return
 
-    st.caption("Messages refresh when you open the chat, send a message, or press Refresh. Automatic live updates can be added separately.")
+    st.markdown("---")
+    st.subheader("Messages")
+    if not messages:
+        st.info("No messages yet. Start the conversation!")
+    for item in messages:
+        is_me = str(item.get("sender_id")) == user_id
+        sender_label = "You" if is_me else "Team member"
+        created_at = str(item.get("created_at") or "")
+        st.markdown(f"**{sender_label}** · {created_at}\n\n{item.get('message', '')}")
+        st.divider()
+
+    with st.form("team_chat_send_form", clear_on_submit=True):
+        message = st.text_area("Your message", max_chars=2000, placeholder="Write a message...")
+        send = st.form_submit_button("Send message", type="primary")
+    if send:
+        message = message.strip()
+        if not message:
+            st.warning("Please type a message first.")
+        else:
+            try:
+                client.table("team_chat_messages").insert({
+                    "sender_id": user_id,
+                    "recipient_id": recipient_id,
+                    "message": message,
+                }).execute()
+                st.rerun()
+            except Exception as exc:
+                st.error("Message could not be sent. Confirm that you are signed in with a Supabase account.")
+                st.caption(f"Technical detail: {exc}")
 
 
 def main():
     require_login()
+    if st.session_state.pop("login_just_succeeded", False):
+        st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
-    _game_zone_popup()
-
     page = st.query_params.get("page", "dashboard")
+    # Keep the Game Zone invitation/notification active on every non-game page.
+    # The fragment itself suppresses the popup while the Game Zone is open.
+    _game_zone_popup()
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
@@ -1271,23 +1509,60 @@ def main():
         render_games_page()
         return
     if page == "chat":
-        if st.button("← Back to Meta Leads Dashboard", key="back_from_chat"):
+        if st.button("← Back to Meta Leads Dashboard", key="back_from_team_chat"):
             st.query_params["page"] = "dashboard"
             st.rerun()
         render_team_chat()
         return
-    st.markdown('<div class="hero"><div class="eyebrow">Dreamztree · Marketing intelligence</div><div class="hero-title">Meta Leads Command Center</div><p class="hero-copy">Branch-wise lead volume, campaign assignments and cost reporting in one workspace.</p></div>', unsafe_allow_html=True)
-    header_left, header_right = st.columns([5, 1])
-    with header_left:
-        nav1, nav2 = st.columns([1, 1])
-        with nav1:
-            if st.button("💬 Team Chat", key="open_team_chat", use_container_width=True):
-                st.query_params["page"] = "chat"
-                st.rerun()
-        with nav2:
-            if st.button("🎮 Game Zone", key="open_game_zone", use_container_width=True):
-                st.query_params["page"] = "game"
-                st.rerun()
+    # Dreamztree landing page with a clean hero; global particle animation is applied in inject_premium_theme().
+    st.markdown("""
+    <style>
+      .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
+        border-radius:28px; background:linear-gradient(125deg,rgba(124,58,237,.25),rgba(37,99,235,.18) 48%,rgba(13,148,136,.20));
+        border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
+      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+        background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
+      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
+      .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
+      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
+      .dt-landing-kicker {text-align:center;color:#77f3df;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;position:relative;}
+      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;position:relative;}
+      .dt-landing-copy {text-align:center;color:#d2def2;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;position:relative;}
+      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;position:relative;}
+      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:16px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
+      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(96,165,250,.18);}
+      .dt-landing-actions .primary {background:linear-gradient(100deg,#ec4899,#8b5cf6 55%,#2563eb);color:#fff!important;border:1px solid rgba(255,255,255,.18);font-weight:750;}
+      .dt-landing-actions .secondary {background:rgba(15,23,42,.25);color:#f8f9fc!important;border:1px solid rgba(167,139,250,.55);}
+      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(167,139,250,.32);border-radius:24px;background:linear-gradient(120deg,rgba(99,102,241,.14),rgba(20,184,166,.08));}
+      .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
+      .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
+      .dt-landing + div {scroll-margin-top:24px;}
+      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
+      @media(prefers-reduced-motion:reduce){.dt-landing-actions a{animation:none;transition:none}}
+    </style>
+    <section class="dt-landing">
+      <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
+      <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
+      <p class="dt-landing-copy">Track leads. Analyze ad spend. Discover winning campaigns.</p>
+      <div class="dt-landing-actions">
+        <a class="primary" href="#report-form">Explore Reports ↓</a>
+        <a class="secondary" href="#campaign-insights">Campaign Insights</a>
+      </div>
+    </section>
+    <section class="dt-report-intro" id="report-form">
+      <h2>↓ Scroll down to create a report</h2>
+      <p>The existing report-making form and dashboard features remain below the landing page.</p>
+    </section>
+    """, unsafe_allow_html=True)
+    header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
+    with game_col:
+        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
+            st.query_params["page"] = "game"
+            st.rerun()
+    with chat_col:
+        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
+            st.query_params["page"] = "chat"
+            st.rerun()
     with header_right:
         if st.button("Sign out", use_container_width=True):
             if st.session_state.get("auth_method") == "supabase":
@@ -1300,10 +1575,12 @@ def main():
             st.session_state["authenticated"] = False
             st.session_state.pop("authenticated_user", None)
             st.session_state.pop("auth_method", None)
-            st.session_state.pop("auth_user_id", None)
+            st.session_state.pop("supabase_access_token", None)
+            st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
+    st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
