@@ -642,26 +642,11 @@ def _show_login_header():
         }
         @keyframes dt-star-drift {0%{background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,0 0,center;}100%{background-position:30px -90px,-25px -60px,20px -110px,-20px -70px,35px -90px,-30px -80px,25px -100px,-15px -75px,30px -60px,-20px -90px,15px -70px,-30px -95px,center;}}
         @keyframes dt-mountain-drift {0%{transform:scale(1); background-position:48% bottom;}100%{transform:scale(1.07);background-position:54% bottom;}}
-        /* Natural comet: short tapered tail, gradual acceleration, curved diagonal path,
-           and a long quiet interval between appearances. */
-        .dt-space-comet {position:fixed; z-index:0; top:12%; left:-18vw; width:112px; height:1.5px; pointer-events:none;
-          opacity:0; border-radius:999px;
-          background:linear-gradient(90deg,transparent 0%,rgba(167,139,250,.08) 35%,rgba(196,181,253,.55) 78%,#fff 100%);
-          box-shadow:0 0 5px rgba(196,181,253,.45);
-          transform:rotate(-22deg); transform-origin:right center;
-          animation:dt-comet-flight 19s cubic-bezier(.35,.02,.7,.98) infinite;}
-        .dt-space-comet:after {content:""; position:absolute; right:-1.5px; top:-1.75px; width:4px;height:4px;border-radius:50%;
-          background:#fff; box-shadow:0 0 5px 1px rgba(221,214,254,.8);}
-        .dt-space-comet.comet-two {top:29%; width:76px; animation-duration:27s; animation-delay:8s; transform:rotate(-17deg) scale(.82);}
-        .dt-space-comet.comet-three {top:8%; width:90px; animation-duration:23s; animation-delay:15s; transform:rotate(-25deg) scale(.7);}
-        @keyframes dt-comet-flight {
-          0%,56%,100% {left:-18vw; top:12%; opacity:0;}
-          59% {opacity:.15;}
-          61% {opacity:.85;}
-          63% {left:17vw; top:16%; opacity:.8;}
-          66% {left:43vw; top:23%; opacity:.45;}
-          69% {left:67vw; top:31%; opacity:0;}
-        }
+        .dt-space-comet {position:fixed; z-index:0; top:14%; left:-24vw; width:170px; height:2px; pointer-events:none;
+          background:linear-gradient(90deg,transparent,rgba(167,139,250,.25),#fff,#c4b5fd); box-shadow:0 0 12px #c4b5fd;
+          transform:rotate(-19deg); animation:dt-comet-flight 13s linear infinite;}
+        .dt-space-comet:after {content:""; position:absolute; right:-3px; top:-3px; width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 14px 4px #c4b5fd;}
+        @keyframes dt-comet-flight {0%{left:-24vw;top:18%;opacity:0}8%{opacity:1}28%{left:110vw;top:4%;opacity:0}100%{left:110vw;top:4%;opacity:0}}
         .dt-space-satellite {position:fixed; z-index:0; top:24%; left:-80px; width:22px;height:10px; pointer-events:none;
           border-radius:3px; background:linear-gradient(90deg,#a5b4fc 0 25%,#e2e8f0 25% 75%,#a5b4fc 75%);
           box-shadow:0 0 10px rgba(165,180,252,.7); animation:dt-satellite-flight 29s linear infinite;}
@@ -728,9 +713,7 @@ def _show_login_header():
           div[data-testid="stTabs"],[data-testid="stForm"] {max-width:100%;}
         }
         </style>
-        <div class="dt-space-comet comet-one" aria-hidden="true"></div>
-        <div class="dt-space-comet comet-two" aria-hidden="true"></div>
-        <div class="dt-space-comet comet-three" aria-hidden="true"></div>
+        <div class="dt-space-comet" aria-hidden="true"></div>
         <div class="dt-space-satellite" aria-hidden="true"></div>
         <div class="dt-space-spark" aria-hidden="true"></div>
         <div class="dt-login-logo">
