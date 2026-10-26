@@ -920,6 +920,37 @@ def _show_login_header():
           88%,100% {opacity:0;transform:translate(8vw,11vh) scale(.1)}
         }
 
+        /* When the user starts entering login details, trigger a one-time 10-second space fly-by. */
+        body:has(input:focus) #dt-login-universe .dt-spaceship {
+          animation:dt-login-focus-flight 10s ease-in-out 1 both !important;
+        }
+        body:has(input:focus) #dt-login-universe .dt-satellite {
+          animation:dt-login-focus-satellite 10s ease-in-out 1 both !important;
+        }
+        body:has(input:focus) #dt-login-universe .dt-stars {
+          animation:dt-login-focus-stars 10s ease-in-out 1 both !important;
+        }
+        @keyframes dt-login-focus-flight {
+          0% {opacity:0; transform:translate3d(-8vw,0,0) rotate(-12deg) scale(.72)}
+          12% {opacity:1; transform:translate3d(8vw,-2vh,0) rotate(0) scale(.95)}
+          38% {opacity:1; transform:translate3d(42vw,2vh,0) rotate(5deg) scale(1.08)}
+          62% {opacity:1; transform:translate3d(68vw,-1vh,0) rotate(-5deg) scale(1)}
+          82% {opacity:1; transform:translate3d(88vw,3vh,0) rotate(12deg) scale(.9)}
+          100% {opacity:0; transform:translate3d(108vw,8vh,0) rotate(22deg) scale(.7)}
+        }
+        @keyframes dt-login-focus-satellite {
+          0% {opacity:0; transform:translate3d(-5vw,0,0) rotate(0)}
+          15% {opacity:.95}
+          50% {opacity:.95; transform:translate3d(45vw,5vh,0) rotate(140deg)}
+          82% {opacity:.9; transform:translate3d(85vw,-2vh,0) rotate(260deg)}
+          100% {opacity:0; transform:translate3d(110vw,4vh,0) rotate(360deg)}
+        }
+        @keyframes dt-login-focus-stars {
+          0% {opacity:.72; background-position:0 0,47px 31px,83px 109px}
+          50% {opacity:1; background-position:45px 85px,-55px 60px,75px -65px}
+          100% {opacity:.72; background-position:90px 170px,-110px 120px,150px -130px}
+        }
+
         @keyframes dt-spaceship-flight {
           /* Cruise calmly, then occasionally malfunction and tumble out of the sky. */
           0%,3% {opacity:0; transform:translate3d(-4vw,3vh,0) rotate(-8deg) scale(.72); filter:drop-shadow(0 0 7px rgba(125,211,252,.35))}
@@ -975,12 +1006,56 @@ def _show_login_header():
         @media (prefers-reduced-motion: reduce) {
           #dt-login-universe *,#dt-login-universe *::before,#dt-login-universe *::after {animation:none !important;}
         }
-        /* Keep the login content visible and stationary; no escape/dodge effect. */
+        /* Safe escape effect: animate the login content container as one unit.
+           The fixed universe and mountain layers are never transformed. */
+        @keyframes dt-login-escape-20 {
+          0% {transform:translate3d(0,0,0) rotate(0deg)}
+          8% {transform:translate3d(5vw,-3vh,0) rotate(.7deg)}
+          17% {transform:translate3d(-6vw,4vh,0) rotate(-.8deg)}
+          27% {transform:translate3d(7vw,2vh,0) rotate(.8deg)}
+          38% {transform:translate3d(-5vw,-4vh,0) rotate(-.7deg)}
+          50% {transform:translate3d(6vw,5vh,0) rotate(.8deg)}
+          62% {transform:translate3d(-7vw,-2vh,0) rotate(-.8deg)}
+          74% {transform:translate3d(5vw,3vh,0) rotate(.6deg)}
+          87% {transform:translate3d(-4vw,-3vh,0) rotate(-.5deg)}
+          100% {transform:translate3d(0,0,0) rotate(0deg)}
+        }
+        @keyframes dt-ship-escape-20 {
+          0% {transform:translate3d(0,0,0) rotate(0deg)}
+          18% {transform:translate3d(-18vw,9vh,0) rotate(-35deg)}
+          38% {transform:translate3d(26vw,-10vh,0) rotate(65deg)}
+          58% {transform:translate3d(-30vw,14vh,0) rotate(-100deg)}
+          78% {transform:translate3d(34vw,6vh,0) rotate(180deg)}
+          100% {transform:translate3d(0,0,0) rotate(360deg)}
+        }
+        @keyframes dt-satellite-escape-20 {
+          0% {transform:translate3d(0,0,0) rotate(0deg)}
+          20% {transform:translate3d(20vw,-10vh,0) rotate(55deg)}
+          40% {transform:translate3d(-26vw,12vh,0) rotate(-90deg)}
+          62% {transform:translate3d(32vw,8vh,0) rotate(150deg)}
+          82% {transform:translate3d(-18vw,-12vh,0) rotate(260deg)}
+          100% {transform:translate3d(0,0,0) rotate(360deg)}
+        }
+        /* Keep content in normal flow and visible by default. */
         .dt-login-logo, .login-panel, div[data-testid="stTabs"], [data-testid="stForm"] {
-          visibility: visible !important;
-          opacity: 1 !important;
-          transform: none !important;
-          animation: none !important;
+          visibility:visible !important; opacity:1;
+        }
+        /* Trigger when the pointer reaches the login area or the user focuses a field.
+           Move the page's login content as a single unit; never move the mountain layers. */
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) [data-testid="stAppViewContainer"] .block-container {
+          animation:dt-login-escape-20 20s ease-in-out 1 both !important;
+          will-change:transform;
+        }
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-spaceship {
+          animation:dt-ship-escape-20 20s ease-in-out 1 both !important;
+        }
+        body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus, [data-testid="stFormSubmitButton"] button:hover) #dt-login-universe .dt-satellite {
+          animation:dt-satellite-escape-20 20s ease-in-out 1 both !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus) [data-testid="stAppViewContainer"] .block-container,
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus) #dt-login-universe .dt-spaceship,
+          body:has(.login-panel:hover, div[data-testid="stTabs"]:hover, [data-testid="stForm"]:hover, input:hover, input:focus) #dt-login-universe .dt-satellite {animation:none !important;}
         }
         </style>
         <div id="dt-login-universe" aria-hidden="true">
@@ -1822,8 +1897,8 @@ def main():
         )
     if uploaded is None:
         st.info("Upload today's Meta Ads Excel export to begin. Add yesterday's report for a day-over-day comparison.")
-        st.subheader("Campaign mapping preview")
-        st.dataframe(mappings, use_container_width=True, hide_index=True)
+        with st.expander("Campaign mapping preview", expanded=False):
+            st.dataframe(mappings, use_container_width=True, hide_index=True)
         st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
     try:
