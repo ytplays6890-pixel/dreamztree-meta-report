@@ -1419,8 +1419,21 @@ def main():
       .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
         border-radius:28px; background:linear-gradient(125deg,rgba(124,58,237,.25),rgba(37,99,235,.18) 48%,rgba(13,148,136,.20));
         border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
-      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;
+      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
         background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
+      .dt-code-wave {position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;opacity:.20;
+        color:#9aa8c5;font:600 11px/2 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:5px;
+        white-space:pre;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);}
+      .dt-code-wave .dt-code-row {position:absolute;left:-5%;width:115%;height:26px;white-space:nowrap;
+        animation:dt-code-wave-motion 11s ease-in-out infinite alternate;}
+      .dt-code-wave .dt-code-row:nth-child(2n) {animation-duration:14s;animation-delay:-4s;}
+      .dt-code-wave .dt-code-row:nth-child(3n) {animation-duration:17s;animation-delay:-7s;}
+      @keyframes dt-code-wave-motion {
+        0% {transform:translate3d(-2%,0,0) skewY(-1deg);opacity:.35}
+        50% {transform:translate3d(1%,8px,0) skewY(1deg);opacity:1}
+        100% {transform:translate3d(3%,-4px,0) skewY(-.5deg);opacity:.55}
+      }
+      .dt-landing > :not(.dt-code-wave) {position:relative;z-index:1;}
       .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
       .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
       .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
@@ -1439,12 +1452,15 @@ def main():
       .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
       .dt-landing + div {scroll-margin-top:24px;}
       @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}.dt-binary-line{margin-top:32px;font-size:.75rem}}
-      @media(prefers-reduced-motion:reduce){.dt-binary-line,.dt-landing-actions a{animation:none;transition:none}}
+      @media(prefers-reduced-motion:reduce){.dt-binary-line,.dt-code-wave .dt-code-row,.dt-landing-actions a{animation:none;transition:none}}
     </style>
     <section class="dt-landing">
-      <div class="dt-brand-row">
-        <div class="dt-brand">DREAMZTREE</div>
-        <div class="dt-brand-tag">MARKETING INTELLIGENCE</div>
+      <div class="dt-code-wave" aria-hidden="true">
+        <div class="dt-code-row" style="top:8%">01001010 10110100 01101001 11001010 01011010 10100101 01101010 11010010</div>
+        <div class="dt-code-row" style="top:24%">10110100 01001010 11001010 01101001 10100101 01011010 11010010 01101010</div>
+        <div class="dt-code-row" style="top:42%">01101001 11010010 01011010 10110100 01001010 11001010 10100101 01101010</div>
+        <div class="dt-code-row" style="top:61%">11001010 01101010 10110100 01001010 01101001 10100101 11010010 01011010</div>
+        <div class="dt-code-row" style="top:80%">01011010 10100101 01101010 11010010 01001010 10110100 01101001 11001010</div>
       </div>
       <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
       <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
