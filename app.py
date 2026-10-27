@@ -16,6 +16,47 @@ from supabase import create_client
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
+# The lamp pull is a small Streamlit custom component so pointer dragging can
+# redraw the real SVG cord in the browser (st.markdown scripts cannot do this).
+_DT_LAMP_COMPONENT_DIR = Path(__file__).resolve().parent / ".dt_lamp_drag_component"
+_DT_LAMP_COMPONENT_DIR.mkdir(parents=True, exist_ok=True)
+_DT_LAMP_COMPONENT_HTML = r'''<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}*{box-sizing:border-box}
+#stage{position:relative;width:72px;height:178px;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+svg{position:absolute;inset:0;width:72px;height:178px;overflow:visible;touch-action:none}
+#cord{fill:none;stroke:#17191d;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 1px 1px #000)}
+#highlight{fill:none;stroke:rgba(210,215,225,.34);stroke-width:.65;stroke-linecap:round}
+#bead{cursor:grab;touch-action:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
+#bead:active{cursor:grabbing}
+#beadCore{fill:url(#gold);stroke:#6f4b16;stroke-width:.8}
+#shine{fill:none;stroke:rgba(255,245,190,.85);stroke-width:1.1;stroke-linecap:round}
+</style></head><body><div id="stage" aria-label="Pull the lamp cord">
+<svg viewBox="0 0 72 178" role="img" aria-label="Lamp pull cord">
+<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9b6c24"/><stop offset=".32" stop-color="#f1ca69"/><stop offset=".58" stop-color="#fff0aa"/><stop offset="1" stop-color="#a87322"/></linearGradient></defs>
+<path id="cord" d="M36 0 Q36 45 36 105"/><path id="highlight" d="M36.6 1 Q36.6 45 36.6 105"/>
+<g id="bead" transform="translate(36 105)"><circle id="beadCore" r="6.1"/><path id="shine" d="M-2.5 -3.4 Q-4 -1.8 -3.3 .2"/></g>
+</svg></div>
+<script>
+(function(){
+ const stage=document.getElementById('stage'),cord=document.getElementById('cord'),hi=document.getElementById('highlight'),bead=document.getElementById('bead');
+ const anchorX=36, restY=105; let drag=false,startY=0,offsetY=0,offsetX=0,raf=0,pulls=0,velocity=0,lastY=0,lastT=0;
+ function draw(x,y){const bend=x*.24;const midY=(restY+y)*.5;const d=`M ${anchorX} 0 Q ${anchorX+bend} ${midY} ${anchorX+x} ${restY+y}`;cord.setAttribute('d',d);hi.setAttribute('d',`M ${anchorX+.7} 1 Q ${anchorX+bend+.7} ${midY} ${anchorX+x+.7} ${restY+y}`);bead.setAttribute('transform',`translate(${anchorX+x} ${restY+y})`)}
+ function spring(){cancelAnimationFrame(raf);let y=offsetY,v=velocity;let prev=performance.now();function tick(now){const dt=Math.min((now-prev)/1000,.032);prev=now;const a=-210*y-25*v;v+=a*dt;y+=v*dt;if(Math.abs(y)<.16&&Math.abs(v)<1.2){y=0;draw(0,0);return}draw(offsetX*Math.exp(-now*.0001),y);raf=requestAnimationFrame(tick)}raf=requestAnimationFrame(tick)}
+ function down(e){if(e.button!==undefined&&e.button!==0)return;drag=true;stage.setPointerCapture?.(e.pointerId);bead.setPointerCapture?.(e.pointerId);startY=e.clientY;lastY=startY;lastT=performance.now();offsetY=0;velocity=0;cancelAnimationFrame(raf);e.preventDefault()}
+ function move(e){if(!drag)return;const now=performance.now(),dt=Math.max(.008,(now-lastT)/1000);const dy=e.clientY-startY;offsetY=Math.max(0,Math.min(86,dy));offsetX=Math.max(-18,Math.min(18,(e.clientX-(stage.getBoundingClientRect().left+anchorX))*.3));velocity=(e.clientY-lastY)/dt;lastY=e.clientY;lastT=now;draw(offsetX,offsetY);e.preventDefault()}
+ function up(e){if(!drag)return;drag=false;const pulled=offsetY>8;const releaseY=offsetY;velocity=Math.max(-500,Math.min(500,velocity*.45));if(!pulled){offsetY=0;offsetX=0;draw(0,0);return}pulls++;window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{pulls:pulls,stamp:Date.now()}},'*');offsetY=releaseY;spring();e.preventDefault()}
+ bead.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);stage.addEventListener('lostpointercapture',()=>{if(drag){drag=false;spring()}});
+ window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='streamlit:render'){if(d.args&&typeof d.args.pulls==='number')pulls=Math.max(pulls,d.args.pulls);}});
+ window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:178},'*');draw(0,0);
+})();
+</script></body></html>'''
+_DT_LAMP_COMPONENT_FILE = _DT_LAMP_COMPONENT_DIR / "index.html"
+if not _DT_LAMP_COMPONENT_FILE.exists() or _DT_LAMP_COMPONENT_FILE.read_text(encoding="utf-8") != _DT_LAMP_COMPONENT_HTML:
+    _DT_LAMP_COMPONENT_FILE.write_text(_DT_LAMP_COMPONENT_HTML, encoding="utf-8")
+_dt_lamp_drag = components.declare_component("dt_lamp_drag", path=str(_DT_LAMP_COMPONENT_DIR))
+
 # Default mapping from the existing Dreamztree report. Edit or extend in the Mapping editor.
 DEFAULT_MAPPINGS = [
     ("Jincy |01| healthacreleads campaign", "Jincy", "Healthcare", "Mangaf"),
@@ -1781,7 +1822,7 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .room { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; z-index:0 !important; pointer-events:none !important; }
 .room .lamp-side { position:fixed !important; left:0 !important; top:0 !important; width:44vw !important; height:100vh !important; pointer-events:none !important; }
 .room .lamp-container { pointer-events:none !important; }
-.room .string-handle { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
+.room .string-svg, .room .string-handle { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
 /* Spring animation for the visible gold pull bead and its cord. */
 @keyframes dt-bead-spring {0%{transform:translateY(0) scaleY(1)}9%{transform:translateY(48px) scaleY(1.30)}22%{transform:translateY(-12px) scaleY(.91)}38%{transform:translateY(15px) scaleY(1.13)}54%{transform:translateY(-7px) scaleY(.95)}70%{transform:translateY(5px) scaleY(1.05)}85%{transform:translateY(-2px) scaleY(.99)}100%{transform:translateY(0) scaleY(1)}}
 @keyframes dt-cord-spring {0%{transform:scaleY(1)}9%{transform:scaleY(1.72)}22%{transform:scaleY(.94)}38%{transform:scaleY(1.28)}54%{transform:scaleY(.97)}70%{transform:scaleY(1.10)}85%{transform:scaleY(.995)}100%{transform:scaleY(1)}}
@@ -1798,14 +1839,9 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
-.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 10px) !important; top:calc(44.2vh - 67px) !important; width:28px !important; height:34px !important; padding:0 !important; margin:0 !important; display:flex !important; align-items:flex-start !important; justify-content:center !important; }
-.st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }
-.st-key-lamp_pull_control button { animation:none; transition:box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:26px !important; min-height:26px !important; flex:0 0 18px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
-.st-key-lamp_pull_control button:active { cursor:grabbing !important; }
-.st-key-lamp_pull_control button { transform-origin:top center !important; }
-.st-key-lamp_pull_control button:active { transition:transform .16s cubic-bezier(.2,.8,.2,1) !important; }
-.st-key-lamp_pull_control button:focus-visible { outline:2px solid #fff0a6 !important; outline-offset:2px !important; }
-.st-key-lamp_pull_control button p, .st-key-lamp_pull_control button span { display:none !important; }
+/* Position the transparent custom component over the physical cord location. */
+.st-key-dt_lamp_drag_component { position:fixed !important; left:calc(26.4vw - 36px) !important; top:calc(44.2vh - 67px) !important; width:72px !important; height:178px !important; min-width:72px !important; max-width:72px !important; padding:0 !important; margin:0 !important; z-index:100000 !important; background:transparent !important; overflow:visible !important; }
+.st-key-dt_lamp_drag_component iframe { width:72px !important; height:178px !important; border:0 !important; background:transparent !important; display:block !important; }
 /* Realistic dark room: layered vignette, wall falloff and subtle floor reflections. */
 html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !important; }
 [data-testid="stAppViewContainer"]::before {
@@ -1844,7 +1880,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
  .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }
  .room .lamp-container { transform:scale(.65) !important; transform-origin:top center !important; }
  .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }
- .st-key-lamp_pull_control { left:calc(50vw + 37px) !important; top:calc(18vh + 55px) !important; }
+ .st-key-dt_lamp_drag_component { left:calc(50vw - 36px) !important; top:calc(18vh + 55px) !important; }
 }
 """
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
@@ -1881,19 +1917,24 @@ def require_login():
         st.session_state["dt_lamp_theme"] = 0
 
     _show_login_header()
-    # Use the visible gold bead itself as the Streamlit control. Its spring animation
-    # is retriggered on each click, while Streamlit handles the authentication state.
-    with st.container(key="lamp_pull_control"):
-        # The visible gold bead is the button; the help text remains available on hover.
-        pull_clicked = st.button(" ", key="dt_lamp_pull_button")
-    if pull_clicked:
-        st.session_state["dt_lamp_pull_count"] = int(st.session_state.get("dt_lamp_pull_count", 0)) + 1
-        if not st.session_state["dt_lamp_on"]:
-            st.session_state["dt_lamp_on"] = True
-            st.session_state["dt_lamp_theme"] = 0
-        else:
-            st.session_state["dt_lamp_theme"] = (st.session_state["dt_lamp_theme"] + 1) % 5
-        st.rerun()
+    # Actual draggable cord component: the SVG path and bead are redrawn together
+    # during pointer movement, then spring back after release. No separate button.
+    drag_value = _dt_lamp_drag(
+        pulls=int(st.session_state.get("dt_lamp_pull_count", 0)),
+        key="dt_lamp_drag_component",
+        default={"pulls": int(st.session_state.get("dt_lamp_pull_count", 0))},
+    )
+    if isinstance(drag_value, dict):
+        reported_pulls = int(drag_value.get("pulls", 0) or 0)
+        previous_pulls = int(st.session_state.get("dt_lamp_pull_count", 0))
+        if reported_pulls > previous_pulls:
+            st.session_state["dt_lamp_pull_count"] = reported_pulls
+            if not st.session_state["dt_lamp_on"]:
+                st.session_state["dt_lamp_on"] = True
+                st.session_state["dt_lamp_theme"] = 0
+            else:
+                st.session_state["dt_lamp_theme"] = (int(st.session_state.get("dt_lamp_theme", 0)) + 1) % 5
+            st.rerun()
 
     # Keep the pull counter in this scope as well: it drives the CSS spring animation.
     # Without this local value Streamlit raises NameError while rendering the login page.
