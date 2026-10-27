@@ -648,7 +648,1162 @@ def _show_login_header():
     """Render the new supplied animated lamp room behind the real Streamlit auth form."""
     pull_step = int(st.session_state.get("dt_lamp_pull_count", 0))
     room_class = ("room on pull-step-{}".format(pull_step) if st.session_state.get("dt_lamp_on", False) else "room pull-step-{}".format(pull_step))
-    css = '/* ===================================================\n   COZY ANIMATED LAMP LOGIN - MODERN INTERACTIVE STYLES\n   =================================================== */\n\n* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}\n\n:root {\n  --font-family: \'Plus Jakarta Sans\', -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;\n  \n  /* Dynamic Lamp Theme Colors (Default: Warm Gold) */\n  --lamp-clr: #ffd54f;\n  --lamp-glow-core: #fff9c4;\n  --lamp-glow-strong: rgba(255, 213, 79, 0.65);\n  --lamp-glow-soft: rgba(255, 193, 7, 0.25);\n  --lamp-beam-start: rgba(255, 235, 150, 0.85);\n  --lamp-beam-mid: rgba(255, 213, 79, 0.25);\n  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(255, 220, 100, 0.35) 0%, rgba(255, 180, 50, 0.08) 55%, transparent 75%);\n  \n  /* Dark Atmosphere Colors */\n  --bg-dark-off: #08090c;\n  --bg-dark-on: #0e1117;\n  --glass-bg: rgba(22, 27, 34, 0.65);\n  --glass-border: rgba(255, 255, 255, 0.12);\n  --text-main: #f0f6fc;\n  --text-muted: #8b949e;\n  --card-shadow-off: 0 30px 60px rgba(0, 0, 0, 0.8);\n  --card-shadow-on: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px -5px var(--lamp-glow-soft);\n}\n\n/* Mood Color Variations */\n[data-theme="cyber"] {\n  --lamp-clr: #00e5ff;\n  --lamp-glow-core: #e0f7fa;\n  --lamp-glow-strong: rgba(0, 229, 255, 0.65);\n  --lamp-glow-soft: rgba(0, 188, 212, 0.25);\n  --lamp-beam-start: rgba(128, 243, 255, 0.85);\n  --lamp-beam-mid: rgba(0, 229, 255, 0.25);\n  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.35) 0%, rgba(0, 188, 212, 0.08) 55%, transparent 75%);\n}\n\n[data-theme="sunset"] {\n  --lamp-clr: #ff5252;\n  --lamp-glow-core: #ffebee;\n  --lamp-glow-strong: rgba(255, 82, 82, 0.65);\n  --lamp-glow-soft: rgba(233, 30, 99, 0.25);\n  --lamp-beam-start: rgba(255, 138, 128, 0.85);\n  --lamp-beam-mid: rgba(255, 82, 82, 0.25);\n  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(255, 82, 82, 0.35) 0%, rgba(233, 30, 99, 0.08) 55%, transparent 75%);\n}\n\n[data-theme="aurora"] {\n  --lamp-clr: #00e676;\n  --lamp-glow-core: #e8f5e9;\n  --lamp-glow-strong: rgba(0, 230, 118, 0.65);\n  --lamp-glow-soft: rgba(76, 175, 80, 0.25);\n  --lamp-beam-start: rgba(185, 246, 202, 0.85);\n  --lamp-beam-mid: rgba(0, 230, 118, 0.25);\n  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(0, 230, 118, 0.35) 0%, rgba(76, 175, 80, 0.08) 55%, transparent 75%);\n}\n\n[data-theme="violet"] {\n  --lamp-clr: #d500f9;\n  --lamp-glow-core: #f3e5f5;\n  --lamp-glow-strong: rgba(213, 0, 249, 0.65);\n  --lamp-glow-soft: rgba(171, 71, 188, 0.25);\n  --lamp-beam-start: rgba(234, 128, 252, 0.85);\n  --lamp-beam-mid: rgba(213, 0, 249, 0.25);\n  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(213, 0, 249, 0.35) 0%, rgba(171, 71, 188, 0.08) 55%, transparent 75%);\n}\n\nhtml, body {\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n  font-family: var(--font-family);\n  background-color: var(--bg-dark-off);\n  color: var(--text-main);\n  user-select: none;\n  -webkit-font-smoothing: antialiased;\n}\n\nbutton, input {\n  font-family: inherit;\n}\n\n/* ===================================================\n   ROOM & AMBIENCE\n   =================================================== */\n\n.room {\n  position: relative;\n  width: 100vw;\n  height: 100vh;\n  display: flex;\n  overflow: hidden;\n  background: radial-gradient(circle at 35% 45%, #131720 0%, var(--bg-dark-off) 85%);\n  transition: background .8s cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.room.on {\n  background: radial-gradient(circle at 35% 45%, #19202c 0%, var(--bg-dark-on) 85%);\n}\n\n/* Night Sky Backdrop with Subtle Window Frame */\n.night-sky {\n  position: absolute;\n  top: 40px;\n  left: 60px;\n  width: 160px;\n  height: 240px;\n  border-radius: 12px;\n  border: 4px solid rgba(255, 255, 255, 0.05);\n  background: linear-gradient(180deg, #050811 0%, #0c1220 100%);\n  overflow: hidden;\n  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.4);\n  pointer-events: none;\n  opacity: 0.6;\n  transition: opacity 0.8s ease;\n  z-index: 1;\n}\n\n.room.on .night-sky {\n  opacity: 0.25;\n}\n\n.ambient-window {\n  width: 100%;\n  height: 100%;\n  position: relative;\n}\n\n.window-frame {\n  position: absolute;\n  top: 50%;\n  left: 0;\n  right: 0;\n  height: 3px;\n  background: rgba(255, 255, 255, 0.07);\n}\n\n.window-frame::after {\n  content: \'\';\n  position: absolute;\n  left: 50%;\n  top: -120px;\n  bottom: -120px;\n  width: 3px;\n  background: rgba(255, 255, 255, 0.07);\n}\n\n.stars-cluster {\n  position: absolute;\n  inset: 0;\n  background-image: \n    radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),\n    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),\n    radial-gradient(1.5px 1.5px at 90px 40px, #aed581, rgba(0,0,0,0)),\n    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),\n    radial-gradient(1.5px 1.5px at 110px 140px, #81d4fa, rgba(0,0,0,0)),\n    radial-gradient(1px 1px at 50px 180px, #fff, rgba(0,0,0,0));\n  animation: twinkle 4s ease-in-out infinite alternate;\n}\n\n@keyframes twinkle {\n  0% { opacity: 0.3; }\n  100% { opacity: 0.9; }\n}\n\n/* Room Light Radial Gradient */\n.room-light {\n  position: absolute;\n  top: -20%;\n  left: -10%;\n  width: 1100px;\n  height: 1100px;\n  border-radius: 50%;\n  pointer-events: none;\n  z-index: 2;\n  opacity: 0;\n  transform: scale(0.6);\n  background: radial-gradient(circle, var(--lamp-glow-soft) 0%, rgba(0,0,0,0) 70%);\n  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.room.on .room-light {\n  opacity: 1;\n  transform: scale(1.4);\n}\n\n/* Atmospheric Floating Fireflies / Dust Motes */\n.fireflies {\n  position: fixed;\n  inset: 0;\n  pointer-events: none;\n  z-index: 15;\n  overflow: hidden;\n}\n\n.firefly {\n  position: absolute;\n  border-radius: 50%;\n  background: var(--lamp-clr);\n  box-shadow: 0 0 12px 3px var(--lamp-glow-strong), 0 0 24px var(--lamp-clr);\n  animation: fireflyMove var(--duration) ease-in-out var(--delay) infinite alternate;\n  pointer-events: none;\n  transition: background-color 0.5s ease, box-shadow 0.5s ease;\n}\n\n@keyframes fireflyMove {\n  0% { transform: translate(var(--x1), var(--y1)) scale(0.8); opacity: 0.2; }\n  33% { transform: translate(var(--x2), var(--y2)) scale(1.2); opacity: 0.8; }\n  66% { transform: translate(var(--x3), var(--y3)) scale(0.9); opacity: 0.4; }\n  100% { transform: translate(var(--x4), var(--y4)) scale(1); opacity: 0.7; }\n}\n\n/* ===================================================\n   TOP CONTROLS (Sound Toggle)\n   =================================================== */\n\n.top-controls {\n  position: absolute;\n  top: 24px;\n  right: 32px;\n  display: flex;\n  align-items: center;\n  gap: 16px;\n  z-index: 40;\n}\n\n.sound-toggle {\n  width: 42px;\n  height: 42px;\n  border-radius: 50%;\n  background: rgba(22, 27, 34, 0.7);\n  backdrop-filter: blur(12px);\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  color: #c9d1d9;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);\n  transition: all 0.25s ease;\n}\n\n.sound-toggle:hover {\n  background: rgba(35, 42, 54, 0.9);\n  color: #fff;\n  transform: translateY(-2px);\n  border-color: rgba(255, 255, 255, 0.25);\n}\n\n.sound-icon {\n  width: 20px;\n  height: 20px;\n}\n\n.hidden {\n  display: none !important;\n}\n\n/* ===================================================\n   LAMP ASSEMBLY & REALISTIC 3D LIGHTING\n   =================================================== */\n\n.lamp-side {\n  flex: 1.1;\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  z-index: 10;\n}\n\n.lamp-container {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  transform: scale(1.15);\n  transform-origin: center bottom;\n  -webkit-tap-highlight-color: transparent;\n  transition: transform 0.3s ease;\n}\n\n/* Interactive Prompt Tooltip */\n.pull-hint {\n  position: absolute;\n  top: 15px;\n  left: calc(50% + 80px);\n  background: rgba(20, 24, 33, 0.85);\n  backdrop-filter: blur(8px);\n  border: 1px solid rgba(255, 255, 255, 0.15);\n  color: #e6edf3;\n  padding: 8px 14px;\n  border-radius: 20px;\n  font-size: 13px;\n  font-weight: 500;\n  white-space: nowrap;\n  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  pointer-events: none;\n  opacity: 0.9;\n  transform: translateY(0);\n  animation: floatHint 2.5s ease-in-out infinite;\n  transition: opacity 0.5s ease, transform 0.5s ease;\n  z-index: 20;\n}\n\n.room.on .pull-hint {\n  opacity: 0;\n  transform: translateY(-15px);\n}\n\n@keyframes floatHint {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-6px); }\n}\n\n/* Lamp Finial */\n.lamp-top-finial {\n  width: 18px;\n  height: 8px;\n  background: linear-gradient(180deg, #d4af37 0%, #856404 100%);\n  border-radius: 6px 6px 0 0;\n  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);\n  z-index: 12;\n}\n\n/* Lamp Head Shade */\n.lamp-head {\n  width: 154px;\n  height: 60px;\n  background: linear-gradient(135deg, #24292e 0%, #161b22 60%, #0d1117 100%);\n  border-radius: 154px 154px 8px 8px;\n  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.2), \n              inset 0 -2px 6px rgba(0, 0, 0, 0.8),\n              0 15px 30px rgba(0, 0, 0, 0.95);\n  position: relative;\n  z-index: 11;\n  border-bottom: 3px solid #111418;\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;\n  display: flex;\n  justify-content: center;\n  align-items: flex-end;\n}\n\n.lamp-inner-bulb {\n  width: 32px;\n  height: 14px;\n  background: #2a2e37;\n  border-radius: 50% 50% 0 0;\n  margin-bottom: 2px;\n  transition: background 0.4s ease, box-shadow 0.4s ease;\n}\n\n.room.on .lamp-inner-bulb {\n  background: var(--lamp-glow-core);\n  box-shadow: 0 0 20px 8px var(--lamp-clr);\n}\n\n.room.on .lamp-head {\n  box-shadow: inset 0 -4px 15px var(--lamp-glow-soft), \n              inset 0 3px 6px rgba(255, 255, 255, 0.25),\n              0 15px 30px rgba(0, 0, 0, 0.9);\n}\n\n/* Filament Core Glow */\n.lamp-glow {\n  position: absolute;\n  top: 52px;\n  width: 110px;\n  height: 28px;\n  background: #ffffff;\n  border-radius: 50%;\n  box-shadow: 0 0 45px 25px var(--lamp-glow-strong), 0 0 90px 45px var(--lamp-glow-soft);\n  opacity: 0;\n  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);\n  z-index: 10;\n  pointer-events: none;\n}\n\n.room.on .lamp-glow {\n  opacity: 1;\n}\n\n/* Volumetric Light Beam */\n.light-beam {\n  position: absolute;\n  top: 55px;\n  width: 620px;\n  height: 400px;\n  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);\n  background: linear-gradient(180deg, var(--lamp-beam-start) 0%, var(--lamp-beam-mid) 50%, rgba(0, 0, 0, 0) 100%);\n  opacity: 0;\n  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);\n  z-index: 6;\n  pointer-events: none;\n  filter: blur(12px);\n  transform-origin: 50% 0%;\n}\n\n.room.on .light-beam {\n  opacity: 0.95;\n}\n\n/* Lamp Hardware Details */\n.lamp-neck-joint {\n  width: 14px;\n  height: 10px;\n  background: linear-gradient(90deg, #b8860b 0%, #ffd700 50%, #856404 100%);\n  border-radius: 3px;\n  z-index: 9;\n}\n\n.lamp-stem {\n  width: 8px;\n  height: 310px;\n  background: linear-gradient(90deg, #111418 0%, #2f3640 45%, #111418 100%);\n  position: relative;\n  z-index: 8;\n  box-shadow: 0 0 10px rgba(0,0,0,0.8);\n  transition: box-shadow 0.4s ease;\n}\n\n.room.on .lamp-stem {\n  box-shadow: 0 0 15px var(--lamp-glow-soft);\n}\n\n.lamp-joint {\n  width: 18px;\n  height: 12px;\n  background: linear-gradient(90deg, #856404 0%, #ffd700 50%, #856404 100%);\n  border-radius: 4px;\n  margin-top: -6px;\n  z-index: 9;\n}\n\n.lamp-base {\n  width: 120px;\n  height: 20px;\n  background: linear-gradient(180deg, #24292e 0%, #161b22 100%);\n  border-radius: 40px 40px 6px 6px;\n  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15), 0 12px 24px rgba(0, 0, 0, 0.9);\n  position: relative;\n  z-index: 9;\n  border-bottom: 3px solid #090c10;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n.base-ridge {\n  width: 80px;\n  height: 3px;\n  background: rgba(255, 255, 255, 0.08);\n  border-radius: 2px;\n}\n\n/* Desk Light Reflection Pool */\n.desk-surface {\n  position: absolute;\n  bottom: -45px;\n  width: 650px;\n  height: 120px;\n  background: var(--lamp-desk-glow);\n  border-radius: 50%;\n  opacity: 0;\n  transition: opacity 0.5s ease;\n  z-index: 3;\n  pointer-events: none;\n}\n\n.room.on .desk-surface {\n  opacity: 1;\n}\n\n/* ===================================================\n   INTERACTIVE PULL STRING WITH SPRING PHYSICS\n   =================================================== */\n\n.string-svg {\n  position: absolute;\n  top: 55px;\n  left: calc(50% + 58px);\n  width: 4px;\n  height: 4px;\n  overflow: visible;\n  z-index: 10;\n  pointer-events: none;\n}\n\n.string-svg path {\n  stroke: #7d8590;\n  stroke-width: 2.2;\n  stroke-linecap: round;\n  fill: none;\n  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));\n}\n\n.string-handle {\n  position: absolute;\n  top: 145px;\n  left: calc(50% + 52px);\n  width: 14px;\n  height: 26px;\n  background: linear-gradient(180deg, #f7d56e 0%, #c49826 60%, #7e5e0f 100%);\n  border-radius: 7px;\n  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.6), 0 4px 10px rgba(0, 0, 0, 0.8);\n  cursor: grab;\n  z-index: 12;\n  touch-action: none;\n  user-select: none;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  outline: none;\n  transition: box-shadow 0.2s ease, filter 0.2s ease;\n}\n\n.string-handle:hover {\n  filter: brightness(1.15);\n  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(0, 0, 0, 0.9), 0 0 12px var(--lamp-glow-soft);\n}\n\n.string-handle.dragging {\n  cursor: grabbing;\n  filter: brightness(1.25);\n  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.95);\n}\n\n.handle-bead {\n  width: 4px;\n  height: 12px;\n  background: rgba(0, 0, 0, 0.25);\n  border-radius: 2px;\n}\n\n/* ===================================================\n   GLASSMORPHIC LOGIN CARD 2.0\n   =================================================== */\n\n.login-side {\n  flex: 1.2;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  z-index: 20;\n  padding-right: 8%;\n}\n\n.login-card {\n  width: 100%;\n  max-width: 450px;\n  padding: 40px;\n  border-radius: 28px;\n  display: flex;\n  flex-direction: column;\n  gap: 22px;\n  position: relative;\n  overflow: hidden;\n  opacity: 0;\n  transform: translateX(45px) scale(0.96);\n  filter: blur(12px);\n  pointer-events: none;\n  box-shadow: var(--card-shadow-off);\n  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),\n              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),\n              filter 0.6s ease,\n              box-shadow 0.6s ease;\n}\n\n.room.on .login-card {\n  opacity: 1;\n  transform: translateX(0) scale(1);\n  filter: blur(0);\n  pointer-events: auto;\n  box-shadow: var(--card-shadow-on);\n  transition-delay: 0.15s;\n}\n\n.glass {\n  background: var(--glass-bg);\n  backdrop-filter: blur(24px) saturate(180%);\n  -webkit-backdrop-filter: blur(24px) saturate(180%);\n  border: 1px solid var(--glass-border);\n}\n\n.glass-line {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 1.5px;\n  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), var(--lamp-clr), transparent);\n}\n\n/* Card Glow Spotlight Overlay */\n.card-glow-overlay {\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n  border-radius: inherit;\n  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--lamp-glow-soft) 0%, transparent 65%);\n  opacity: 0;\n  transition: opacity 0.4s ease;\n  z-index: 1;\n}\n\n.room.on .card-glow-overlay {\n  opacity: 0.35;\n}\n\n/* Form Switcher Tabs */\n.form-tabs {\n  position: relative;\n  display: flex;\n  background: rgba(13, 17, 23, 0.6);\n  padding: 4px;\n  border-radius: 16px;\n  border: 1px solid rgba(255, 255, 255, 0.08);\n  z-index: 2;\n}\n\n.tab-slider {\n  position: absolute;\n  top: 4px;\n  left: 4px;\n  width: calc(50% - 4px);\n  height: calc(100% - 8px);\n  background: rgba(255, 255, 255, 0.12);\n  border-radius: 12px;\n  border: 1px solid rgba(255, 255, 255, 0.15);\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n.form-tabs.signup-active .tab-slider {\n  transform: translateX(100%);\n}\n\n.tab-btn {\n  flex: 1;\n  padding: 10px 0;\n  border: none;\n  background: transparent;\n  color: var(--text-muted);\n  font-size: 14px;\n  font-weight: 600;\n  cursor: pointer;\n  z-index: 3;\n  transition: color 0.3s ease;\n}\n\n.tab-btn.active {\n  color: #fff;\n}\n\n/* Card Heading */\n.login-heading {\n  text-align: center;\n  position: relative;\n  z-index: 2;\n}\n\n.login-heading h2 {\n  font-size: 30px;\n  font-weight: 700;\n  color: #fff;\n  letter-spacing: -0.5px;\n  margin-bottom: 6px;\n}\n\n.login-heading p {\n  color: var(--text-muted);\n  font-size: 14px;\n  font-weight: 400;\n}\n\n/* ===================================================\n   INPUTS & FORM FIELDS\n   =================================================== */\n\n.auth-form {\n  display: flex;\n  flex-direction: column;\n  gap: 18px;\n  position: relative;\n  z-index: 2;\n}\n\n.inputs {\n  display: flex;\n  flex-direction: column;\n  gap: 14px;\n}\n\n.signup-only-field {\n  max-height: 0;\n  opacity: 0;\n  overflow: hidden;\n  margin: 0;\n  transform: translateY(-8px);\n  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),\n              opacity 0.35s ease,\n              transform 0.35s ease,\n              margin 0.35s ease;\n}\n\n.form-tabs.signup-active ~ .login-heading ~ .auth-form .signup-only-field,\n.auth-form.mode-signup .signup-only-field {\n  max-height: 70px;\n  opacity: 1;\n  transform: translateY(0);\n}\n\n.input-wrap {\n  position: relative;\n  display: flex;\n  align-items: center;\n}\n\n.input-icon {\n  position: absolute;\n  left: 16px;\n  top: 50%;\n  transform: translateY(-50%);\n  width: 20px;\n  height: 20px;\n  color: var(--text-muted);\n  pointer-events: none;\n  transition: color 0.25s ease;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.input-icon svg {\n  width: 100%;\n  height: 100%;\n}\n\n.input-wrap input {\n  width: 100%;\n  padding: 15px 16px 15px 48px;\n  border-radius: 16px;\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  background: rgba(13, 17, 23, 0.55);\n  color: #fff;\n  font-size: 15px;\n  font-weight: 500;\n  outline: none;\n  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);\n  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;\n}\n\n.input-wrap input:focus {\n  border-color: var(--lamp-clr);\n  background: rgba(13, 17, 23, 0.85);\n  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--lamp-glow-soft);\n}\n\n.input-wrap input:focus ~ .input-icon {\n  color: var(--lamp-clr);\n}\n\n.input-wrap input::placeholder {\n  color: #6e7681;\n  font-weight: 400;\n}\n\n/* Password Visibility Toggle */\n.password-wrap input {\n  padding-right: 48px;\n}\n\n.toggle-password {\n  position: absolute;\n  right: 14px;\n  top: 50%;\n  transform: translateY(-50%);\n  background: none;\n  border: none;\n  color: var(--text-muted);\n  width: 24px;\n  height: 24px;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transition: color 0.25s ease, transform 0.2s ease;\n}\n\n.toggle-password:hover {\n  color: #fff;\n  transform: translateY(-50%) scale(1.1);\n}\n\n.toggle-password svg {\n  width: 20px;\n  height: 20px;\n}\n\n/* Live Password Strength Meter */\n.password-meter {\n  display: none;\n  flex-direction: column;\n  gap: 4px;\n  padding: 0 4px;\n  transition: opacity 0.3s ease;\n}\n\n.password-meter.active {\n  display: flex;\n}\n\n.meter-bar {\n  width: 100%;\n  height: 4px;\n  background: rgba(255, 255, 255, 0.1);\n  border-radius: 4px;\n  overflow: hidden;\n}\n\n.meter-fill {\n  display: block;\n  height: 100%;\n  width: 0%;\n  border-radius: 4px;\n  transition: width 0.3s ease, background-color 0.3s ease;\n}\n\n.meter-text {\n  font-size: 11px;\n  color: var(--text-muted);\n  text-align: right;\n  font-weight: 500;\n}\n\n/* Options Row (Remember Me & Forgot Password) */\n.options-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  font-size: 13px;\n}\n\n.remember-label {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  cursor: pointer;\n  color: var(--text-muted);\n  transition: color 0.2s ease;\n}\n\n.remember-label:hover {\n  color: #fff;\n}\n\n.remember-label input {\n  display: none;\n}\n\n.checkbox-custom {\n  width: 18px;\n  height: 18px;\n  border-radius: 6px;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  background: rgba(13, 17, 23, 0.6);\n  position: relative;\n  transition: all 0.2s ease;\n}\n\n.remember-label input:checked ~ .checkbox-custom {\n  background: var(--lamp-clr);\n  border-color: var(--lamp-clr);\n}\n\n.remember-label input:checked ~ .checkbox-custom::after {\n  content: \'\';\n  position: absolute;\n  left: 6px;\n  top: 2px;\n  width: 4px;\n  height: 9px;\n  border: solid #000;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n}\n\n.forgot-link {\n  color: var(--lamp-clr);\n  text-decoration: none;\n  font-weight: 500;\n  transition: opacity 0.2s ease, text-shadow 0.2s ease;\n}\n\n.forgot-link:hover {\n  opacity: 0.85;\n  text-shadow: 0 0 8px var(--lamp-glow-soft);\n}\n\n/* ===================================================\n   BUTTONS & SOCIAL LOGIN\n   =================================================== */\n\n.sign-in-btn {\n  position: relative;\n  padding: 16px;\n  border-radius: 16px;\n  border: none;\n  background: var(--lamp-clr);\n  color: #0d1117;\n  font-size: 16px;\n  font-weight: 700;\n  cursor: pointer;\n  box-shadow: 0 6px 20px var(--lamp-glow-soft);\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.2s ease;\n  overflow: hidden;\n}\n\n.sign-in-btn:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 10px 25px var(--lamp-glow-strong);\n  filter: brightness(1.08);\n}\n\n.sign-in-btn:active {\n  transform: translateY(1px);\n}\n\n/* Button Loading Spinner */\n.btn-loader {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.spinner {\n  width: 20px;\n  height: 20px;\n  border: 3px solid rgba(0, 0, 0, 0.2);\n  border-top-color: #000;\n  border-radius: 50%;\n  animation: spin 0.7s linear infinite;\n}\n\n@keyframes spin {\n  to { transform: rotate(360deg); }\n}\n\n/* Social Divider */\n.divider {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin: 4px 0;\n}\n\n.divider span {\n  flex: 1;\n  height: 1px;\n  background: rgba(255, 255, 255, 0.1);\n}\n\n.divider b {\n  color: #6e7681;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.5px;\n  white-space: nowrap;\n}\n\n/* Social Buttons */\n.socials {\n  display: flex;\n  gap: 12px;\n}\n\n.social-btn {\n  flex: 1;\n  padding: 12px;\n  border-radius: 16px;\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  background: rgba(255, 255, 255, 0.04);\n  color: #f0f6fc;\n  font-size: 14px;\n  font-weight: 600;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 10px;\n  transition: transform 0.2s ease, background 0.25s ease, border-color 0.25s ease;\n}\n\n.social-btn:hover {\n  background: rgba(255, 255, 255, 0.1);\n  border-color: rgba(255, 255, 255, 0.25);\n  transform: translateY(-2px);\n}\n\n.social-btn:active {\n  transform: translateY(0);\n}\n\n.social-svg {\n  width: 18px;\n  height: 18px;\n}\n\n/* Feedback Toast Notification */\n.feedback-toast {\n  position: absolute;\n  bottom: 20px;\n  left: 50%;\n  transform: translateX(-50%) translateY(30px);\n  background: #1f6feb;\n  color: #fff;\n  padding: 10px 18px;\n  border-radius: 30px;\n  font-size: 13px;\n  font-weight: 600;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);\n  opacity: 0;\n  pointer-events: none;\n  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;\n  z-index: 30;\n}\n\n.feedback-toast.show {\n  opacity: 1;\n  transform: translateX(-50%) translateY(0);\n}\n\n.feedback-toast.success {\n  background: #238636;\n}\n\n.feedback-toast.error {\n  background: #da3633;\n}\n\n/* Error Shake Animation */\n.shake {\n  animation: shakeCard 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;\n}\n\n@keyframes shakeCard {\n  10%, 90% { transform: translate3d(-2px, 0, 0); }\n  20%, 80% { transform: translate3d(3px, 0, 0); }\n  30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }\n  40%, 60% { transform: translate3d(5px, 0, 0); }\n}\n\n/* ===================================================\n   RESPONSIVE DESIGN\n   =================================================== */\n\n@media (max-width: 950px) {\n  .room {\n    flex-direction: column;\n    overflow-y: auto;\n    overflow-x: hidden;\n  }\n\n  .lamp-side {\n    flex: 0 0 52vh;\n    min-height: 400px;\n    padding-top: 20px;\n  }\n\n  .login-side {\n    padding: 20px 20px 60px;\n    flex: 0 0 auto;\n  }\n\n  .night-sky {\n    display: none;\n  }\n\n  .top-controls {\n    top: 16px;\n    right: 16px;\n  }\n\n  .lamp-container {\n    transform: scale(0.95);\n  }\n\n  .login-card {\n    max-width: 420px;\n    padding: 30px 24px;\n  }\n\n  .pull-hint {\n    left: 50%;\n    transform: translateX(-50%);\n    top: 0;\n  }\n}\n\n@media (max-height: 680px) and (min-width: 951px) {\n  .lamp-container {\n    transform: scale(0.85);\n  }\n\n  .login-card {\n    padding: 26px 30px;\n    gap: 16px;\n  }\n}\n\n/* Streamlit pull-cord elastic interaction */\n@keyframes dt-cord-elastic {0% { transform:translateY(0) scaleY(1); }18% { transform:translateY(20px) scaleY(1.22); }38% { transform:translateY(-7px) scaleY(.88); }58% { transform:translateY(5px) scaleY(1.08); }78% { transform:translateY(-2px) scaleY(.97); }100% { transform:translateY(0) scaleY(1); }}\n/* Streamlit integration overrides: keep the supplied lamp room, but use real Streamlit auth widgets. */\nhtml, body { overflow-x:hidden !important; overflow-y:auto !important; }\n.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] { background:#08090c !important; }\n[data-testid="stMain"], [data-testid="stMainBlockContainer"], .main { background:transparent !important; }\n.room { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; z-index:0 !important; pointer-events:none !important; }\n.room .lamp-side { position:fixed !important; left:0 !important; top:0 !important; width:44vw !important; height:100vh !important; pointer-events:none !important; }\n.room .lamp-container { pointer-events:none !important; }\n.room .string-handle { pointer-events:none !important; }\n.room[class*="pull-step-"] .string-svg { animation:dt-cord-elastic .58s cubic-bezier(.2,.7,.25,1) both; transform-origin:top center; }\n.room[class*="pull-step-"] .string-handle { animation:dt-cord-elastic .58s cubic-bezier(.2,.7,.25,1) both; transform-origin:top center; }\n.room .night-sky { position:fixed !important; left:3vw !important; top:9vh !important; }\n.block-container { position:relative !important; z-index:5 !important; }\n.block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }\n.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"],\n.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { max-width:100% !important; width:100% !important; }\n.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }\n.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }\n.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }\n.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 4px) !important; top:36.8vh !important; width:28px !important; height:38px !important; padding:0 !important; margin:0 !important; }\n.st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }\n.st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:30px !important; min-height:30px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }\n.st-key-lamp_pull_control button:active { transform:translateY(18px) scaleY(1.16) !important; cursor:grabbing !important; }\n.st-key-lamp_pull_control button p, .st-key-lamp_pull_control button span { display:none !important; }\n@media(max-width:850px) {\n .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }\n .room .lamp-container { transform:scale(.65) !important; transform-origin:top center !important; }\n .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }\n .st-key-lamp_pull_control { left:calc(50vw + 32px) !important; top:calc(18vh + 12px) !important; }\n}\n'
+    css = r"""/* ===================================================
+   COZY ANIMATED LAMP LOGIN - MODERN INTERACTIVE STYLES
+   =================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Dynamic Lamp Theme Colors (Default: Warm Gold) */
+  --lamp-clr: #ffd54f;
+  --lamp-glow-core: #fff9c4;
+  --lamp-glow-strong: rgba(255, 213, 79, 0.65);
+  --lamp-glow-soft: rgba(255, 193, 7, 0.25);
+  --lamp-beam-start: rgba(255, 235, 150, 0.85);
+  --lamp-beam-mid: rgba(255, 213, 79, 0.25);
+  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(255, 220, 100, 0.35) 0%, rgba(255, 180, 50, 0.08) 55%, transparent 75%);
+  
+  /* Dark Atmosphere Colors */
+  --bg-dark-off: #08090c;
+  --bg-dark-on: #0e1117;
+  --glass-bg: rgba(22, 27, 34, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --text-main: #f0f6fc;
+  --text-muted: #8b949e;
+  --card-shadow-off: 0 30px 60px rgba(0, 0, 0, 0.8);
+  --card-shadow-on: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px -5px var(--lamp-glow-soft);
+}
+
+/* Mood Color Variations */
+[data-theme="cyber"] {
+  --lamp-clr: #00e5ff;
+  --lamp-glow-core: #e0f7fa;
+  --lamp-glow-strong: rgba(0, 229, 255, 0.65);
+  --lamp-glow-soft: rgba(0, 188, 212, 0.25);
+  --lamp-beam-start: rgba(128, 243, 255, 0.85);
+  --lamp-beam-mid: rgba(0, 229, 255, 0.25);
+  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.35) 0%, rgba(0, 188, 212, 0.08) 55%, transparent 75%);
+}
+
+[data-theme="sunset"] {
+  --lamp-clr: #ff5252;
+  --lamp-glow-core: #ffebee;
+  --lamp-glow-strong: rgba(255, 82, 82, 0.65);
+  --lamp-glow-soft: rgba(233, 30, 99, 0.25);
+  --lamp-beam-start: rgba(255, 138, 128, 0.85);
+  --lamp-beam-mid: rgba(255, 82, 82, 0.25);
+  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(255, 82, 82, 0.35) 0%, rgba(233, 30, 99, 0.08) 55%, transparent 75%);
+}
+
+[data-theme="aurora"] {
+  --lamp-clr: #00e676;
+  --lamp-glow-core: #e8f5e9;
+  --lamp-glow-strong: rgba(0, 230, 118, 0.65);
+  --lamp-glow-soft: rgba(76, 175, 80, 0.25);
+  --lamp-beam-start: rgba(185, 246, 202, 0.85);
+  --lamp-beam-mid: rgba(0, 230, 118, 0.25);
+  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(0, 230, 118, 0.35) 0%, rgba(76, 175, 80, 0.08) 55%, transparent 75%);
+}
+
+[data-theme="violet"] {
+  --lamp-clr: #d500f9;
+  --lamp-glow-core: #f3e5f5;
+  --lamp-glow-strong: rgba(213, 0, 249, 0.65);
+  --lamp-glow-soft: rgba(171, 71, 188, 0.25);
+  --lamp-beam-start: rgba(234, 128, 252, 0.85);
+  --lamp-beam-mid: rgba(213, 0, 249, 0.25);
+  --lamp-desk-glow: radial-gradient(ellipse at center, rgba(213, 0, 249, 0.35) 0%, rgba(171, 71, 188, 0.08) 55%, transparent 75%);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-family);
+  background-color: var(--bg-dark-off);
+  color: var(--text-main);
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input {
+  font-family: inherit;
+}
+
+/* ===================================================
+   ROOM & AMBIENCE
+   =================================================== */
+
+.room {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 45%, #131720 0%, var(--bg-dark-off) 85%);
+  transition: background .8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.room.on {
+  background: radial-gradient(circle at 35% 45%, #19202c 0%, var(--bg-dark-on) 85%);
+}
+
+/* Night Sky Backdrop with Subtle Window Frame */
+.night-sky {
+  position: absolute;
+  top: 40px;
+  left: 60px;
+  width: 160px;
+  height: 240px;
+  border-radius: 12px;
+  border: 4px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, #050811 0%, #0c1220 100%);
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.8s ease;
+  z-index: 1;
+}
+
+.room.on .night-sky {
+  opacity: 0.25;
+}
+
+.ambient-window {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.window-frame {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.window-frame::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -120px;
+  bottom: -120px;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.stars-cluster {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 90px 40px, #aed581, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 110px 140px, #81d4fa, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 50px 180px, #fff, rgba(0,0,0,0));
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; }
+  100% { opacity: 0.9; }
+}
+
+/* Room Light Radial Gradient */
+.room-light {
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 1100px;
+  height: 1100px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0.6);
+  background: radial-gradient(circle, var(--lamp-glow-soft) 0%, rgba(0,0,0,0) 70%);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.room.on .room-light {
+  opacity: 1;
+  transform: scale(1.4);
+}
+
+/* Atmospheric Floating Fireflies / Dust Motes */
+.fireflies {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  overflow: hidden;
+}
+
+.firefly {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--lamp-clr);
+  box-shadow: 0 0 12px 3px var(--lamp-glow-strong), 0 0 24px var(--lamp-clr);
+  animation: fireflyMove var(--duration) ease-in-out var(--delay) infinite alternate;
+  pointer-events: none;
+  transition: background-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+@keyframes fireflyMove {
+  0% { transform: translate(var(--x1), var(--y1)) scale(0.8); opacity: 0.2; }
+  33% { transform: translate(var(--x2), var(--y2)) scale(1.2); opacity: 0.8; }
+  66% { transform: translate(var(--x3), var(--y3)) scale(0.9); opacity: 0.4; }
+  100% { transform: translate(var(--x4), var(--y4)) scale(1); opacity: 0.7; }
+}
+
+/* ===================================================
+   TOP CONTROLS (Sound Toggle)
+   =================================================== */
+
+.top-controls {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 40;
+}
+
+.sound-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(22, 27, 34, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #c9d1d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.sound-toggle:hover {
+  background: rgba(35, 42, 54, 0.9);
+  color: #fff;
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sound-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===================================================
+   LAMP ASSEMBLY & REALISTIC 3D LIGHTING
+   =================================================== */
+
+.lamp-side {
+  flex: 1.1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.lamp-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(1.15);
+  transform-origin: center bottom;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.3s ease;
+}
+
+/* Interactive Prompt Tooltip */
+.pull-hint {
+  position: absolute;
+  top: 15px;
+  left: calc(50% + 80px);
+  background: rgba(20, 24, 33, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e6edf3;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: translateY(0);
+  animation: floatHint 2.5s ease-in-out infinite;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  z-index: 20;
+}
+
+.room.on .pull-hint {
+  opacity: 0;
+  transform: translateY(-15px);
+}
+
+@keyframes floatHint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Lamp Finial */
+.lamp-top-finial {
+  width: 18px;
+  height: 8px;
+  background: linear-gradient(180deg, #d4af37 0%, #856404 100%);
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+  z-index: 12;
+}
+
+/* Lamp Head Shade */
+.lamp-head {
+  width: 154px;
+  height: 60px;
+  background: linear-gradient(135deg, #24292e 0%, #161b22 60%, #0d1117 100%);
+  border-radius: 154px 154px 8px 8px;
+  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.2), 
+              inset 0 -2px 6px rgba(0, 0, 0, 0.8),
+              0 15px 30px rgba(0, 0, 0, 0.95);
+  position: relative;
+  z-index: 11;
+  border-bottom: 3px solid #111418;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.lamp-inner-bulb {
+  width: 32px;
+  height: 14px;
+  background: #2a2e37;
+  border-radius: 50% 50% 0 0;
+  margin-bottom: 2px;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.room.on .lamp-inner-bulb {
+  background: var(--lamp-glow-core);
+  box-shadow: 0 0 20px 8px var(--lamp-clr);
+}
+
+.room.on .lamp-head {
+  box-shadow: inset 0 -4px 15px var(--lamp-glow-soft), 
+              inset 0 3px 6px rgba(255, 255, 255, 0.25),
+              0 15px 30px rgba(0, 0, 0, 0.9);
+}
+
+/* Filament Core Glow */
+.lamp-glow {
+  position: absolute;
+  top: 52px;
+  width: 110px;
+  height: 28px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 45px 25px var(--lamp-glow-strong), 0 0 90px 45px var(--lamp-glow-soft);
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.room.on .lamp-glow {
+  opacity: 1;
+}
+
+/* Volumetric Light Beam */
+.light-beam {
+  position: absolute;
+  top: 55px;
+  width: 620px;
+  height: 400px;
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, var(--lamp-beam-start) 0%, var(--lamp-beam-mid) 50%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 6;
+  pointer-events: none;
+  filter: blur(12px);
+  transform-origin: 50% 0%;
+}
+
+.room.on .light-beam {
+  opacity: 0.95;
+}
+
+/* Lamp Hardware Details */
+.lamp-neck-joint {
+  width: 14px;
+  height: 10px;
+  background: linear-gradient(90deg, #b8860b 0%, #ffd700 50%, #856404 100%);
+  border-radius: 3px;
+  z-index: 9;
+}
+
+.lamp-stem {
+  width: 8px;
+  height: 310px;
+  background: linear-gradient(90deg, #111418 0%, #2f3640 45%, #111418 100%);
+  position: relative;
+  z-index: 8;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  transition: box-shadow 0.4s ease;
+}
+
+.room.on .lamp-stem {
+  box-shadow: 0 0 15px var(--lamp-glow-soft);
+}
+
+.lamp-joint {
+  width: 18px;
+  height: 12px;
+  background: linear-gradient(90deg, #856404 0%, #ffd700 50%, #856404 100%);
+  border-radius: 4px;
+  margin-top: -6px;
+  z-index: 9;
+}
+
+.lamp-base {
+  width: 120px;
+  height: 20px;
+  background: linear-gradient(180deg, #24292e 0%, #161b22 100%);
+  border-radius: 40px 40px 6px 6px;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15), 0 12px 24px rgba(0, 0, 0, 0.9);
+  position: relative;
+  z-index: 9;
+  border-bottom: 3px solid #090c10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.base-ridge {
+  width: 80px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+/* Desk Light Reflection Pool */
+.desk-surface {
+  position: absolute;
+  bottom: -45px;
+  width: 650px;
+  height: 120px;
+  background: var(--lamp-desk-glow);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.room.on .desk-surface {
+  opacity: 1;
+}
+
+/* ===================================================
+   INTERACTIVE PULL STRING WITH SPRING PHYSICS
+   =================================================== */
+
+.string-svg {
+  position: absolute;
+  top: 55px;
+  left: calc(50% + 58px);
+  width: 4px;
+  height: 4px;
+  overflow: visible;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.string-svg path {
+  stroke: #7d8590;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));
+}
+
+.string-handle {
+  position: absolute;
+  top: 145px;
+  left: calc(50% + 52px);
+  width: 14px;
+  height: 26px;
+  background: linear-gradient(180deg, #f7d56e 0%, #c49826 60%, #7e5e0f 100%);
+  border-radius: 7px;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.6), 0 4px 10px rgba(0, 0, 0, 0.8);
+  cursor: grab;
+  z-index: 12;
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+  transition: box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.string-handle:hover {
+  filter: brightness(1.15);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(0, 0, 0, 0.9), 0 0 12px var(--lamp-glow-soft);
+}
+
+.string-handle.dragging {
+  cursor: grabbing;
+  filter: brightness(1.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.95);
+}
+
+.handle-bead {
+  width: 4px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+}
+
+/* ===================================================
+   GLASSMORPHIC LOGIN CARD 2.0
+   =================================================== */
+
+.login-side {
+  flex: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding-right: 8%;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(45px) scale(0.96);
+  filter: blur(12px);
+  pointer-events: none;
+  box-shadow: var(--card-shadow-off);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.6s ease,
+              box-shadow 0.6s ease;
+}
+
+.room.on .login-card {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  filter: blur(0);
+  pointer-events: auto;
+  box-shadow: var(--card-shadow-on);
+  transition-delay: 0.15s;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), var(--lamp-clr), transparent);
+}
+
+/* Card Glow Spotlight Overlay */
+.card-glow-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--lamp-glow-soft) 0%, transparent 65%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+
+.room.on .card-glow-overlay {
+  opacity: 0.35;
+}
+
+/* Form Switcher Tabs */
+.form-tabs {
+  position: relative;
+  display: flex;
+  background: rgba(13, 17, 23, 0.6);
+  padding: 4px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 2;
+}
+
+.tab-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.form-tabs.signup-active .tab-slider {
+  transform: translateX(100%);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 3;
+  transition: color 0.3s ease;
+}
+
+.tab-btn.active {
+  color: #fff;
+}
+
+/* Card Heading */
+.login-heading {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.login-heading h2 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.login-heading p {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* ===================================================
+   INPUTS & FORM FIELDS
+   =================================================== */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  z-index: 2;
+}
+
+.inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.signup-only-field {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  transform: translateY(-8px);
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.35s ease,
+              transform 0.35s ease,
+              margin 0.35s ease;
+}
+
+.form-tabs.signup-active ~ .login-heading ~ .auth-form .signup-only-field,
+.auth-form.mode-signup .signup-only-field {
+  max-height: 70px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.input-wrap input {
+  width: 100%;
+  padding: 15px 16px 15px 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(13, 17, 23, 0.55);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.input-wrap input:focus {
+  border-color: var(--lamp-clr);
+  background: rgba(13, 17, 23, 0.85);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--lamp-glow-soft);
+}
+
+.input-wrap input:focus ~ .input-icon {
+  color: var(--lamp-clr);
+}
+
+.input-wrap input::placeholder {
+  color: #6e7681;
+  font-weight: 400;
+}
+
+/* Password Visibility Toggle */
+.password-wrap input {
+  padding-right: 48px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.25s ease, transform 0.2s ease;
+}
+
+.toggle-password:hover {
+  color: #fff;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.toggle-password svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Live Password Strength Meter */
+.password-meter {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+  transition: opacity 0.3s ease;
+}
+
+.password-meter.active {
+  display: flex;
+}
+
+.meter-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.meter-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Options Row (Remember Me & Forgot Password) */
+.options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.remember-label:hover {
+  color: #fff;
+}
+
+.remember-label input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(13, 17, 23, 0.6);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.remember-label input:checked ~ .checkbox-custom {
+  background: var(--lamp-clr);
+  border-color: var(--lamp-clr);
+}
+
+.remember-label input:checked ~ .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 9px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.forgot-link {
+  color: var(--lamp-clr);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s ease, text-shadow 0.2s ease;
+}
+
+.forgot-link:hover {
+  opacity: 0.85;
+  text-shadow: 0 0 8px var(--lamp-glow-soft);
+}
+
+/* ===================================================
+   BUTTONS & SOCIAL LOGIN
+   =================================================== */
+
+.sign-in-btn {
+  position: relative;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: var(--lamp-clr);
+  color: #0d1117;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--lamp-glow-soft);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.2s ease;
+  overflow: hidden;
+}
+
+.sign-in-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px var(--lamp-glow-strong);
+  filter: brightness(1.08);
+}
+
+.sign-in-btn:active {
+  transform: translateY(1px);
+}
+
+/* Button Loading Spinner */
+.btn-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Social Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.divider span {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.divider b {
+  color: #6e7681;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Social Buttons */
+.socials {
+  display: flex;
+  gap: 12px;
+}
+
+.social-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f0f6fc;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.2s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.social-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.social-btn:active {
+  transform: translateY(0);
+}
+
+.social-svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Feedback Toast Notification */
+.feedback-toast {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  background: #1f6feb;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  z-index: 30;
+}
+
+.feedback-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.feedback-toast.success {
+  background: #238636;
+}
+
+.feedback-toast.error {
+  background: #da3633;
+}
+
+/* Error Shake Animation */
+.shake {
+  animation: shakeCard 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shakeCard {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(3px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+  40%, 60% { transform: translate3d(5px, 0, 0); }
+}
+
+/* ===================================================
+   RESPONSIVE DESIGN
+   =================================================== */
+
+@media (max-width: 950px) {
+  .room {
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .lamp-side {
+    flex: 0 0 52vh;
+    min-height: 400px;
+    padding-top: 20px;
+  }
+
+  .login-side {
+    padding: 20px 20px 60px;
+    flex: 0 0 auto;
+  }
+
+  .night-sky {
+    display: none;
+  }
+
+  .top-controls {
+    top: 16px;
+    right: 16px;
+  }
+
+  .lamp-container {
+    transform: scale(0.95);
+  }
+
+  .login-card {
+    max-width: 420px;
+    padding: 30px 24px;
+  }
+
+  .pull-hint {
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+  }
+}
+
+@media (max-height: 680px) and (min-width: 951px) {
+  .lamp-container {
+    transform: scale(0.85);
+  }
+
+  .login-card {
+    padding: 26px 30px;
+    gap: 16px;
+  }
+}
+
+/* Streamlit pull-cord elastic interaction */
+@keyframes dt-cord-elastic {0% { transform:translateY(0) scaleY(1); }14% { transform:translateY(24px) scaleY(1.25); }32% { transform:translateY(-8px) scaleY(.88); }52% { transform:translateY(7px) scaleY(1.09); }72% { transform:translateY(-3px) scaleY(.97); }88% { transform:translateY(2px) scaleY(1.02); }100% { transform:translateY(0) scaleY(1); }}
+/* Streamlit integration overrides: keep the supplied lamp room, but use real Streamlit auth widgets. */
+html, body { overflow-x:hidden !important; overflow-y:auto !important; }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] { background:#08090c !important; }
+[data-testid="stMain"], [data-testid="stMainBlockContainer"], .main { background:transparent !important; }
+.room { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; z-index:0 !important; pointer-events:none !important; }
+.room .lamp-side { position:fixed !important; left:0 !important; top:0 !important; width:44vw !important; height:100vh !important; pointer-events:none !important; }
+.room .lamp-container { pointer-events:none !important; }
+.room .string-handle { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
+.room[class*="pull-step-"] .string-svg { animation:dt-cord-elastic .72s cubic-bezier(.22,.61,.36,1) both; transform-origin:top center; }
+.room[class*="pull-step-"] .string-handle { animation:dt-cord-elastic .72s cubic-bezier(.22,.61,.36,1) both; transform-origin:top center; }
+.room .night-sky { position:fixed !important; left:3vw !important; top:9vh !important; }
+.block-container { position:relative !important; z-index:5 !important; }
+.block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"],
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { max-width:100% !important; width:100% !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
+.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 4px) !important; top:44.2vh !important; width:28px !important; height:42px !important; padding:0 !important; margin:0 !important; }
+.st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }
+.st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:30px !important; min-height:30px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
+.st-key-lamp_pull_control button:active { transform:translateY(18px) scaleY(1.16) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button p, .st-key-lamp_pull_control button span { display:none !important; }
+@media(max-width:850px) {
+ .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }
+ .room .lamp-container { transform:scale(.65) !important; transform-origin:top center !important; }
+ .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }
+ .st-key-lamp_pull_control { left:calc(50vw + 32px) !important; top:calc(18vh + 12px) !important; }
+}
+"""
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
     st.markdown("<style>" + css + "</style>" + markup, unsafe_allow_html=True)
 
