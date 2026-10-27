@@ -2809,7 +2809,32 @@ def main():
         min-height: 0 !important;
       }
       .block-container { height: auto !important; }
-      .room, .room.on { height: 0 !important; min-height: 0 !important; overflow: visible !important; }
+      /* Keep the legacy lamp scene out of document flow. Its 1100px light layer
+         was overflowing the page even when the lamp itself was visually hidden. */
+      main.room, .room, .room.on {
+        position: fixed !important;
+        inset: 0 auto auto 0 !important;
+        width: 100vw !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        overflow: clip !important;
+        contain: layout paint size !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+      }
+      .room .night-sky, .room .room-light, .room .fireflies,
+      .room .lamp-side, .room .lamp-container {
+        max-height: 0 !important;
+        overflow: clip !important;
+        pointer-events: none !important;
+      }
+      .room .room-light { width: 0 !important; height: 0 !important; }
+      [data-testid="stAppViewContainer"], [data-testid="stMain"],
+      [data-testid="stMainBlockContainer"], section.main, .block-container {
+        position: relative !important;
+        z-index: 1 !important;
+      }
       .dt-game-toast { width: min(290px, calc(100vw - 32px)) !important; padding: 12px 14px !important; border-radius: 12px !important; box-shadow: 0 8px 24px rgba(0,0,0,.28) !important; }
       .dt-game-toast strong { font-size: 14px !important; }
       .dt-game-toast span { font-size: 12px !important; }
