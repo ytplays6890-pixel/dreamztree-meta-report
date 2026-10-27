@@ -2799,22 +2799,22 @@ def main():
     if st.session_state.pop("login_just_succeeded", False):
         st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
-    # Professional enterprise theme inspired by Linear/Stripe analytics:
+    # Minimal professional theme inspired by Stripe/Linear:
     # restrained navy/slate palette, crisp hierarchy, compact cards, no decorative motion.
     st.markdown("""
     <style>
       :root {
-        --pro-bg: #0b1220;
-        --pro-surface: #111b2e;
-        --pro-surface-raised: #152238;
-        --pro-border: rgba(148,163,184,.18);
-        --pro-text: #edf3fc;
-        --pro-muted: #9eacc2;
-        --pro-blue: #76a9fa;
+        --pro-bg: #0d1117;
+        --pro-surface: #111820;
+        --pro-surface-raised: #171f29;
+        --pro-border: rgba(148,163,184,.14);
+        --pro-text: #e6edf3;
+        --pro-muted: #8b949e;
+        --pro-blue: #8ab4f8;
         --pro-teal: #5eead4;
       }
       .stApp {
-        background: #0b1220 !important;
+        background: #0d1117 !important;
         color: var(--pro-text) !important;
         animation: none !important;
       }
@@ -2822,29 +2822,29 @@ def main():
       [data-testid="stAppViewContainer"]:after,
       .stApp:before { display:none !important; animation:none !important; }
       [data-testid="stHeader"] {
-        background: rgba(11,18,32,.94) !important;
+        background: rgba(13,17,23,.96) !important;
         border-bottom: 1px solid var(--pro-border) !important;
         backdrop-filter: blur(16px);
       }
       [data-testid="stSidebar"] {
-        background: #0e1728 !important;
+        background: #0d1117 !important;
         border-right: 1px solid var(--pro-border) !important;
       }
       .block-container {
-        max-width: 1440px !important;
-        padding: 1.4rem clamp(1rem, 3vw, 2.6rem) 3rem !important;
+        max-width: 1360px !important;
+        padding: 1.25rem clamp(1rem, 2.4vw, 2rem) 2.5rem !important;
       }
       h1, h2, h3 { color: #f4f7fc !important; letter-spacing: -.025em !important; text-shadow:none !important; }
-      h1 { font-size: clamp(1.8rem, 2.8vw, 2.45rem) !important; font-weight: 760 !important; }
+      h1 { font-size: clamp(1.7rem, 2.5vw, 2.15rem) !important; font-weight: 700 !important; }
       h2 { font-size: clamp(1.28rem, 2vw, 1.65rem) !important; font-weight: 700 !important; }
       p, label, [data-testid="stMarkdownContainer"] { color: #d5deec; }
       [data-testid="stCaptionContainer"] { color: var(--pro-muted) !important; }
       [data-testid="stMetric"] {
-        background: linear-gradient(180deg, rgba(21,34,56,.96), rgba(17,27,46,.96)) !important;
+        background: #10161d !important;
         border: 1px solid var(--pro-border) !important;
-        border-radius: 14px !important;
-        padding: 18px 20px !important;
-        box-shadow: 0 6px 18px rgba(0,0,0,.12) !important;
+        border-radius: 10px !important;
+        padding: 15px 17px !important;
+        box-shadow: none !important;
         animation: none !important;
         transition: border-color .18s ease, background .18s ease !important;
       }
@@ -2859,12 +2859,12 @@ def main():
       [data-testid="stExpander"] {
         background: rgba(17,27,46,.72) !important;
         border: 1px solid var(--pro-border) !important;
-        border-radius: 13px !important;
+        border-radius: 10px !important;
         box-shadow: none !important;
       }
       [data-testid="stDataFrame"], [data-testid="stTable"] {
         border: 1px solid var(--pro-border) !important;
-        border-radius: 12px !important;
+        border-radius: 9px !important;
         overflow: hidden !important;
         animation: none !important;
       }
@@ -2875,30 +2875,30 @@ def main():
         animation: none !important;
       }
       .stButton button, [data-testid="stDownloadButton"] button {
-        background: #18263d !important;
+        background: #161b22 !important;
         color: #eaf1fc !important;
         border: 1px solid rgba(148,163,184,.24) !important;
-        border-radius: 10px !important;
-        font-weight: 650 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
         min-height: 40px !important;
         box-shadow: none !important;
         animation: none !important;
         transition: background .16s ease, border-color .16s ease !important;
       }
       .stButton button:hover, [data-testid="stDownloadButton"] button:hover {
-        background: #203451 !important;
+        background: #202832 !important;
         border-color: rgba(118,169,250,.55) !important;
         transform:none !important;
         filter:none !important;
       }
       .stButton button[kind="primary"], button[kind="primary"] {
-        background: #3478e5 !important;
+        background: #2f6feb !important;
         color: #fff !important;
-        border: 1px solid #4b8bf0 !important;
+        border: 1px solid #2f6feb !important;
         font-weight: 720 !important;
       }
       .stButton button[kind="primary"]:hover, button[kind="primary"]:hover {
-        background: #2868ce !important;
+        background: #245ed0 !important;
       }
       [data-testid="stAlert"] {
         border-radius: 12px !important;
@@ -2922,31 +2922,31 @@ def main():
       .dt-landing {
         margin: 4px 0 16px !important;
         padding: clamp(24px, 4vw, 42px) !important;
-        border-radius: 18px !important;
-        background: linear-gradient(120deg, #14233b, #112b3b) !important;
-        border: 1px solid rgba(148,163,184,.20) !important;
-        box-shadow: 0 12px 32px rgba(0,0,0,.16) !important;
+        border-radius: 12px !important;
+        background: #111820 !important;
+        border: 1px solid var(--pro-border) !important;
+        box-shadow: none !important;
       }
       .dt-landing:before { display:none !important; }
       .dt-landing-kicker {
         color: #8db8ff !important;
         font-size: .76rem !important;
         font-weight: 750 !important;
-        letter-spacing: .13em !important;
+        letter-spacing: .09em !important;
       }
       .dt-landing-title {
         color: #f5f8ff !important;
         background: none !important;
         -webkit-text-fill-color: #f5f8ff !important;
         animation: none !important;
-        font-size: clamp(1.8rem, 4vw, 3rem) !important;
+        font-size: clamp(1.7rem, 3.5vw, 2.55rem) !important;
         line-height: 1.1 !important;
         letter-spacing: -.04em !important;
       }
       .dt-landing-copy { color: #bdcadd !important; }
       .dt-landing-actions .primary {
-        background: #3478e5 !important;
-        border: 1px solid #4b8bf0 !important;
+        background: #2f6feb !important;
+        border: 1px solid #2f6feb !important;
         border-radius: 10px !important;
       }
       .dt-landing-actions .secondary {
@@ -2958,21 +2958,21 @@ def main():
         margin: 0 0 18px !important;
         padding: 18px 20px !important;
         border-radius: 14px !important;
-        background: rgba(17,27,46,.66) !important;
+        background: #111820 !important;
         border: 1px solid var(--pro-border) !important;
       }
       .dt-report-intro h2 { font-size: 1.2rem !important; }
       .dt-report-intro p { color: #aebbd0 !important; }
-      .dt-sidebar-brand { display:flex; align-items:center; gap:11px; padding:8px 2px 24px; }
-      .dt-sidebar-mark { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:linear-gradient(145deg,#4388f5,#245ac2); color:white; font-weight:850; font-size:21px; box-shadow:0 5px 16px rgba(52,120,229,.24); }
+      .dt-sidebar-brand { display:flex; align-items:center; gap:11px; padding:8px 2px 18px; }
+      .dt-sidebar-mark { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:#2f6feb; color:white; font-weight:750; font-size:19px; box-shadow:none; }
       .dt-sidebar-name { color:#f4f7fc; font-weight:760; font-size:1.03rem; letter-spacing:-.025em; }
-      .dt-sidebar-sub { color:#8092ad; font-size:.58rem; letter-spacing:.105em; font-weight:750; margin-top:3px; }
+      .dt-sidebar-sub { color:#8092ad; font-size:.58rem; letter-spacing:.08em; font-weight:650; margin-top:3px; }
       .dt-sidebar-label { color:#71829c; font-size:.68rem; letter-spacing:.13em; font-weight:800; padding:4px 0 10px; }
       .dt-sidebar-divider { height:1px; background:rgba(148,163,184,.16); margin:18px 0 14px; }
       [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color:#91a1b9; font-size:.76rem; }
       [data-testid="stSidebar"] [role="radiogroup"] { gap:5px !important; }
       [data-testid="stSidebar"] [role="radiogroup"] label { border-radius:9px; padding:9px 10px; border:1px solid transparent; }
-      [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:rgba(65,128,232,.15); border-color:rgba(118,169,250,.22); }
+      [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background:rgba(47,111,235,.12); border-color:rgba(47,111,235,.32); }
       [data-testid="stSidebar"] [role="radiogroup"] label p { color:#dce6f5 !important; font-size:.86rem !important; font-weight:620; }
       @media (max-width: 760px) {
         .block-container { padding: .85rem .8rem 2rem !important; }
@@ -2990,7 +2990,7 @@ def main():
       }
     </style>
     """, unsafe_allow_html=True)
-    # Stripe + Linear style: persistent sidebar navigation with compact workspace.
+    # Minimal Stripe + Linear style: persistent sidebar navigation and restrained workspace.
     current_page = st.query_params.get("page", "dashboard")
     if current_page not in ("dashboard", "game", "chat"):
         current_page = "dashboard"
@@ -3050,26 +3050,25 @@ def main():
     # Dreamztree landing page with a clean hero; global particle animation is applied in inject_premium_theme().
     st.markdown("""
     <style>
-      .dt-landing { position:relative; overflow:hidden; margin:4px 0 18px; padding:26px clamp(20px,3vw,34px) 28px;
-        border-radius:16px; background:linear-gradient(120deg,#14233b,#112238);
-        border:1px solid rgba(148,163,184,.20); box-shadow:0 10px 28px rgba(0,0,0,.13); }
+      .dt-landing { position:relative; margin:4px 0 16px; padding:26px 28px 24px;
+        border-radius:12px; background:#111820; border:1px solid #27313d; box-shadow:none; }
       .dt-landing:before { display:none; }
-      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px;position:relative;}
-      .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
-      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
-      .dt-landing-kicker {text-align:left;color:#8db8ff;font-size:.74rem;font-weight:800;letter-spacing:.13em;margin-bottom:14px;position:relative;}
-      .dt-landing-title {text-align:left;color:#f8f9fc;font-size:clamp(1.65rem,2.7vw,2.45rem);line-height:1.12;font-weight:800;letter-spacing:-.04em;margin:0 0 14px;max-width:900px;position:relative;}
-      .dt-landing-copy {text-align:left;color:#aebbd0;font-size:1rem;line-height:1.55;margin:0 0 18px;position:relative;}
-      .dt-landing-actions {display:flex;justify-content:flex-start;gap:10px;flex-wrap:wrap;position:relative;}
-      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:9px;text-decoration:none!important;font-size:.9rem;font-weight:650;transition:background .16s ease;}
-      .dt-landing-actions a:hover {filter:brightness(1.08);}
-      .dt-landing-actions .primary {background:#3478e5;color:#fff!important;border:1px solid #4b8bf0;font-weight:750;}
-      .dt-landing-actions .secondary {background:rgba(255,255,255,.035);color:#eaf1fc!important;border:1px solid rgba(148,163,184,.30);}
-      .dt-report-intro {margin:0 0 18px;padding:18px 20px;border:1px solid rgba(148,163,184,.18);border-radius:13px;background:rgba(17,27,46,.66);}
-      .dt-report-intro h2 {margin:0 0 8px;color:#f8f9fc;font-size:1.15rem;}
-      .dt-report-intro p {margin:0;color:#aebbd0;font-size:.92rem;}
-      .dt-landing + div {scroll-margin-top:24px;}
-      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
+      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;position:relative;}
+      .dt-brand {display:flex;align-items:center;gap:12px;color:#f0f3f6;font-size:clamp(1.2rem,2vw,1.7rem);font-weight:700;letter-spacing:-.035em;}
+      .dt-brand-tag {font-size:.85rem;color:#a5b0bd;letter-spacing:.02em;text-align:right;}
+      .dt-landing-kicker {text-align:left;color:#8ab4f8;font-size:.68rem;font-weight:700;letter-spacing:.12em;margin-bottom:12px;position:relative;}
+      .dt-landing-title {text-align:left;color:#f0f3f6;font-size:clamp(1.55rem,2.4vw,2.05rem);line-height:1.18;font-weight:720;letter-spacing:-.04em;margin:0 0 10px;max-width:820px;position:relative;}
+      .dt-landing-copy {text-align:left;color:#9aa7b5;font-size:.94rem;line-height:1.55;margin:0 0 18px;position:relative;}
+      .dt-landing-actions {display:flex;justify-content:flex-start;gap:8px;flex-wrap:wrap;position:relative;}
+      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:7px;text-decoration:none!important;font-size:.84rem;font-weight:600;transition:none;}
+      .dt-landing-actions a:hover {filter:brightness(1.06);}
+      .dt-landing-actions .primary {background:#2f6feb;color:#fff!important;border:1px solid #2f6feb;font-weight:650;}
+      .dt-landing-actions .secondary {background:transparent;color:#c9d1d9!important;border:1px solid #35404d;}
+      .dt-report-intro {margin:0 0 16px;padding:14px 17px;border:1px solid #27313d;border-radius:9px;background:#0f151c;}
+      .dt-report-intro h2 {margin:0 0 5px;color:#e6edf3;font-size:1rem;font-weight:650;}
+      .dt-report-intro p {margin:0;color:#8b949e;font-size:.86rem;}
+      .dt-landing + div {scroll-margin-top:20px;}
+      @media(max-width:650px){.dt-landing{padding:20px 16px}.dt-brand-row{margin-bottom:24px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
       @media(prefers-reduced-motion:reduce){.dt-landing-actions a{animation:none;transition:none}}
     </style>
     <section class="dt-landing">
@@ -3088,12 +3087,12 @@ def main():
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
     with game_col:
-        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
+        if st.button("Game Zone", key="open_game_zone_main", use_container_width=True):
             st.session_state["dt_sidebar_navigation"] = "🎮  Game Zone"
             st.query_params["page"] = "game"
             st.rerun()
     with chat_col:
-        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
+        if st.button("Team Chat", key="open_team_chat_main", use_container_width=True):
             st.session_state["dt_sidebar_navigation"] = "💬  Team Chat"
             st.query_params["page"] = "chat"
             st.rerun()
