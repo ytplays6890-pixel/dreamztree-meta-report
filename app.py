@@ -1869,6 +1869,8 @@ def require_login():
             st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
         st.stop()
 
+    # Initialize animation state before any login CSS or markup interpolates it.
+    pull_step = int(st.session_state.get("dt_lamp_pull_count", 0))
     # The first pull reveals authentication; later pulls cycle lamp colors.
     if "dt_lamp_on" not in st.session_state:
         st.session_state["dt_lamp_on"] = False
@@ -1890,6 +1892,9 @@ def require_login():
             st.session_state["dt_lamp_theme"] = (st.session_state["dt_lamp_theme"] + 1) % 5
         st.rerun()
 
+    # Keep the pull counter in this scope as well: it drives the CSS spring animation.
+    # Without this local value Streamlit raises NameError while rendering the login page.
+    pull_step = int(st.session_state.get("dt_lamp_pull_count", 0))
     theme = int(st.session_state.get("dt_lamp_theme", 0))
     # Apply theme colors without modifying Supabase or any dashboard settings.
     theme_colors = [("#ffd166", "rgba(255,209,102,.34)", "#11152b"),
@@ -1903,8 +1908,8 @@ def require_login():
       [data-testid="stAppViewContainer"] {{background-color:{room_tint}!important;}}
       .dt-new-login-heading {{border-color:{lamp_color}99!important;}}
       .st-key-lamp_pull_control button {{box-shadow:0 0 18px {lamp_glow}!important;}}
-      body:has(.room.pull-step-{pull_step}) .st-key-lamp_pull_control button {{ animation:dt-bead-spring .82s cubic-bezier(.22,.61,.36,1) both!important; }}
-      body:has(.room.pull-step-{pull_step}) .room .string-svg {{ animation:dt-cord-spring .82s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center; }}
+      .room.pull-step-{pull_step} ~ * .st-key-lamp_pull_control button {{ animation:dt-bead-spring .82s cubic-bezier(.22,.61,.36,1) both!important; }}
+      .room.pull-step-{pull_step} .string-svg {{ animation:dt-cord-spring .82s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center; }}
     </style>""", unsafe_allow_html=True)
 
     if not st.session_state["dt_lamp_on"]:
