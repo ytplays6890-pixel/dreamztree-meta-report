@@ -1784,9 +1784,12 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .room .string-handle { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
 /* Spring animation for the visible gold pull bead and its cord. */
 @keyframes dt-bead-spring {0%{transform:translateY(0) scaleY(1)}9%{transform:translateY(48px) scaleY(1.30)}22%{transform:translateY(-12px) scaleY(.91)}38%{transform:translateY(15px) scaleY(1.13)}54%{transform:translateY(-7px) scaleY(.95)}70%{transform:translateY(5px) scaleY(1.05)}85%{transform:translateY(-2px) scaleY(.99)}100%{transform:translateY(0) scaleY(1)}}
-@keyframes dt-cord-spring {0%{transform:scaleY(1)}9%{transform:scaleY(1.52)}22%{transform:scaleY(.94)}38%{transform:scaleY(1.24)}54%{transform:scaleY(.97)}70%{transform:scaleY(1.09)}85%{transform:scaleY(.995)}100%{transform:scaleY(1)}}
-.room[class*="pull-step-"] .string-svg path { animation:dt-cord-spring .95s cubic-bezier(.22,.61,.36,1) both; transform-box:fill-box; transform-origin:top center; }
-.room[class*="pull-step-"] .string-handle { animation:dt-bead-spring .95s cubic-bezier(.22,.61,.36,1) both; transform-origin:top center; }
+@keyframes dt-cord-spring {0%{transform:scaleY(1)}9%{transform:scaleY(1.72)}22%{transform:scaleY(.94)}38%{transform:scaleY(1.28)}54%{transform:scaleY(.97)}70%{transform:scaleY(1.10)}85%{transform:scaleY(.995)}100%{transform:scaleY(1)}}
+@keyframes dt-bead-spring {0%{transform:translateY(0)}9%{transform:translateY(58px)}22%{transform:translateY(-10px)}38%{transform:translateY(17px)}54%{transform:translateY(-7px)}70%{transform:translateY(5px)}85%{transform:translateY(-2px)}100%{transform:translateY(0)}}
+/* Stretch the whole SVG cord from its top anchor, not just the invisible SVG path. */
+.room[class*="pull-step-"] .string-svg { animation:dt-cord-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top left!important; transform-box:border-box!important; overflow:visible!important; }
+.room[class*="pull-step-"] .string-svg path { animation:none!important; }
+.room[class*="pull-step-"] .string-handle { animation:dt-bead-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center!important; }
 .room .night-sky { position:fixed !important; left:3vw !important; top:9vh !important; }
 .block-container { position:relative !important; z-index:5 !important; }
 .block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }
@@ -1926,7 +1929,8 @@ def require_login():
       }}
       /* The cord and bead stretch together, then both return to their exact resting position. */
       .st-key-lamp_pull_control button {{ animation:dt-bead-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center!important; }}
-      .room .string-svg path {{ animation:dt-cord-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-box:fill-box!important; transform-origin:top center!important; }}
+      .room .string-svg {{ animation:dt-cord-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top left!important; transform-box:border-box!important; overflow:visible!important; }}
+      .room .string-svg path {{ animation:none!important; }}
     </style>""", unsafe_allow_html=True)
 
     if not st.session_state["dt_lamp_on"]:
