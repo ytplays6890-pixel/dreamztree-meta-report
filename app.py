@@ -687,16 +687,25 @@ def _show_login_header():
         }
         .dt-login-logo {
           display:flex; flex-direction:column; align-items:center; justify-content:center;
-          gap:.25rem; margin: 48px auto 1rem; min-height:112px; text-align:center;
+          gap:.25rem; margin: 18px auto 0; min-height:0; height:112px; text-align:center;
+          transform-origin:center top;
           animation: dt-logo-rise-away 2.8s cubic-bezier(.4,0,.2,1) .15s both;
+          pointer-events:none;
         }
+        /* Collapse the logo's reserved space as it fades, so the login card visibly rises into its place. */
+        @keyframes dt-logo-space-collapse {
+          0%, 65% { height:112px; margin-top:18px; margin-bottom:0; }
+          100% { height:0; margin-top:0; margin-bottom:0; }
+        }
+        .dt-login-logo { animation: dt-logo-rise-away 2.8s cubic-bezier(.4,0,.2,1) .15s both,
+                         dt-logo-space-collapse 2.8s cubic-bezier(.4,0,.2,1) .15s both; }
         .dt-login-logo-image {
           display:block; width:116px; height:100px; object-fit:contain;
           filter: drop-shadow(0 0 18px rgba(96,165,250,.18));
         }
         .login-panel {
           max-width: 620px; width:100%; box-sizing:border-box;
-          margin: -12px auto .8rem auto; padding: 1.6rem 1.8rem;
+          margin: 0 auto .8rem auto; padding: 1.6rem 1.8rem;
           border: 1px solid rgba(167,139,250,.55); border-radius: 22px;
           background: linear-gradient(125deg, rgba(124,58,237,.32), rgba(37,99,235,.2) 55%, rgba(13,148,136,.2));
           background-size: 180% 180%; position:relative; overflow:hidden;
