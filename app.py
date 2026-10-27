@@ -3113,6 +3113,43 @@ def main():
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
+    # Executive workspace overview: helpful content fills the previous empty area without inventing metrics.
+    st.markdown("""
+    <style>
+      .dt-overview-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:18px 0 12px;}
+      .dt-overview-title{font-size:1.15rem;font-weight:650;letter-spacing:-.025em;color:#e6edf3;margin:0;}
+      .dt-overview-subtitle{font-size:.82rem;color:#8b949e;margin-top:4px;}
+      .dt-overview-card{height:100%;min-height:116px;background:#111820;border:1px solid #27313d;border-radius:10px;padding:16px 17px;box-sizing:border-box;}
+      .dt-overview-card-label{font-size:.76rem;color:#9aa7b5;margin-bottom:13px;}
+      .dt-overview-card-value{font-size:1.32rem;font-weight:650;color:#e6edf3;letter-spacing:-.035em;}
+      .dt-overview-card-note{font-size:.75rem;color:#8b949e;margin-top:6px;line-height:1.4;}
+      .dt-workspace-panel{background:#0f151c;border:1px solid #27313d;border-radius:10px;padding:15px 17px;margin:12px 0 18px;}
+      .dt-workspace-panel-title{color:#e6edf3;font-size:.9rem;font-weight:650;margin-bottom:5px;}
+      .dt-workspace-panel-copy{color:#9aa7b5;font-size:.82rem;line-height:1.5;}
+      .dt-workspace-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#d29922;margin-right:8px;vertical-align:middle;}
+      @media(max-width:650px){.dt-overview-head{display:block}.dt-overview-card{min-height:100px}}
+    </style>
+    <div class="dt-overview-head">
+      <div><div class="dt-overview-title">Performance overview</div><div class="dt-overview-subtitle">Your reporting workspace, ready when your data is.</div></div>
+    </div>
+    """, unsafe_allow_html=True)
+    overview_cols = st.columns(4, gap="small")
+    overview_cards = [
+        ("TOTAL LEADS", "—", "Calculated from the uploaded report"),
+        ("AD SPEND", "—", "Converted to KWD for reporting"),
+        ("COST PER LEAD", "—", "Available once results are loaded"),
+        ("CAMPAIGN COUNT", "—", "Based on the current export"),
+    ]
+    for col, (label, value, note) in zip(overview_cols, overview_cards):
+        with col:
+            st.markdown(f'<div class="dt-overview-card"><div class="dt-overview-card-label">{label}</div><div class="dt-overview-card-value">{value}</div><div class="dt-overview-card-note">{note}</div></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="dt-workspace-panel">
+      <div class="dt-workspace-panel-title"><span class="dt-workspace-dot"></span>Waiting for report data</div>
+      <div class="dt-workspace-panel-copy">Upload today's Meta Ads export below to populate the overview and campaign analysis. Add yesterday's export to unlock the day-over-day comparison. No sample figures are shown as real performance data.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
     with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
