@@ -24,8 +24,8 @@ _DT_LAMP_COMPONENT_HTML = r'''<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}*{box-sizing:border-box}
-#stage{position:relative;width:72px;height:178px;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
-svg{position:absolute;inset:0;width:72px;height:178px;overflow:visible;touch-action:none}
+#stage{position:relative;width:72px;height:250px;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+svg{position:absolute;inset:0;width:72px;height:250px;overflow:visible;touch-action:none}
 #cord{fill:none;stroke:#17191d;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 1px 1px #000)}
 #highlight{fill:none;stroke:rgba(210,215,225,.34);stroke-width:.65;stroke-linecap:round}
 #bead{cursor:grab;touch-action:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
@@ -33,23 +33,23 @@ svg{position:absolute;inset:0;width:72px;height:178px;overflow:visible;touch-act
 #beadCore{fill:url(#gold);stroke:#6f4b16;stroke-width:.8}
 #shine{fill:none;stroke:rgba(255,245,190,.85);stroke-width:1.1;stroke-linecap:round}
 </style></head><body><div id="stage" aria-label="Pull the lamp cord">
-<svg viewBox="0 0 72 178" role="img" aria-label="Lamp pull cord">
+<svg viewBox="0 0 72 250" role="img" aria-label="Lamp pull cord">
 <defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9b6c24"/><stop offset=".32" stop-color="#f1ca69"/><stop offset=".58" stop-color="#fff0aa"/><stop offset="1" stop-color="#a87322"/></linearGradient></defs>
-<path id="cord" d="M36 0 Q36 45 36 105"/><path id="highlight" d="M36.6 1 Q36.6 45 36.6 105"/>
-<g id="bead" transform="translate(36 105)"><circle id="beadCore" r="6.1"/><path id="shine" d="M-2.5 -3.4 Q-4 -1.8 -3.3 .2"/></g>
+<path id="cord" d="M36 0 Q36 84 36 183"/><path id="highlight" d="M36.6 1 Q36.6 84 36.6 183"/>
+<g id="bead" transform="translate(36 183)"><circle id="beadCore" r="6.1"/><path id="shine" d="M-2.5 -3.4 Q-4 -1.8 -3.3 .2"/></g>
 </svg></div>
 <script>
 (function(){
  const stage=document.getElementById('stage'),cord=document.getElementById('cord'),hi=document.getElementById('highlight'),bead=document.getElementById('bead');
- const anchorX=36, restY=105; let drag=false,startY=0,offsetY=0,offsetX=0,raf=0,pulls=0,velocity=0,lastY=0,lastT=0;
+ const anchorX=36, restY=183; let drag=false,startY=0,offsetY=0,offsetX=0,raf=0,pulls=0,velocity=0,lastY=0,lastT=0;
  function draw(x,y){const bend=x*.24;const midY=(restY+y)*.5;const d=`M ${anchorX} 0 Q ${anchorX+bend} ${midY} ${anchorX+x} ${restY+y}`;cord.setAttribute('d',d);hi.setAttribute('d',`M ${anchorX+.7} 1 Q ${anchorX+bend+.7} ${midY} ${anchorX+x+.7} ${restY+y}`);bead.setAttribute('transform',`translate(${anchorX+x} ${restY+y})`)}
- function spring(){cancelAnimationFrame(raf);let y=offsetY,v=velocity;let prev=performance.now();function tick(now){const dt=Math.min((now-prev)/1000,.032);prev=now;const a=-210*y-25*v;v+=a*dt;y+=v*dt;if(Math.abs(y)<.16&&Math.abs(v)<1.2){y=0;draw(0,0);return}draw(offsetX*Math.exp(-now*.0001),y);raf=requestAnimationFrame(tick)}raf=requestAnimationFrame(tick)}
+ function spring(){cancelAnimationFrame(raf);let y=offsetY,v=velocity,x=offsetX;let prev=performance.now(),start=prev;function tick(now){const dt=Math.min((now-prev)/1000,.032);prev=now;const a=-210*y-25*v;v+=a*dt;y+=v*dt;if(Math.abs(y)<.16&&Math.abs(v)<1.2){y=0;draw(0,0);return}draw(x*Math.exp(-(now-start)*.012),y);raf=requestAnimationFrame(tick)}raf=requestAnimationFrame(tick)}
  function down(e){if(e.button!==undefined&&e.button!==0)return;drag=true;stage.setPointerCapture?.(e.pointerId);bead.setPointerCapture?.(e.pointerId);startY=e.clientY;lastY=startY;lastT=performance.now();offsetY=0;velocity=0;cancelAnimationFrame(raf);e.preventDefault()}
  function move(e){if(!drag)return;const now=performance.now(),dt=Math.max(.008,(now-lastT)/1000);const dy=e.clientY-startY;offsetY=Math.max(0,Math.min(86,dy));offsetX=Math.max(-18,Math.min(18,(e.clientX-(stage.getBoundingClientRect().left+anchorX))*.3));velocity=(e.clientY-lastY)/dt;lastY=e.clientY;lastT=now;draw(offsetX,offsetY);e.preventDefault()}
  function up(e){if(!drag)return;drag=false;const pulled=offsetY>8;const releaseY=offsetY;velocity=Math.max(-500,Math.min(500,velocity*.45));if(!pulled){offsetY=0;offsetX=0;draw(0,0);return}pulls++;window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',value:{pulls:pulls,stamp:Date.now()}},'*');offsetY=releaseY;spring();e.preventDefault()}
  bead.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);stage.addEventListener('lostpointercapture',()=>{if(drag){drag=false;spring()}});
  window.addEventListener('message',e=>{const d=e.data||{};if(d.type==='streamlit:render'){if(d.args&&typeof d.args.pulls==='number')pulls=Math.max(pulls,d.args.pulls);}});
- window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:178},'*');draw(0,0);
+ window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:250},'*');draw(0,0);
 })();
 </script></body></html>'''
 _DT_LAMP_COMPONENT_FILE = _DT_LAMP_COMPONENT_DIR / "index.html"
@@ -1840,8 +1840,8 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
 /* Position the transparent custom component over the physical cord location. */
-.st-key-dt_lamp_drag_component { position:fixed !important; left:calc(26.4vw - 36px) !important; top:calc(44.2vh - 67px) !important; width:72px !important; height:178px !important; min-width:72px !important; max-width:72px !important; padding:0 !important; margin:0 !important; z-index:100000 !important; background:transparent !important; overflow:visible !important; }
-.st-key-dt_lamp_drag_component iframe { width:72px !important; height:178px !important; border:0 !important; background:transparent !important; display:block !important; }
+.st-key-dt_lamp_drag_component { position:fixed !important; left:calc(26.4vw - 36px) !important; top:calc(44.2vh - 145px) !important; width:72px !important; height:250px !important; min-width:72px !important; max-width:72px !important; padding:0 !important; margin:0 !important; z-index:100000 !important; background:transparent !important; overflow:visible !important; }
+.st-key-dt_lamp_drag_component iframe { width:72px !important; height:250px !important; border:0 !important; background:transparent !important; display:block !important; }
 /* Realistic dark room: layered vignette, wall falloff and subtle floor reflections. */
 html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !important; }
 [data-testid="stAppViewContainer"]::before {
@@ -1880,7 +1880,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
  .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }
  .room .lamp-container { transform:scale(.65) !important; transform-origin:top center !important; }
  .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }
- .st-key-dt_lamp_drag_component { left:calc(50vw - 36px) !important; top:calc(18vh + 55px) !important; }
+ .st-key-dt_lamp_drag_component { left:calc(50vw - 36px) !important; top:calc(18vh - 23px) !important; }
 }
 """
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
