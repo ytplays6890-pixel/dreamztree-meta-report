@@ -778,6 +778,19 @@ button, input {
   font-family: inherit;
 }
 
+/* DREAMZTREE BACKGROUND STREET LAMPS */
+.street-scene{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+.street-lamp{position:absolute;bottom:9%;width:44px;height:36vh;max-height:390px;min-height:190px;transform-origin:bottom center;opacity:.72;filter:blur(.15px);transition:opacity .8s ease,filter .8s ease}
+.street-lamp .pole{position:absolute;bottom:0;left:calc(50% - 2px);width:4px;height:88%;border-radius:4px;background:linear-gradient(90deg,#11151b,#5d6268 48%,#151920);box-shadow:0 0 5px #0008}
+.street-lamp .arm{position:absolute;top:9%;left:50%;width:48%;height:4px;background:#272d34;border-radius:4px;transform:rotate(-18deg);transform-origin:left center}
+.street-lamp .head{position:absolute;top:4%;left:38%;width:58%;height:12px;border-radius:10px 10px 3px 3px;background:linear-gradient(#252a30,#07090d);border-bottom:2px solid #6c7175}
+.street-lamp .bulb{position:absolute;top:calc(4% + 10px);left:51%;width:13px;height:5px;border-radius:50%;background:#342d1c;transition:background .5s,box-shadow .5s}
+.street-lamp .beam{position:absolute;top:calc(4% + 14px);left:50%;border-left:55px solid transparent;border-right:55px solid transparent;border-top:240px solid transparent;transform:translateX(-50%);transition:border-top-color .8s}
+.room.on .street-lamp{opacity:1;filter:none}
+.room.on .street-lamp .bulb{background:#fff3b0;box-shadow:0 0 8px 4px rgba(255,214,112,.9),0 0 26px 12px rgba(255,194,72,.4)}
+.room.on .street-lamp .beam{border-top-color:rgba(255,211,104,.13)}
+.street-lamp.l1{left:2%;transform:scale(.48)}.street-lamp.l2{left:13%;transform:scale(.63)}.street-lamp.l3{left:69%;transform:scale(.58)}.street-lamp.l4{left:84%;transform:scale(.43)}
+
 /* ===================================================
    ROOM & AMBIENCE
    =================================================== */
@@ -1883,7 +1896,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
  .st-key-dt_lamp_drag_component { left:calc(50vw - 36px) !important; top:calc(18vh - 23px) !important; }
 }
 """
-    markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
+    markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <div class="street-scene" aria-hidden="true"><div class="street-lamp l1"><div class="beam"></div><div class="pole"></div><div class="arm"></div><div class="head"></div><div class="bulb"></div></div><div class="street-lamp l2"><div class="beam"></div><div class="pole"></div><div class="arm"></div><div class="head"></div><div class="bulb"></div></div><div class="street-lamp l3"><div class="beam"></div><div class="pole"></div><div class="arm"></div><div class="head"></div><div class="bulb"></div></div><div class="street-lamp l4"><div class="beam"></div><div class="pole"></div><div class="arm"></div><div class="head"></div><div class="bulb"></div></div></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
     st.markdown("<style>" + css + "</style>" + markup, unsafe_allow_html=True)
 
 
