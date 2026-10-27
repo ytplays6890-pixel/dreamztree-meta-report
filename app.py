@@ -2627,11 +2627,67 @@ def render_team_chat():
                 st.caption(f"Technical detail: {exc}")
 
 
+def render_post_login_transition():
+    """Show a brief, one-time welcome transition after a successful login."""
+    st.markdown(r"""
+    <style>
+      @keyframes dt-welcome-overlay {
+        0% { opacity: 0; visibility: visible; }
+        12% { opacity: 1; }
+        72% { opacity: 1; }
+        100% { opacity: 0; visibility: hidden; }
+      }
+      @keyframes dt-welcome-logo {
+        0% { opacity: 0; transform: translateY(14px) scale(.92); filter: blur(5px); }
+        55% { opacity: 1; transform: translateY(0) scale(1.02); filter: blur(0); }
+        75% { transform: translateY(0) scale(1); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      }
+      @keyframes dt-welcome-line {
+        0%,18% { opacity: 0; transform: translateY(8px); }
+        48%,82% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-4px); }
+      }
+      .dt-welcome-overlay {
+        position: fixed; inset: 0; z-index: 999999; pointer-events: none;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, rgba(24,42,67,.97), rgba(7,10,16,.985) 72%);
+        animation: dt-welcome-overlay 1.65s ease forwards;
+      }
+      .dt-welcome-content { text-align: center; padding: 24px; color: #f3f6fb; }
+      .dt-welcome-mark {
+        width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 19px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -.06em;
+        background: linear-gradient(145deg,#3979d8,#244c91);
+        border: 1px solid rgba(190,215,255,.38);
+        box-shadow: 0 12px 42px rgba(47,111,219,.25), inset 0 1px rgba(255,255,255,.22);
+        animation: dt-welcome-logo 1.35s cubic-bezier(.2,.75,.25,1) both;
+      }
+      .dt-welcome-title { margin: 0; font-size: clamp(24px,3.5vw,38px); font-weight: 720; letter-spacing: -.045em; }
+      .dt-welcome-subtitle { margin: 9px 0 0; color: #9eafc5; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; animation: dt-welcome-line 1.35s ease both; }
+      @media (prefers-reduced-motion: reduce) {
+        .dt-welcome-overlay, .dt-welcome-mark, .dt-welcome-subtitle { animation-duration: .01ms !important; }
+      }
+    </style>
+    <div class="dt-welcome-overlay" aria-hidden="true">
+      <div class="dt-welcome-content">
+        <div class="dt-welcome-mark">D</div>
+        <h1 class="dt-welcome-title">Welcome to Dreamztree</h1>
+        <p class="dt-welcome-subtitle">Marketing Intelligence</p>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def main():
     require_login()
-    if st.session_state.pop("login_just_succeeded", False):
+    just_logged_in = st.session_state.pop("login_just_succeeded", False)
+    if just_logged_in:
         st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
+    if just_logged_in:
+        render_post_login_transition()
     page = st.query_params.get("page", "dashboard")
     # Keep the Game Zone invitation/notification active on every non-game page.
     # The fragment itself suppresses the popup while the Game Zone is open.
