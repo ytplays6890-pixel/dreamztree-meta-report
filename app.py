@@ -1792,17 +1792,53 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
-.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 15px) !important; top:calc(44.2vh - 115px) !important; width:28px !important; height:34px !important; padding:0 !important; margin:0 !important; }
+.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 15px) !important; top:calc(44.2vh - 67px) !important; width:28px !important; height:34px !important; padding:0 !important; margin:0 !important; }
 .st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }
 .st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:26px !important; min-height:26px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
-.st-key-lamp_pull_control button:active { transform:translateY(20px) scaleY(1.18) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button:active { transform:translateY(18px) scaleY(1.22) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button { transform-origin:top center !important; }
+.st-key-lamp_pull_control button:active { transition:transform .16s cubic-bezier(.2,.8,.2,1) !important; }
 .st-key-lamp_pull_control button:focus-visible { outline:2px solid #fff0a6 !important; outline-offset:2px !important; }
 .st-key-lamp_pull_control button p, .st-key-lamp_pull_control button span { display:none !important; }
+/* Realistic dark room: layered vignette, wall falloff and subtle floor reflections. */
+html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !important; }
+[data-testid="stAppViewContainer"]::before {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 22% 42%, var(--lamp-glow-soft) 0%, transparent 35%),
+    radial-gradient(ellipse at 78% 82%, rgba(38,48,62,.16) 0%, transparent 44%),
+    linear-gradient(90deg, rgba(0,0,0,.12), rgba(4,6,10,.12) 45%, rgba(0,0,0,.52)),
+    linear-gradient(180deg, #090b10 0%, #0c1017 58%, #050609 100%);
+  transition:background 1.1s ease, opacity 1.1s ease;
+}
+.room { isolation:isolate; }
+.room::after { content:""; position:fixed; inset:0; z-index:3; pointer-events:none; background:radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,.24) 72%, rgba(0,0,0,.62) 100%); }
+.night-sky { filter:brightness(.58) saturate(.72); transition:filter 1.2s ease, opacity 1.2s ease; }
+.room.on .night-sky { filter:brightness(.36) saturate(.58); }
+.lamp-glow { transition:opacity 1s ease, filter 1s ease; }
+.light-beam { opacity:.12; filter:blur(1.4px); transition:opacity 1.15s cubic-bezier(.2,.7,.2,1), filter 1.15s ease; }
+.room.on .light-beam { opacity:.92; filter:blur(.35px); }
+.desk-surface { transition:opacity 1.2s ease, filter 1.2s ease; }
+.room.on .desk-surface { filter:blur(2px) saturate(1.15); }
+/* Gentle login entrance: smooth fade, small rise and blur-to-focus. */
+@keyframes dt-auth-fade-rise {
+  0% { opacity:0; transform:translate3d(0,24px,0) scale(.992); filter:blur(5px); }
+  65% { opacity:1; filter:blur(.6px); }
+  100% { opacity:1; transform:translate3d(0,0,0) scale(1); filter:blur(0); }
+}
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] { animation:dt-auth-fade-rise 1.05s cubic-bezier(.22,.75,.25,1) both !important; animation-delay:.12s !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { animation:dt-auth-fade-rise 1.2s cubic-bezier(.22,.75,.25,1) both !important; animation-delay:.28s !important; will-change:opacity,transform,filter; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] input,
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] button { transition:background-color .35s ease, border-color .35s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.7,.2,1) !important; }
+@media (prefers-reduced-motion: reduce) {
+  .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"], .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { animation:none !important; }
+  .light-beam, .lamp-glow, .desk-surface, .night-sky { transition:none !important; }
+}
 @media(max-width:850px) {
  .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }
  .room .lamp-container { transform:scale(.65) !important; transform-origin:top center !important; }
  .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }
- .st-key-lamp_pull_control { left:calc(50vw + 32px) !important; top:calc(18vh + 12px) !important; }
+ .st-key-lamp_pull_control { left:calc(50vw + 32px) !important; top:calc(18vh + 55px) !important; }
 }
 """
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
