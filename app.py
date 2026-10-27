@@ -685,6 +685,84 @@ def get_supabase_client():
         return None
 
 
+
+def _is_admin_user():
+    """Identify the administrator using server-side configured credentials/email allowlist."""
+    username = str(st.session_state.get("authenticated_user", "")).strip()
+    if st.session_state.get("auth_method") == "legacy":
+        env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
+        if not env_admin_user:
+            try:
+                env_admin_user = str(st.secrets.get("auth", {}).get("admin_username", "")).strip()
+            except Exception:
+                env_admin_user = ""
+        if env_admin_user and username == env_admin_user:
+            return True
+    configured = os.environ.get("ADMIN_EMAILS", "").strip()
+    if not configured:
+        try:
+            configured = str(st.secrets.get("auth", {}).get("admin_emails", ""))
+        except Exception:
+            configured = ""
+    admin_emails = {item.strip().lower() for item in configured.split(",") if item.strip()}
+    return username.lower() in admin_emails
+
+
+def _settings_admin_client():
+    """Use a server-side Supabase service-role key for secure shared settings writes."""
+    try:
+        config = st.secrets.get("supabase", {})
+        url = str(os.environ.get("SUPABASE_URL", "") or config.get("url", "")).strip()
+        service_key = str(
+            os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+            or config.get("service_role_key", "")
+        ).strip()
+        if url and service_key:
+            return create_client(url, service_key)
+    except Exception:
+        pass
+    return None
+
+
+def _get_no_more_counts():
+    """Read the globally shared switch from Supabase; fail closed only when configured."""
+    admin_client = _settings_admin_client()
+    if admin_client is None:
+        return bool(st.session_state.get("dt_no_more_counts_fallback", False)), False
+    try:
+        result = (
+            admin_client.table("app_settings")
+            .select("value")
+            .eq("key", "no_more_counts")
+            .limit(1)
+            .execute()
+        )
+        rows = getattr(result, "data", None) or []
+        if rows:
+            value = rows[0].get("value", False)
+            if isinstance(value, str):
+                value = value.strip().lower() in {"true", "1", "yes", "on"}
+            return bool(value), True
+        return False, True
+    except Exception:
+        return bool(st.session_state.get("dt_no_more_counts_fallback", False)), False
+
+
+def _set_no_more_counts(enabled):
+    admin_client = _settings_admin_client()
+    if admin_client is None:
+        return False, "Add SUPABASE_SERVICE_ROLE_KEY to the server-side Streamlit secrets before using the shared setting."
+    try:
+        admin_client.table("app_settings").upsert(
+            {"key": "no_more_counts", "value": bool(enabled)},
+            on_conflict="key",
+        ).execute()
+        st.session_state["dt_no_more_counts_fallback"] = bool(enabled)
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
+
+
 def _show_login_header():
     """Render the new supplied animated lamp room behind the real Streamlit auth form."""
     pull_step = int(st.session_state.get("dt_lamp_pull_count", 0))
@@ -1894,6 +1972,16 @@ def require_login():
     existing administrator can still sign in during the transition.
     """
     if st.session_state.get("authenticated"):
+        no_more_counts, settings_shared = _get_no_more_counts()
+        if no_more_counts and not _is_admin_user():
+            st.markdown(
+                "<div style='position:fixed;inset:0;z-index:999999;background:#0b1020;"
+                "display:flex;align-items:center;justify-content:center;padding:24px;"
+                "color:#fff;font:700 24px system-ui;text-align:center'>"
+                "Oops! No more counts</div>",
+                unsafe_allow_html=True,
+            )
+            st.stop()
         return
 
     client = get_supabase_client()
@@ -1934,6 +2022,8 @@ def require_login():
                 st.session_state["dt_lamp_theme"] = 0
             else:
                 st.session_state["dt_lamp_theme"] = (int(st.session_state.get("dt_lamp_theme", 0)) + 1) % 5
+            # Show a short contact notice whenever the lamp is pulled.
+            st.session_state["dt_lamp_notice_pending"] = True
             st.rerun()
 
     # Keep the pull counter in this scope as well: it drives the CSS spring animation.
@@ -1978,6 +2068,38 @@ def require_login():
         # Keep the room dark and authentication hidden without showing a notification.
         st.stop()
 
+    if st.session_state.pop("dt_lamp_notice_pending", False):
+        st.markdown("""
+        <style>
+          .dt-lamp-contact-notice {
+            position:fixed; right:24px; bottom:24px; z-index:100000;
+            width:min(360px,calc(100vw - 32px)); padding:16px 18px;
+            border-radius:16px; color:#f8fafc;
+            background:linear-gradient(135deg,rgba(15,23,42,.97),rgba(30,41,59,.97));
+            border:1px solid rgba(255,209,102,.65);
+            box-shadow:0 14px 38px rgba(0,0,0,.38),0 0 24px rgba(255,209,102,.15);
+            animation:dt-lamp-notice-life 5.5s ease forwards;
+            pointer-events:none;
+          }
+          .dt-lamp-contact-notice strong {display:block;font-size:14px;margin-bottom:5px;color:#ffdf8a;}
+          @keyframes dt-lamp-notice-life {
+            0% {opacity:0;transform:translateY(14px)}
+            10%,72% {opacity:1;transform:translateY(0)}
+            100% {opacity:0;transform:translateY(10px);visibility:hidden}
+          }
+          @media(max-width:600px) {.dt-lamp-contact-notice{right:12px;bottom:16px;width:calc(100vw - 24px)}}
+          @media(prefers-reduced-motion:reduce) {.dt-lamp-contact-notice{animation:none;opacity:1}}
+        </style>
+        <div class="dt-lamp-contact-notice" role="status" aria-live="polite">
+          <strong>Oops! No more counts</strong>
+        </div>
+        """, unsafe_allow_html=True)
+
+    no_more_counts, settings_shared = _get_no_more_counts()
+    if no_more_counts:
+        st.warning("Oops! No more counts")
+        st.caption("Administrator sign-in remains available to turn this setting off.")
+
     sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
 
     with sign_in_tab:
@@ -2008,6 +2130,15 @@ def require_login():
                 if legacy_password is not None and hmac.compare_digest(
                     password, str(legacy_password)
                 ):
+                    configured_admin_user = env_admin_user
+                    if not configured_admin_user:
+                        try:
+                            configured_admin_user = str(st.secrets.get("auth", {}).get("admin_username", "")).strip()
+                        except Exception:
+                            configured_admin_user = ""
+                    if no_more_counts and login_id != configured_admin_user:
+                        st.error("Oops! No more counts")
+                        st.stop()
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
@@ -2020,6 +2151,20 @@ def require_login():
                                 {"email": login_id, "password": password}
                             )
                         if response and response.user:
+                            configured_admin_emails = os.environ.get("ADMIN_EMAILS", "").strip()
+                            if not configured_admin_emails:
+                                try:
+                                    configured_admin_emails = str(st.secrets.get("auth", {}).get("admin_emails", ""))
+                                except Exception:
+                                    configured_admin_emails = ""
+                            admin_emails = {item.strip().lower() for item in configured_admin_emails.split(",") if item.strip()}
+                            if no_more_counts and (response.user.email or login_id).lower() not in admin_emails:
+                                try:
+                                    client.auth.sign_out()
+                                except Exception:
+                                    pass
+                                st.error("Oops! No more counts")
+                                st.stop()
                             if getattr(response, "session", None):
                                 st.session_state["supabase_access_token"] = response.session.access_token
                                 st.session_state["supabase_refresh_token"] = response.session.refresh_token
@@ -2629,9 +2774,161 @@ def render_team_chat():
 
 def main():
     require_login()
+    if _is_admin_user():
+        with st.expander("🔐 Admin only · No More Counts", expanded=False):
+            current_no_more_counts, settings_shared = _get_no_more_counts()
+            if not settings_shared:
+                st.info(
+                    "The shared setting needs the Supabase app_settings table and a server-side "
+                    "SUPABASE_SERVICE_ROLE_KEY."
+                )
+            updated_no_more_counts = st.toggle(
+                "Enable “Oops! No more counts” mode",
+                value=current_no_more_counts,
+                key="admin_no_more_counts_toggle",
+                help="When enabled, non-admin users cannot access the dashboard.",
+            )
+            if updated_no_more_counts != current_no_more_counts:
+                saved, error = _set_no_more_counts(updated_no_more_counts)
+                if saved:
+                    st.success("Setting saved for all users.")
+                    st.rerun()
+                else:
+                    st.error("Could not save the shared setting.")
+                    st.caption(error)
     if st.session_state.pop("login_just_succeeded", False):
         st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
+    # Premium Apple-inspired layout polish: calmer surfaces, less visual noise,
+    # compact landing area, accessible controls, and responsive report layouts.
+    st.markdown("""
+    <style>
+      :root {
+        --dt-apple-bg: #0b0d12;
+        --dt-apple-surface: rgba(25, 28, 35, .82);
+        --dt-apple-border: rgba(255,255,255,.10);
+        --dt-apple-muted: #a7adba;
+        --dt-apple-accent: #8ab4ff;
+      }
+      .stApp {
+        background:
+          radial-gradient(ellipse at 12% 0%, rgba(88, 101, 242, .12), transparent 35%),
+          linear-gradient(180deg, #0b0d12 0%, #10131a 100%) !important;
+        animation: none !important;
+      }
+      [data-testid="stAppViewContainer"]:before,
+      [data-testid="stAppViewContainer"]:after,
+      .stApp:before { opacity: 0 !important; animation: none !important; }
+      [data-testid="stHeader"] {
+        background: rgba(11,13,18,.88) !important;
+        backdrop-filter: blur(18px);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+      .block-container {
+        max-width: 1380px !important;
+        padding: 1.35rem clamp(1rem, 3vw, 2.5rem) 3rem !important;
+      }
+      h1, h2, h3 { letter-spacing: -.035em !important; text-shadow: none !important; }
+      h1 { font-size: clamp(1.8rem, 3vw, 2.55rem) !important; }
+      h2 { font-size: clamp(1.3rem, 2.2vw, 1.8rem) !important; }
+      [data-testid="stMetric"] {
+        background: rgba(255,255,255,.045) !important;
+        border: 1px solid var(--dt-apple-border) !important;
+        border-radius: 18px !important;
+        padding: 18px 20px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        animation: none !important;
+        transition: border-color .18s ease, background .18s ease !important;
+      }
+      [data-testid="stMetric"]:hover {
+        transform: none !important;
+        background: rgba(255,255,255,.065) !important;
+        border-color: rgba(138,180,255,.34) !important;
+      }
+      [data-testid="stMetricLabel"] { color: var(--dt-apple-muted) !important; }
+      [data-testid="stMetricValue"] { color: #f5f7fb !important; }
+      [data-testid="stExpander"] {
+        background: rgba(255,255,255,.025) !important;
+        border: 1px solid var(--dt-apple-border) !important;
+        border-radius: 16px !important;
+        box-shadow: none !important;
+      }
+      [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid var(--dt-apple-border) !important;
+        border-radius: 14px !important;
+        animation: none !important;
+      }
+      [data-testid="stFileUploader"] {
+        background: rgba(255,255,255,.025) !important;
+        border: 1px dashed rgba(255,255,255,.20) !important;
+        border-radius: 16px !important;
+        animation: none !important;
+      }
+      .stButton button, [data-testid="stDownloadButton"] button {
+        background: rgba(255,255,255,.07) !important;
+        border: 1px solid rgba(255,255,255,.13) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        animation: none !important;
+        min-height: 42px;
+      }
+      .stButton button[kind="primary"], button[kind="primary"] {
+        background: linear-gradient(180deg, #8ab4ff, #5b8def) !important;
+        color: #07111f !important;
+        border: 1px solid rgba(255,255,255,.15) !important;
+        font-weight: 750 !important;
+      }
+      .stButton button:hover, [data-testid="stDownloadButton"] button:hover {
+        transform: translateY(-1px) !important;
+        filter: brightness(1.08) !important;
+        border-color: rgba(138,180,255,.5) !important;
+      }
+      [data-testid="stAlert"] { border-radius: 14px !important; }
+      [data-testid="stTabs"] button { border-radius: 10px !important; }
+      .dt-landing {
+        margin: 4px 0 16px !important;
+        padding: clamp(24px, 4vw, 42px) !important;
+        border-radius: 24px !important;
+        background: linear-gradient(135deg, rgba(35,43,61,.92), rgba(18,28,43,.92)) !important;
+        border: 1px solid rgba(255,255,255,.10) !important;
+        box-shadow: 0 16px 40px rgba(0,0,0,.18) !important;
+      }
+      .dt-landing:before { opacity: .35 !important; }
+      .dt-landing-kicker { letter-spacing: .12em !important; color: #9cc2ff !important; }
+      .dt-landing-title {
+        font-size: clamp(1.8rem, 4.4vw, 3.2rem) !important;
+        line-height: 1.08 !important;
+        letter-spacing: -.045em !important;
+      }
+      .dt-landing-copy { color: #c2c9d6 !important; }
+      .dt-report-intro {
+        margin: 0 0 18px !important;
+        padding: 18px 20px !important;
+        border-radius: 18px !important;
+        background: rgba(255,255,255,.035) !important;
+        border: 1px solid var(--dt-apple-border) !important;
+      }
+      .dt-report-intro h2 { font-size: 1.25rem !important; }
+      .dt-report-intro p { color: #aeb7c6 !important; }
+      [data-testid="stCaptionContainer"] { color: #a7adba !important; }
+      @media (max-width: 760px) {
+        .block-container { padding: .85rem .8rem 2rem !important; }
+        .dt-landing { padding: 22px 18px !important; border-radius: 18px !important; }
+        .dt-landing-title { font-size: clamp(1.65rem, 7vw, 2.25rem) !important; }
+        .dt-landing-copy { font-size: .94rem !important; }
+        .dt-landing-actions { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+        .dt-landing-actions a { width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+        [data-testid="stMetric"] { padding: 13px !important; border-radius: 14px !important; }
+        [data-testid="stMetricValue"] { font-size: 1.35rem !important; }
+        [data-testid="stDataFrame"] { max-width: 100% !important; overflow-x: auto !important; }
+        [data-testid="stDownloadButton"] button, .stButton button { width: 100%; }
+        [data-testid="stHorizontalBlock"] { gap: .65rem !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      }
+    </style>
+    """, unsafe_allow_html=True)
     page = st.query_params.get("page", "dashboard")
     # Keep the Game Zone invitation/notification active on every non-game page.
     # The fragment itself suppresses the popup while the Game Zone is open.
@@ -2935,6 +3232,25 @@ def main():
                 )
                 fig_cost.update_traces(textposition="outside", cliponaxis=False)
                 st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False, "responsive": True})
+            st.markdown("#### Staff performance by leads")
+            staff_chart = valid.groupby("Staff", as_index=False).agg(
+                Leads=("Results", "sum"), Spend_USD=("Spent", "sum")
+            ).sort_values("Leads", ascending=True)
+            fig_staff = px.bar(
+                staff_chart, x="Leads", y="Staff", orientation="h",
+                text="Leads", color_discrete_sequence=["#8ab4ff"],
+                template="plotly_dark",
+            )
+            fig_staff.update_layout(
+                height=max(280, 34 * len(staff_chart) + 70),
+                margin=dict(l=12, r=20, t=12, b=12),
+                showlegend=False, xaxis_title="Leads", yaxis_title="",
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#E8EEF7", size=12),
+            )
+            fig_staff.update_traces(textposition="outside", cliponaxis=False)
+            st.plotly_chart(fig_staff, use_container_width=True, config={"displayModeBar": False, "responsive": True})
+
             st.markdown("#### Top courses by leads")
             course_plot = course_chart.sort_values("Results", ascending=True)
             fig_courses = px.bar(
