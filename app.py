@@ -2633,41 +2633,43 @@ def render_post_login_transition():
     <style>
       @keyframes dt-welcome-overlay {
         0% { opacity: 0; visibility: visible; }
-        10% { opacity: 1; }
-        84% { opacity: 1; }
+        12% { opacity: 1; }
+        82% { opacity: 1; }
         100% { opacity: 0; visibility: hidden; }
       }
+      /* Animate only opacity and transform; avoid blur/filter changes that can stutter. */
       @keyframes dt-welcome-logo {
-        0% { opacity: 0; transform: translateY(18px) scale(.86); filter: blur(7px); }
-        38% { opacity: .65; transform: translateY(5px) scale(.96); filter: blur(2px); }
-        72% { opacity: 1; transform: translateY(0) scale(1.015); filter: blur(0); }
-        88% { transform: translateY(0) scale(1); }
-        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        0% { opacity: 0; transform: translate3d(0, 14px, 0) scale(.94); }
+        24% { opacity: .35; }
+        62% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
       }
       @keyframes dt-welcome-line {
-        0%,28% { opacity: 0; transform: translateY(10px); }
-        58%,88% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-3px); }
+        0%,34% { opacity: 0; transform: translate3d(0, 8px, 0); }
+        68%,88% { opacity: 1; transform: translate3d(0, 0, 0); }
+        100% { opacity: 0; transform: translate3d(0, -2px, 0); }
       }
       .dt-welcome-overlay {
         position: fixed; inset: 0; z-index: 999999; pointer-events: none;
         display: flex; align-items: center; justify-content: center;
         background: radial-gradient(ellipse at center, rgba(24,42,67,.97), rgba(7,10,16,.985) 72%);
-        animation: dt-welcome-overlay 2.8s ease-in-out forwards;
+        animation: dt-welcome-overlay 3.2s linear forwards;
+        will-change: opacity; contain: layout paint;
       }
       .dt-welcome-content { text-align: center; padding: 24px; color: #f3f6fb; }
       .dt-welcome-mark {
         width: 170px; height: 170px; margin: 0 auto 18px;
         display: flex; align-items: center; justify-content: center;
         background: transparent; border: 0; box-shadow: none; border-radius: 0;
-        animation: dt-welcome-logo 2.25s cubic-bezier(.22,.61,.36,1) both;
+        animation: dt-welcome-logo 2.7s cubic-bezier(.16, 1, .3, 1) both;
+        will-change: transform, opacity; transform: translateZ(0); backface-visibility: hidden;
       }
       .dt-welcome-mark img {
         display: block; width: 100%; height: 100%; object-fit: contain;
-        filter: drop-shadow(0 8px 28px rgba(120,160,220,.16));
+        filter: none; transform: translateZ(0); backface-visibility: hidden;
       }
       .dt-welcome-title { margin: 0; font-size: clamp(24px,3.5vw,38px); font-weight: 720; letter-spacing: -.045em; }
-      .dt-welcome-subtitle { margin: 9px 0 0; color: #9eafc5; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; animation: dt-welcome-line 2.35s ease both; }
+      .dt-welcome-subtitle { margin: 9px 0 0; color: #9eafc5; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; animation: dt-welcome-line 2.7s cubic-bezier(.16, 1, .3, 1) both; }
       @media (prefers-reduced-motion: reduce) {
         .dt-welcome-overlay, .dt-welcome-mark, .dt-welcome-subtitle { animation-duration: .01ms !important; }
       }
