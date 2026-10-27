@@ -989,7 +989,7 @@ def _show_login_header():
         @keyframes dt-lamp-glow {0%,100%{opacity:.32;transform:scale(.92)}50%{opacity:.72;transform:scale(1.08)}}
         @keyframes dt-lamp-dust {0%{transform:translate(0,0);opacity:0}20%{opacity:.85}100%{transform:translate(35px,-115px);opacity:0}}
         @keyframes dt-lamp-cord {0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.035)}}
-        #dt-cozy-lamp {position:fixed;z-index:1;left:7vw;top:49%;width:300px;height:430px;transform:translateY(-50%);pointer-events:none;}
+        #dt-cozy-lamp {position:fixed;z-index:3;left:7vw;top:49%;width:300px;height:430px;transform:translateY(-50%);pointer-events:none;}
         #dt-cozy-lamp .lamp-aura {position:absolute;left:-105px;top:10px;width:510px;height:420px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,198,82,.17),rgba(80,110,255,.08) 38%,transparent 70%);filter:blur(12px);animation:dt-lamp-glow 5s ease-in-out infinite;}
         #dt-cozy-lamp .lamp-shade {position:absolute;left:72px;top:35px;width:160px;height:72px;border-radius:100px 100px 14px 14px;background:linear-gradient(145deg,#4b5563,#151b29 62%,#090d16);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 4px 8px #ffffff20,0 18px 30px #0008;animation:dt-lamp-sway 6s ease-in-out infinite;transform-origin:50% 100%;}
         #dt-cozy-lamp .lamp-rim {position:absolute;left:64px;top:98px;width:176px;height:10px;border-radius:50%;background:linear-gradient(90deg,#697386,#f6d78a,#4b5563);box-shadow:0 0 14px #ffd16670;}
@@ -1002,9 +1002,22 @@ def _show_login_header():
         #dt-cozy-lamp .lamp-cord {position:absolute;left:214px;top:103px;width:2px;height:112px;background:linear-gradient(#b8c0ce,#697386);transform-origin:top;animation:dt-lamp-cord 3s ease-in-out infinite;}
         #dt-cozy-lamp .lamp-pull {position:absolute;left:207px;top:211px;width:16px;height:22px;border-radius:8px;background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20);box-shadow:0 0 14px #ffd16655;}
         #dt-cozy-lamp .lamp-dust {position:absolute;width:4px;height:4px;border-radius:50%;background:#ffe8a3;box-shadow:0 0 9px #ffd166;animation:dt-lamp-dust 5s ease-out infinite;}
-        #dt-cozy-lamp #dt-cozy-lamp .d2{left:80px;top:275px;animation-delay:1.3s}#dt-cozy-lamp .d3{left:210px;top:300px;animation-delay:2.5s}#dt-cozy-lamp .d4{left:140px;top:225px;animation-delay:3.3s}
-        @media(max-width:900px){.block-container:has(.login-panel){width:auto!important;max-width:760px!important;margin:0 auto!important}#dt-cozy-lamp{display:none}.dt-login-logo-image{width:72px;height:60px}}
+        #dt-cozy-lamp .d2{left:80px;top:275px;animation-delay:1.3s}#dt-cozy-lamp .d3{left:210px;top:300px;animation-delay:2.5s}#dt-cozy-lamp .d4{left:140px;top:225px;animation-delay:3.3s}
+        @media(max-width:640px){.block-container:has(.login-panel){width:auto!important;max-width:760px!important;margin:0 auto!important}#dt-cozy-lamp{left:-45px;transform:translateY(-50%) scale(.78);transform-origin:left center}.dt-login-logo-image{width:72px;height:60px}}
         @media(prefers-reduced-motion:reduce){#dt-cozy-lamp *,#dt-cozy-lamp *::before{animation:none!important}}
+        /* Pull-cord states are driven by Streamlit so they work reliably on Cloud. */
+        :root { --dt-lamp-color: #ffd166; --dt-lamp-glow: rgba(255,209,102,.34); }
+        [data-testid="stAppViewContainer"].dt-lamp-theme-1 { --dt-lamp-color:#67e8f9; --dt-lamp-glow:rgba(34,211,238,.34); }
+        [data-testid="stAppViewContainer"].dt-lamp-theme-2 { --dt-lamp-color:#fb923c; --dt-lamp-glow:rgba(251,146,60,.34); }
+        [data-testid="stAppViewContainer"].dt-lamp-theme-3 { --dt-lamp-color:#86efac; --dt-lamp-glow:rgba(134,239,172,.34); }
+        [data-testid="stAppViewContainer"].dt-lamp-theme-4 { --dt-lamp-color:#c4b5fd; --dt-lamp-glow:rgba(196,181,253,.34); }
+        #dt-cozy-lamp .lamp-bulb { background:var(--dt-lamp-color); box-shadow:0 0 18px 8px var(--dt-lamp-glow),0 0 65px 30px var(--dt-lamp-glow); }
+        #dt-cozy-lamp .lamp-rim { box-shadow:0 0 14px var(--dt-lamp-glow); }
+        #dt-cozy-lamp .lamp-aura { background:radial-gradient(ellipse,var(--dt-lamp-glow),rgba(80,110,255,.08) 38%,transparent 70%); }
+        .st-key-lamp_pull_control { position:fixed !important; z-index:20 !important; left:calc(7vw + 205px) !important; top:calc(49% - 10px) !important; width:54px !important; }
+        .st-key-lamp_pull_control button { min-height:32px !important; height:32px !important; width:30px !important; padding:0 !important; border-radius:18px !important; border:1px solid #ffe7a3 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:#241b08 !important; box-shadow:0 0 16px var(--dt-lamp-glow) !important; font-size:0 !important; cursor:grab !important; }
+        .st-key-lamp_pull_control button:hover { transform:translateY(5px) scale(1.06) !important; filter:brightness(1.12) !important; }
+        @media(max-width:640px){.st-key-lamp_pull_control{left:calc(7vw + 150px)!important;top:calc(49% - 8px)!important}}
         </style>
         <div id="dt-login-universe" aria-hidden="true">
           <div class="dt-stars"></div>
@@ -1056,7 +1069,45 @@ def require_login():
             st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
         st.stop()
 
+    # The first pull reveals authentication; later pulls cycle lamp colors.
+    if "dt_lamp_on" not in st.session_state:
+        st.session_state["dt_lamp_on"] = False
+    if "dt_lamp_theme" not in st.session_state:
+        st.session_state["dt_lamp_theme"] = 0
+
     _show_login_header()
+    # Add a real Streamlit control over the gold pull bead. Unlike JS injected into
+    # st.markdown, this works reliably in Streamlit Cloud and triggers a rerun.
+    with st.container(key="lamp_pull_control"):
+        pull_clicked = st.button("Pull lamp cord", key="dt_lamp_pull_button", help="Pull the lamp cord to turn on the light and reveal sign-in")
+    if pull_clicked:
+        if not st.session_state["dt_lamp_on"]:
+            st.session_state["dt_lamp_on"] = True
+            st.session_state["dt_lamp_theme"] = 0
+        else:
+            st.session_state["dt_lamp_theme"] = (st.session_state["dt_lamp_theme"] + 1) % 5
+        st.rerun()
+
+    theme = int(st.session_state.get("dt_lamp_theme", 0))
+    # Apply theme colors without modifying Supabase or any dashboard settings.
+    theme_colors = [("#ffd166", "rgba(255,209,102,.34)", "#11152b"),
+                    ("#67e8f9", "rgba(34,211,238,.34)", "#0b1d2b"),
+                    ("#fb923c", "rgba(251,146,60,.34)", "#21151a"),
+                    ("#86efac", "rgba(134,239,172,.34)", "#0d211d"),
+                    ("#c4b5fd", "rgba(196,181,253,.34)", "#17132b")]
+    lamp_color, lamp_glow, room_tint = theme_colors[theme]
+    st.markdown(f"""<style>
+      #dt-cozy-lamp .lamp-bulb {{background:{lamp_color}!important;box-shadow:0 0 18px 8px {lamp_glow},0 0 65px 30px {lamp_glow}!important;}}
+      #dt-cozy-lamp .lamp-aura {{background:radial-gradient(ellipse,{lamp_glow},rgba(80,110,255,.08) 38%,transparent 70%)!important;}}
+      [data-testid="stAppViewContainer"] {{background-color:{room_tint}!important;}}
+      .login-panel {{border-color:{lamp_color}99!important;}}
+      .st-key-lamp_pull_control button {{box-shadow:0 0 18px {lamp_glow}!important;}}
+    </style>""", unsafe_allow_html=True)
+
+    if not st.session_state["dt_lamp_on"]:
+        st.info("Pull the gold lamp cord to turn on the light and reveal the sign-in form.")
+        st.stop()
+
     sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
 
     with sign_in_tab:
