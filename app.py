@@ -602,8 +602,11 @@ def load_campaign_report(upload, mappings):
     df = raw[[campaign_col, result_col, spent_col]].copy()
     df.columns = ["Campaign", "Results", "Spent"]
     df["Campaign"] = df["Campaign"].fillna("").astype(str)
-    df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
-    df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
+    def _numeric_series(series):
+        cleaned = series.astype(str).str.replace(",", "", regex=False).str.replace("$", "", regex=False).str.replace("KD", "", regex=False).str.strip()
+        return pd.to_numeric(cleaned, errors="coerce")
+    df["Results"] = _numeric_series(df["Results"]).fillna(0).astype(int)
+    df["Spent"] = _numeric_series(df["Spent"]).fillna(0.0)
     # Match the main report's inclusion rule: exclude zero and awareness/reach-scale results.
     df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
 
@@ -2857,12 +2860,14 @@ def main():
     # Keep normal document flow for the dashboard and its report output.
     st.markdown("""
     <style>
-      html, body { height: auto !important; min-height: 0 !important; overflow-y: auto !important; }
-      [data-testid="stAppViewContainer"], [data-testid="stMain"], section.main,
+      html, body, #root { height: auto !important; min-height: 0 !important; overflow-x: hidden !important; overflow-y: auto !important; }
+      [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"], section.main,
       .main, .block-container, [data-testid="stVerticalBlock"] {
-        min-height: 0 !important;
+        height: auto !important; min-height: 0 !important; max-height: none !important;
       }
-      .block-container { height: auto !important; }
+      .block-container { padding-bottom: 1.25rem !important; }
+      /* Streamlit components should not reserve a viewport-sized blank region. */
+      [data-testid="stIFrame"] { max-height: 100% !important; }
       /* Keep the legacy lamp scene out of document flow. Its 1100px light layer
          was overflowing the page even when the lamp itself was visually hidden. */
       main.room, .room, .room.on {
@@ -3309,6 +3314,7 @@ def main():
         st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
     try:
+        uploaded.seek(0)
         raw = pd.read_excel(uploaded)
         original_cols = list(raw.columns)
         normalized_cols = [normalize(c) for c in original_cols]
@@ -3323,14 +3329,23 @@ def main():
         df = raw[[campaign_col, result_col, spent_col]].copy()
         df.columns = ["Campaign", "Results", "Spent"]
         df["Campaign"] = df["Campaign"].fillna("").astype(str)
-        df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
-        df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
+        # Meta exports sometimes store numbers as formatted text (e.g. "1,234" or "$12.50").
+        # Normalize those values before converting so valid campaigns are not silently dropped.
+        def _numeric_series(series):
+            cleaned = series.astype(str).str.replace(",", "", regex=False).str.replace("$", "", regex=False).str.replace("KD", "", regex=False).str.strip()
+            return pd.to_numeric(cleaned, errors="coerce")
+        df["Results"] = _numeric_series(df["Results"]).fillna(0).astype(int)
+        df["Spent"] = _numeric_series(df["Spent"]).fillna(0.0)
 
         # Preserve zero-result campaigns for spend visibility, while keeping them out of the lead report.
         no_result_df = df[df["Results"] <= 0].copy().reset_index(drop=True)
         no_result_count = len(no_result_df)
         no_result_spend_usd = float(no_result_df["Spent"].sum())
         df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
+        if df.empty:
+            st.warning("The Excel file was read, but no campaigns have a reportable Results value above 0 and at most 10,000. Check the selected Results column and the spreadsheet's header row.")
+            st.caption("Tip: the export should include campaign name, results, and amount spent in separate columns.")
+            return
 
         st.success(f"Loaded {len(df)} campaigns with {int(df['Results'].sum())} total results.")
         with st.container(border=True):
@@ -3399,7 +3414,9 @@ def main():
             # to remove otherwise valid leads from the branch/staff report.
             valid = edited[(edited["Staff"].astype(str).str.strip() != "") & (edited["Branch"].astype(str).str.strip() != "")].copy()
             if valid.empty:
-                st.error("No campaigns have both Staff and Branch identified. Review the assignment table first.")
+                st.error("The report was not generated because no campaign has both Staff and Branch assigned.")
+                st.info("In the campaign assignment table above, fill in the Staff and Branch columns for at least one campaign, then click Generate report again. A missing Course is allowed and will be labelled 'Unclassified course'.")
+                st.dataframe(edited[["Campaign", "Staff", "Course", "Branch", "Status"]], use_container_width=True, hide_index=True)
                 return
             valid["Course"] = valid["Course"].astype(str).str.strip().replace("", "Unclassified course")
             grouped = valid.groupby(["Branch", "Staff", "Course"], sort=False).agg(Results=("Results", "sum"), Spent=("Spent", "sum")).reset_index()
