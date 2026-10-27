@@ -1782,6 +1782,9 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .room .lamp-side { position:fixed !important; left:0 !important; top:0 !important; width:44vw !important; height:100vh !important; pointer-events:none !important; }
 .room .lamp-container { pointer-events:none !important; }
 .room .string-handle { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
+/* Spring animation for the visible gold pull bead and its cord. */
+@keyframes dt-bead-spring {0%{transform:translateY(0) scaleY(1)}12%{transform:translateY(23px) scaleY(1.22)}29%{transform:translateY(-7px) scaleY(.91)}47%{transform:translateY(6px) scaleY(1.08)}66%{transform:translateY(-3px) scaleY(.97)}82%{transform:translateY(2px) scaleY(1.02)}100%{transform:translateY(0) scaleY(1)}}
+@keyframes dt-cord-spring {0%{transform:scaleY(1)}12%{transform:scaleY(1.22)}29%{transform:scaleY(.93)}47%{transform:scaleY(1.08)}66%{transform:scaleY(.97)}82%{transform:scaleY(1.02)}100%{transform:scaleY(1)}}
 .room[class*="pull-step-"] .string-svg { animation:dt-cord-elastic .72s cubic-bezier(.22,.61,.36,1) both; transform-origin:top center; }
 .room[class*="pull-step-"] .string-handle { animation:dt-cord-elastic .72s cubic-bezier(.22,.61,.36,1) both; transform-origin:top center; }
 .room .night-sky { position:fixed !important; left:3vw !important; top:9vh !important; }
@@ -1794,8 +1797,8 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
 .st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 15px) !important; top:calc(44.2vh - 67px) !important; width:28px !important; height:34px !important; padding:0 !important; margin:0 !important; }
 .st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }
-.st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:26px !important; min-height:26px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
-.st-key-lamp_pull_control button:active { transform:translateY(18px) scaleY(1.22) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button { animation:none; transition:box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:26px !important; min-height:26px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
+.st-key-lamp_pull_control button:active { transform:translateY(14px) scaleY(1.16) !important; cursor:grabbing !important; }
 .st-key-lamp_pull_control button { transform-origin:top center !important; }
 .st-key-lamp_pull_control button:active { transition:transform .16s cubic-bezier(.2,.8,.2,1) !important; }
 .st-key-lamp_pull_control button:focus-visible { outline:2px solid #fff0a6 !important; outline-offset:2px !important; }
@@ -1873,8 +1876,8 @@ def require_login():
         st.session_state["dt_lamp_theme"] = 0
 
     _show_login_header()
-    # Add a real Streamlit control over the gold pull bead. Unlike JS injected into
-    # st.markdown, this works reliably in Streamlit Cloud and triggers a rerun.
+    # Use the visible gold bead itself as the Streamlit control. Its spring animation
+    # is retriggered on each click, while Streamlit handles the authentication state.
     with st.container(key="lamp_pull_control"):
         # The visible gold bead is the button; the help text remains available on hover.
         pull_clicked = st.button(" ", key="dt_lamp_pull_button")
@@ -1900,6 +1903,8 @@ def require_login():
       [data-testid="stAppViewContainer"] {{background-color:{room_tint}!important;}}
       .dt-new-login-heading {{border-color:{lamp_color}99!important;}}
       .st-key-lamp_pull_control button {{box-shadow:0 0 18px {lamp_glow}!important;}}
+      body:has(.room.pull-step-{pull_step}) .st-key-lamp_pull_control button {{ animation:dt-bead-spring .82s cubic-bezier(.22,.61,.36,1) both!important; }}
+      body:has(.room.pull-step-{pull_step}) .room .string-svg {{ animation:dt-cord-spring .82s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center; }}
     </style>""", unsafe_allow_html=True)
 
     if not st.session_state["dt_lamp_on"]:
