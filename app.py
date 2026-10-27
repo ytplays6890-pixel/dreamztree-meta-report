@@ -2799,6 +2799,22 @@ def main():
     if st.session_state.pop("login_just_succeeded", False):
         st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
+    # Fix excess blank-page scrolling caused by legacy full-screen lamp CSS.
+    # Keep normal document flow for the dashboard and its report output.
+    st.markdown("""
+    <style>
+      html, body { height: auto !important; min-height: 0 !important; overflow-y: auto !important; }
+      [data-testid="stAppViewContainer"], [data-testid="stMain"], section.main,
+      .main, .block-container, [data-testid="stVerticalBlock"] {
+        min-height: 0 !important;
+      }
+      .block-container { height: auto !important; }
+      .room, .room.on { height: 0 !important; min-height: 0 !important; overflow: visible !important; }
+      .dt-game-toast { width: min(290px, calc(100vw - 32px)) !important; padding: 12px 14px !important; border-radius: 12px !important; box-shadow: 0 8px 24px rgba(0,0,0,.28) !important; }
+      .dt-game-toast strong { font-size: 14px !important; }
+      .dt-game-toast span { font-size: 12px !important; }
+    </style>
+    """, unsafe_allow_html=True)
     # Minimal professional theme inspired by Stripe/Linear:
     # restrained navy/slate palette, crisp hierarchy, compact cards, no decorative motion.
     st.markdown("""
@@ -3081,8 +3097,8 @@ def main():
       </div>
     </section>
     <section class="dt-report-intro" id="report-form">
-      <h2>↓ Scroll down to create a report</h2>
-      <p>The existing report-making form and dashboard features remain below the landing page.</p>
+      <h2>Create a report</h2>
+      <p>Upload your Meta Ads export below to review campaign mappings and generate the report.</p>
     </section>
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
