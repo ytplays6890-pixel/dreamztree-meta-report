@@ -1792,10 +1792,11 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
-.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 4px) !important; top:44.2vh !important; width:28px !important; height:42px !important; padding:0 !important; margin:0 !important; }
+.st-key-lamp_pull_control { position:fixed !important; z-index:99999 !important; left:calc(26.4vw - 15px) !important; top:calc(44.2vh - 115px) !important; width:28px !important; height:34px !important; padding:0 !important; margin:0 !important; }
 .st-key-lamp_pull_control [data-testid="stButton"] { width:28px !important; margin:0 !important; padding:0 !important; }
-.st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:30px !important; min-height:30px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
-.st-key-lamp_pull_control button:active { transform:translateY(18px) scaleY(1.16) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button { animation:none; transition:transform .18s ease-out, box-shadow .25s ease !important; width:18px !important; min-width:18px !important; height:26px !important; min-height:26px !important; padding:0 !important; margin:0 !important; border-radius:12px !important; border:1px solid #fff0a6 !important; background:linear-gradient(90deg,#d6a84b,#fff0a3,#9c6c20) !important; color:transparent !important; font-size:0 !important; line-height:0 !important; box-shadow:0 0 18px var(--lamp-glow-strong) !important; cursor:grab !important; }
+.st-key-lamp_pull_control button:active { transform:translateY(20px) scaleY(1.18) !important; cursor:grabbing !important; }
+.st-key-lamp_pull_control button:focus-visible { outline:2px solid #fff0a6 !important; outline-offset:2px !important; }
 .st-key-lamp_pull_control button p, .st-key-lamp_pull_control button span { display:none !important; }
 @media(max-width:850px) {
  .room .lamp-side { width:100vw !important; height:46vh !important; top:0 !important; }
