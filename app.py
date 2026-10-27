@@ -1964,6 +1964,60 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
     st.markdown("<style>" + css + "</style>" + markup, unsafe_allow_html=True)
 
+    # Final Streamlit layout correction: prevent legacy viewport-sized wrappers from
+    # extending the document after the actual dashboard content.
+    st.markdown("""
+    <style>
+      html, body {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      .stApp,
+      [data-testid="stAppViewContainer"],
+      [data-testid="stMain"],
+      [data-testid="stMainBlockContainer"],
+      section.main,
+      section.main > div,
+      .main,
+      .block-container {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+      }
+      [data-testid="stMainBlockContainer"] {
+        padding-bottom: 1.5rem !important;
+      }
+      /* Keep decorative fixed backgrounds from contributing to document height. */
+      [data-testid="stAppViewContainer"]::before,
+      [data-testid="stAppViewContainer"]::after,
+      .stApp::before,
+      .stApp::after {
+        position: fixed !important;
+        inset: 0 !important;
+        pointer-events: none !important;
+      }
+      /* Prevent hidden legacy scene nodes from reserving vertical space. */
+      body > .room,
+      .stApp > .room,
+      [data-testid="stAppViewContainer"] > .room {
+        position: fixed !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        overflow: clip !important;
+        pointer-events: none !important;
+      }
+      h1, h2, h3, h4 {
+        clip-path: none !important;
+        overflow: visible !important;
+        max-height: none !important;
+      }
+    </style>
+    """, unsafe_allow_html=True)
 
 def require_login():
     """Use Supabase Auth for colleague registration and sign-in.
