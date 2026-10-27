@@ -685,84 +685,6 @@ def get_supabase_client():
         return None
 
 
-
-def _is_admin_user():
-    """Identify the administrator using server-side configured credentials/email allowlist."""
-    username = str(st.session_state.get("authenticated_user", "")).strip()
-    if st.session_state.get("auth_method") == "legacy":
-        env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
-        if not env_admin_user:
-            try:
-                env_admin_user = str(st.secrets.get("auth", {}).get("admin_username", "")).strip()
-            except Exception:
-                env_admin_user = ""
-        if env_admin_user and username == env_admin_user:
-            return True
-    configured = os.environ.get("ADMIN_EMAILS", "").strip()
-    if not configured:
-        try:
-            configured = str(st.secrets.get("auth", {}).get("admin_emails", ""))
-        except Exception:
-            configured = ""
-    admin_emails = {item.strip().lower() for item in configured.split(",") if item.strip()}
-    return username.lower() in admin_emails
-
-
-def _settings_admin_client():
-    """Use a server-side Supabase service-role key for secure shared settings writes."""
-    try:
-        config = st.secrets.get("supabase", {})
-        url = str(os.environ.get("SUPABASE_URL", "") or config.get("url", "")).strip()
-        service_key = str(
-            os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-            or config.get("service_role_key", "")
-        ).strip()
-        if url and service_key:
-            return create_client(url, service_key)
-    except Exception:
-        pass
-    return None
-
-
-def _get_no_more_counts():
-    """Read the globally shared switch from Supabase; fail closed only when configured."""
-    admin_client = _settings_admin_client()
-    if admin_client is None:
-        return bool(st.session_state.get("dt_no_more_counts_fallback", False)), False
-    try:
-        result = (
-            admin_client.table("app_settings")
-            .select("value")
-            .eq("key", "no_more_counts")
-            .limit(1)
-            .execute()
-        )
-        rows = getattr(result, "data", None) or []
-        if rows:
-            value = rows[0].get("value", False)
-            if isinstance(value, str):
-                value = value.strip().lower() in {"true", "1", "yes", "on"}
-            return bool(value), True
-        return False, True
-    except Exception:
-        return bool(st.session_state.get("dt_no_more_counts_fallback", False)), False
-
-
-def _set_no_more_counts(enabled):
-    admin_client = _settings_admin_client()
-    if admin_client is None:
-        return False, "Add SUPABASE_SERVICE_ROLE_KEY to the server-side Streamlit secrets before using the shared setting."
-    try:
-        admin_client.table("app_settings").upsert(
-            {"key": "no_more_counts", "value": bool(enabled)},
-            on_conflict="key",
-        ).execute()
-        st.session_state["dt_no_more_counts_fallback"] = bool(enabled)
-        return True, ""
-    except Exception as exc:
-        return False, str(exc)
-
-
 def _show_login_header():
     """Render the new supplied animated lamp room behind the real Streamlit auth form."""
     pull_step = int(st.session_state.get("dt_lamp_pull_count", 0))
@@ -1972,16 +1894,6 @@ def require_login():
     existing administrator can still sign in during the transition.
     """
     if st.session_state.get("authenticated"):
-        no_more_counts, settings_shared = _get_no_more_counts()
-        if no_more_counts and not _is_admin_user():
-            st.markdown(
-                "<div style='position:fixed;inset:0;z-index:999999;background:#0b1020;"
-                "display:flex;align-items:center;justify-content:center;padding:24px;"
-                "color:#fff;font:700 24px system-ui;text-align:center'>"
-                "Oops! No more counts</div>",
-                unsafe_allow_html=True,
-            )
-            st.stop()
         return
 
     client = get_supabase_client()
@@ -2022,8 +1934,6 @@ def require_login():
                 st.session_state["dt_lamp_theme"] = 0
             else:
                 st.session_state["dt_lamp_theme"] = (int(st.session_state.get("dt_lamp_theme", 0)) + 1) % 5
-            # Show a short contact notice whenever the lamp is pulled.
-            st.session_state["dt_lamp_notice_pending"] = True
             st.rerun()
 
     # Keep the pull counter in this scope as well: it drives the CSS spring animation.
@@ -2068,38 +1978,6 @@ def require_login():
         # Keep the room dark and authentication hidden without showing a notification.
         st.stop()
 
-    if st.session_state.pop("dt_lamp_notice_pending", False):
-        st.markdown("""
-        <style>
-          .dt-lamp-contact-notice {
-            position:fixed; right:24px; bottom:24px; z-index:100000;
-            width:min(360px,calc(100vw - 32px)); padding:16px 18px;
-            border-radius:16px; color:#f8fafc;
-            background:linear-gradient(135deg,rgba(15,23,42,.97),rgba(30,41,59,.97));
-            border:1px solid rgba(255,209,102,.65);
-            box-shadow:0 14px 38px rgba(0,0,0,.38),0 0 24px rgba(255,209,102,.15);
-            animation:dt-lamp-notice-life 5.5s ease forwards;
-            pointer-events:none;
-          }
-          .dt-lamp-contact-notice strong {display:block;font-size:14px;margin-bottom:5px;color:#ffdf8a;}
-          @keyframes dt-lamp-notice-life {
-            0% {opacity:0;transform:translateY(14px)}
-            10%,72% {opacity:1;transform:translateY(0)}
-            100% {opacity:0;transform:translateY(10px);visibility:hidden}
-          }
-          @media(max-width:600px) {.dt-lamp-contact-notice{right:12px;bottom:16px;width:calc(100vw - 24px)}}
-          @media(prefers-reduced-motion:reduce) {.dt-lamp-contact-notice{animation:none;opacity:1}}
-        </style>
-        <div class="dt-lamp-contact-notice" role="status" aria-live="polite">
-          <strong>Oops! No more counts</strong>
-        </div>
-        """, unsafe_allow_html=True)
-
-    no_more_counts, settings_shared = _get_no_more_counts()
-    if no_more_counts:
-        st.warning("Oops! No more counts")
-        st.caption("Administrator sign-in remains available to turn this setting off.")
-
     sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
 
     with sign_in_tab:
@@ -2130,15 +2008,6 @@ def require_login():
                 if legacy_password is not None and hmac.compare_digest(
                     password, str(legacy_password)
                 ):
-                    configured_admin_user = env_admin_user
-                    if not configured_admin_user:
-                        try:
-                            configured_admin_user = str(st.secrets.get("auth", {}).get("admin_username", "")).strip()
-                        except Exception:
-                            configured_admin_user = ""
-                    if no_more_counts and login_id != configured_admin_user:
-                        st.error("Oops! No more counts")
-                        st.stop()
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
@@ -2151,20 +2020,6 @@ def require_login():
                                 {"email": login_id, "password": password}
                             )
                         if response and response.user:
-                            configured_admin_emails = os.environ.get("ADMIN_EMAILS", "").strip()
-                            if not configured_admin_emails:
-                                try:
-                                    configured_admin_emails = str(st.secrets.get("auth", {}).get("admin_emails", ""))
-                                except Exception:
-                                    configured_admin_emails = ""
-                            admin_emails = {item.strip().lower() for item in configured_admin_emails.split(",") if item.strip()}
-                            if no_more_counts and (response.user.email or login_id).lower() not in admin_emails:
-                                try:
-                                    client.auth.sign_out()
-                                except Exception:
-                                    pass
-                                st.error("Oops! No more counts")
-                                st.stop()
                             if getattr(response, "session", None):
                                 st.session_state["supabase_access_token"] = response.session.access_token
                                 st.session_state["supabase_refresh_token"] = response.session.refresh_token
@@ -2774,28 +2629,6 @@ def render_team_chat():
 
 def main():
     require_login()
-    if _is_admin_user():
-        with st.expander("🔐 Admin only · No More Counts", expanded=False):
-            current_no_more_counts, settings_shared = _get_no_more_counts()
-            if not settings_shared:
-                st.info(
-                    "The shared setting needs the Supabase app_settings table and a server-side "
-                    "SUPABASE_SERVICE_ROLE_KEY."
-                )
-            updated_no_more_counts = st.toggle(
-                "Enable “Oops! No more counts” mode",
-                value=current_no_more_counts,
-                key="admin_no_more_counts_toggle",
-                help="When enabled, non-admin users cannot access the dashboard.",
-            )
-            if updated_no_more_counts != current_no_more_counts:
-                saved, error = _set_no_more_counts(updated_no_more_counts)
-                if saved:
-                    st.success("Setting saved for all users.")
-                    st.rerun()
-                else:
-                    st.error("Could not save the shared setting.")
-                    st.caption(error)
     if st.session_state.pop("login_just_succeeded", False):
         st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
