@@ -1908,6 +1908,22 @@ def require_login():
       [data-testid="stAppViewContainer"] {{background-color:{room_tint}!important;}}
       .dt-new-login-heading {{border-color:{lamp_color}99!important;}}
       .st-key-lamp_pull_control button {{box-shadow:0 0 18px {lamp_glow}!important;}}
+      /* Match authentication action buttons to the current lamp color. */
+      [data-testid="stForm"] button[kind="primary"],
+      [data-testid="stForm"] button[data-testid="stFormSubmitButton"],
+      [data-testid="stForm"] button[kind="primaryFormSubmit"] {{
+        background:linear-gradient(135deg,{lamp_color},{lamp_color}dd)!important;
+        border:1px solid {lamp_color}!important;
+        color:#11131b!important;
+        box-shadow:0 6px 22px {lamp_glow}!important;
+        transition:background .45s ease,border-color .45s ease,box-shadow .45s ease,color .45s ease!important;
+      }}
+      [data-testid="stForm"] button[kind="primary"]:hover,
+      [data-testid="stForm"] button[data-testid="stFormSubmitButton"]:hover,
+      [data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {{
+        filter:brightness(1.08)!important;
+        box-shadow:0 8px 28px {lamp_glow}!important;
+      }}
       .room.pull-step-{pull_step} ~ * .st-key-lamp_pull_control button {{ animation:dt-bead-spring .82s cubic-bezier(.22,.61,.36,1) both!important; }}
       .room.pull-step-{pull_step} .string-svg {{ animation:dt-cord-spring .82s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center; }}
     </style>""", unsafe_allow_html=True)
