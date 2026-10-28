@@ -2684,6 +2684,62 @@ def render_post_login_transition():
     """, unsafe_allow_html=True)
 
 
+
+def inject_performance_patch():
+    """Reduce GPU-heavy ambient effects while retaining a lightweight welcome fade."""
+    st.markdown(r"""
+    <style>
+      /* The original theme animates several full-screen layers continuously.
+         Disable those effects to keep Streamlit reruns and scrolling responsive. */
+      .stApp, .stApp::before, .stApp::after,
+      [data-testid="stAppViewContainer"]::before,
+      [data-testid="stAppViewContainer"]::after,
+      .hero, .hero::before, .hero::after, .hero-title,
+      [data-testid="stMetric"], [data-testid="stMetric"]::after,
+      [data-testid="stFileUploader"], .stButton button,
+      [data-testid="stDownloadButton"] button, .arcade-banner,
+      .block-container, [data-testid="stTabs"],
+      [data-testid="stDataFrame"], [data-testid="stTable"] {
+        animation: none !important;
+        background-attachment: scroll !important;
+      }
+      /* Avoid expensive blur/filter transitions on the login scene. */
+      .fireflies, .fireflies *, .stars-cluster, .stars-cluster *,
+      .night-sky, .lamp-glow, .light-beam, .desk-surface {
+        animation: none !important;
+        transition: none !important;
+        filter: none !important;
+      }
+      /* Lightweight post-login logo: opacity only, no scaling, blur or bounce. */
+      @keyframes dt-welcome-fade-only {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .dt-welcome-overlay {
+        animation: dt-welcome-fade-only 1.35s ease-out forwards !important;
+        background: #080d15 !important;
+        will-change: opacity;
+      }
+      .dt-welcome-mark {
+        animation: dt-welcome-fade-only 1.15s ease-out both !important;
+        transform: none !important;
+        filter: none !important;
+        will-change: opacity;
+      }
+      .dt-welcome-mark img {
+        transform: none !important;
+        filter: none !important;
+      }
+      .dt-welcome-subtitle {
+        animation: dt-welcome-fade-only 1s ease-out .2s both !important;
+        transform: none !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+      }
+    </style>
+    """, unsafe_allow_html=True)
+
 def main():
     require_login()
     just_logged_in = st.session_state.pop("login_just_succeeded", False)
@@ -2692,6 +2748,7 @@ def main():
     inject_premium_theme()
     if just_logged_in:
         render_post_login_transition()
+    inject_performance_patch()
     page = st.query_params.get("page", "dashboard")
     # Keep the Game Zone invitation/notification active on every non-game page.
     # The fragment itself suppresses the popup while the Game Zone is open.
