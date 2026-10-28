@@ -2711,17 +2711,24 @@ def inject_performance_patch():
         filter: none !important;
       }
       /* Lightweight post-login logo: opacity only, no scaling, blur or bounce. */
-      @keyframes dt-welcome-fade-only {
+      @keyframes dt-welcome-overlay-fade {
+        0% { opacity: 0; visibility: visible; }
+        12% { opacity: 1; }
+        72% { opacity: 1; }
+        100% { opacity: 0; visibility: hidden; }
+      }
+      @keyframes dt-welcome-mark-fade {
         from { opacity: 0; }
         to { opacity: 1; }
       }
+      /* The overlay must fade OUT as well as in, or it can cover the app forever. */
       .dt-welcome-overlay {
-        animation: dt-welcome-fade-only 1.35s ease-out forwards !important;
+        animation: dt-welcome-overlay-fade 1.8s ease-out forwards !important;
         background: #080d15 !important;
         will-change: opacity;
       }
       .dt-welcome-mark {
-        animation: dt-welcome-fade-only 1.15s ease-out both !important;
+        animation: dt-welcome-mark-fade .65s ease-out both !important;
         transform: none !important;
         filter: none !important;
         will-change: opacity;
@@ -2731,9 +2738,25 @@ def inject_performance_patch():
         filter: none !important;
       }
       .dt-welcome-subtitle {
-        animation: dt-welcome-fade-only 1s ease-out .2s both !important;
+        animation: dt-welcome-mark-fade .5s ease-out .12s both !important;
         transform: none !important;
       }
+      /* Stop all ambient infinite effects; retain only the short welcome transition. */
+      .stApp *, .stApp *::before, .stApp *::after {
+        animation-iteration-count: 1 !important;
+      }
+      .hero, .hero::before, .hero::after, .hero-title,
+      [data-testid="stMetric"], [data-testid="stMetric"]::after,
+      [data-testid="stFileUploader"], .stButton button,
+      [data-testid="stDownloadButton"] button, .arcade-banner,
+      .room, .room *, .fireflies, .fireflies *, .stars-cluster,
+      .night-sky, .room-light, .firefly, .stApp::before, .stApp::after {
+        animation: none !important;
+        transition: none !important;
+      }
+      .dt-welcome-overlay { animation: dt-welcome-overlay-fade 1.8s ease-out forwards !important; }
+      .dt-welcome-mark { animation: dt-welcome-mark-fade .65s ease-out both !important; }
+      .dt-welcome-subtitle { animation: dt-welcome-mark-fade .5s ease-out .12s both !important; }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation: none !important; transition: none !important; }
       }
