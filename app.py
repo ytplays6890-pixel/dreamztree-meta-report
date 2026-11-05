@@ -21,7 +21,13 @@ st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="w
 # Encrypted browser cookie used only to restore authentication after a reload.
 _AUTH_COOKIE_NAME = "dt_auth_session_v1"
 _AUTH_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days; Supabase refresh token rules still apply.
-_auth_cookie_controller = CookieController(key="dreamztree_auth_cookie_controller")
+# Keep one cookie-controller instance per Streamlit browser session. A module-level
+# controller can accidentally share component state between concurrent sessions.
+if "_dt_auth_cookie_controller" not in st.session_state:
+    st.session_state["_dt_auth_cookie_controller"] = CookieController(
+        key="dreamztree_auth_cookie_controller"
+    )
+_auth_cookie_controller = st.session_state["_dt_auth_cookie_controller"]
 RemoveEmptyElementContainer()
 
 
@@ -50,10 +56,12 @@ def _save_auth_cookie(payload):
         return False
     try:
         token = cipher.encrypt(json.dumps(payload).encode("utf-8")).decode("ascii")
-        _auth_cookie_controller.set(
-            _AUTH_COOKIE_NAME, token, max_age=_AUTH_COOKIE_TTL_SECONDS,
-            path="/", secure=True, same_site="lax"
-        )
+        # The installed streamlit-cookies-controller 0.0.4 API documents
+        # set(name, value). Avoid unsupported keyword arguments.
+        _auth_cookie_controller.set(_AUTH_COOKIE_NAME, token)
+        # The component writes in the browser asynchronously. Give it time to
+        # commit the cookie before the login flow triggers a Streamlit rerun.
+        time.sleep(1.0)
         return True
     except Exception as exc:
         st.warning(f"Could not save the persistent login cookie: {exc}")
@@ -829,9 +837,6 @@ def get_supabase_client():
 
     try:
         client = create_client(supabase_url, publishable_key)
-        # Keep the public project URL/key available for the bounded-time login request.
-        st.session_state["supabase_url"] = supabase_url.rstrip("/")
-        st.session_state["supabase_publishable_key"] = publishable_key
         st.session_state["supabase_client"] = client
         access_token = st.session_state.get("supabase_access_token")
         refresh_token = st.session_state.get("supabase_refresh_token")
@@ -2179,52 +2184,29 @@ def require_login():
                     st.rerun()
                 elif "@" in login_id:
                     try:
-                        # Use a bounded 20-second HTTP request so a network/API issue
-                        # cannot leave the sign-in form spinning indefinitely.
-                        supabase_url = st.session_state.get("supabase_url", "").rstrip("/")
-                        publishable_key = st.session_state.get("supabase_publishable_key", "")
-                        if not supabase_url or not publishable_key:
-                            raise RuntimeError("Supabase connection settings are missing. Check SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in Streamlit Secrets.")
-                        with st.spinner("Signing in securely…"):
-                            auth_response = requests.post(
-                                f"{supabase_url}/auth/v1/token?grant_type=password",
-                                headers={
-                                    "apikey": publishable_key,
-                                    "Content-Type": "application/json",
-                                },
-                                json={"email": login_id, "password": password},
-                                timeout=20,
+                        with st.spinner("Authenticating securely…"):
+                            response = client.auth.sign_in_with_password(
+                                {"email": login_id, "password": password}
                             )
-                        try:
-                            auth_data = auth_response.json()
-                        except ValueError:
-                            auth_data = {}
-                        if auth_response.status_code >= 400:
-                            detail = (auth_data.get("msg") or auth_data.get("message") or auth_data.get("error_description") or auth_data.get("error") or f"Supabase returned HTTP {auth_response.status_code}.")
-                            st.error(f"Sign-in failed: {detail}")
-                        elif not auth_data.get("access_token") or not auth_data.get("refresh_token"):
-                            st.error("Supabase did not return a valid login session. Check the Supabase Auth settings.")
-                        else:
-                            access_token = auth_data["access_token"]
-                            refresh_token = auth_data["refresh_token"]
-                            user_data = auth_data.get("user") or {}
-                            user_email = user_data.get("email") or login_id
-                            # Store tokens in this Streamlit session immediately.
-                            client.auth.set_session(access_token, refresh_token)
-                            st.session_state["supabase_access_token"] = access_token
-                            st.session_state["supabase_refresh_token"] = refresh_token
+                        if response and response.user:
+                            if getattr(response, "session", None):
+                                st.session_state["supabase_access_token"] = response.session.access_token
+                                st.session_state["supabase_refresh_token"] = response.session.refresh_token
+                                _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or login_id})
                             st.session_state["authenticated"] = True
-                            st.session_state["authenticated_user"] = user_email
+                            st.session_state["authenticated_user"] = (
+                                response.user.email or login_id
+                            )
                             st.session_state["auth_method"] = "supabase"
                             st.session_state["login_just_succeeded"] = True
-                            _save_auth_cookie({"method": "supabase", "refresh_token": refresh_token, "email": user_email})
                             st.rerun()
-                    except requests.Timeout:
-                        st.error("Supabase sign-in timed out after 20 seconds. Check that your Supabase project is active and its URL is correct.")
-                    except requests.RequestException as exc:
-                        st.error(f"Could not reach Supabase: {exc}")
-                    except Exception as exc:
-                        st.error(f"Sign-in could not be completed: {type(exc).__name__}: {exc}")
+                        else:
+                            st.error("Sign-in failed. Check your email and password.")
+                    except Exception:
+                        st.error(
+                            "Could not sign in. Check your email and password, and "
+                            "confirm your email address if verification is enabled."
+                        )
                 else:
                     st.error("Incorrect username or password.")
 
