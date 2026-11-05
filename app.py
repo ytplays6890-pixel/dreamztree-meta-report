@@ -76,12 +76,23 @@ def _restore_auth_cookie(client):
     # Stop once so Streamlit can receive the browser cookie value, then rerun.
     try:
         cookies = _auth_cookie_controller.getAll()
+        # CookieController initially returns its component default (often an
+        # empty dict) before the browser has sent the real cookie collection.
+        # Give the component time to hydrate, then read it again. Checking the
+        # first empty dict immediately can incorrectly send returning users to
+        # the login form after a hard refresh.
+        if not isinstance(cookies, dict) or _AUTH_COOKIE_NAME not in cookies:
+            time.sleep(1.0)
+            cookies = _auth_cookie_controller.getAll()
     except Exception:
         cookies = None
-    if cookies is None:
-        st.stop()
 
-    encrypted = cookies.get(_AUTH_COOKIE_NAME) if isinstance(cookies, dict) else None
+    if not isinstance(cookies, dict):
+        # A component load failure should fail closed and show the login form,
+        # not stop the entire Streamlit app on a blank screen.
+        return False
+
+    encrypted = cookies.get(_AUTH_COOKIE_NAME)
     if not encrypted:
         return False
 
