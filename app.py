@@ -310,6 +310,8 @@ def infer_campaign(name, mappings):
         (r"\bsafety\s+course\b|\bsafety\b", "Safety Course"),
         (r"\bhealthcare\b|\bhealth\s+care\b", "Healthcare"),
         (r"\bcomputer\b", "Computer"), (r"\bgerman\b", "German"),
+        # Keep hiring campaigns separate from regular tuition campaigns.
+        (r"\btuition\s+hiring\b|\btution\s+hiring\b", "Tuition Hiring"),
         (r"\btuition\b|\btution\b", "Tuition"), (r"\bielts\b", "IELTS"),
         (r"\bprometric\b", "Prometric"), (r"\bmontessori\b", "Montessori"),
         (r"\bphonics\b", "Phonics"), (r"\bautocad\b", "Autocad"),
@@ -327,6 +329,14 @@ def infer_campaign(name, mappings):
             if re.search(pattern, key):
                 course = label
                 break
+
+    # Treat "Hiring" as a campaign qualifier for EVERY course/staff member.
+    # Examples: "Nissi | Tuition Hiring", "Arya | Caregiver Hiring",
+    # or "New Staff | German | Hiring" are classified separately from
+    # their non-hiring course campaigns without adding person-specific rules.
+    has_hiring_qualifier = bool(re.search(r"\bhiring\b", key))
+    if has_hiring_qualifier and course and not course.lower().endswith("hiring"):
+        course = f"{course} Hiring"
 
     # Recognize an explicit branch in the campaign.
     explicit_branch = next((b for b in BRANCH_ORDER if re.search(r"\b" + re.escape(normalize(b)) + r"\b", key)), "")
