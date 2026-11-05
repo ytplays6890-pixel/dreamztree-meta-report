@@ -299,6 +299,7 @@ def infer_campaign(name, mappings):
     # Identify a course from the whole campaign string. Longer/more-specific terms first.
     course_aliases = [
         (r"\bcaregiving\b|\bcaregiver\b", "Caregiving"),
+        (r"\ball\s+courses?\b", "All Course"),
         (r"\bpractical\s+video\b", "Practical Video"),
         (r"\bj\s*&\s*v\b|\bj\s+and\s+v\s+video\b|\bj\s+v\s+video\b", "J&V Video"),
         (r"\btestimonial\s+healthcare\b", "Healthcare"),
