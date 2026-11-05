@@ -2173,7 +2173,6 @@ def require_login():
                     st.session_state["auth_method"] = "legacy"
                     st.session_state["login_just_succeeded"] = True
                     _save_auth_cookie({"method": "legacy", "username": login_id})
-                    st.rerun()
                 elif "@" in login_id:
                     try:
                         with st.spinner("Authenticating securely…"):
@@ -2191,7 +2190,6 @@ def require_login():
                             )
                             st.session_state["auth_method"] = "supabase"
                             st.session_state["login_just_succeeded"] = True
-                            st.rerun()
                         else:
                             st.error("Sign-in failed. Check your email and password.")
                     except Exception:
@@ -2259,7 +2257,6 @@ def require_login():
                         except Exception:
                             pass
                         st.success("Account created. Signing you in…")
-                        st.rerun()
                     else:
                         st.success(
                             "Registration received. Check your email for a verification "
@@ -2270,7 +2267,8 @@ def require_login():
                     st.error(f"Account creation failed: {e}")
 
 
-    st.stop()
+    if not st.session_state.get("authenticated"):
+        st.stop()
 
 
 def _ludo_default_state():
