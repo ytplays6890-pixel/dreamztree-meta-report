@@ -13,8 +13,144 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 from supabase import create_client
+from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
+from cryptography.fernet import Fernet, InvalidToken
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
+
+# Encrypted browser cookie used only to restore authentication after a reload.
+_AUTH_COOKIE_NAME = "dt_auth_session_v1"
+_AUTH_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days; Supabase refresh token rules still apply.
+_auth_cookie_controller = CookieController(key="dreamztree_auth_cookie_controller")
+RemoveEmptyElementContainer()
+
+
+def _auth_cipher():
+    """Load the server-side Fernet key from Streamlit Secrets or environment."""
+    key = str(os.environ.get("AUTH_COOKIE_KEY", "")).strip()
+    if not key:
+        try:
+            key = str(st.secrets["AUTH_COOKIE_KEY"]).strip()
+        except Exception:
+            key = ""
+    if not key:
+        return None
+    try:
+        return Fernet(key.encode("utf-8"))
+    except Exception:
+        st.error("AUTH_COOKIE_KEY is invalid. Add a valid Fernet key in Streamlit Secrets.")
+        return None
+
+
+def _save_auth_cookie(payload):
+    """Persist an encrypted, short-lived auth payload in the user's browser."""
+    cipher = _auth_cipher()
+    if cipher is None:
+        st.error("Persistent login is not configured. Add AUTH_COOKIE_KEY to Streamlit Secrets.")
+        return False
+    try:
+        token = cipher.encrypt(json.dumps(payload).encode("utf-8")).decode("ascii")
+        _auth_cookie_controller.set(
+            _AUTH_COOKIE_NAME, token, max_age=_AUTH_COOKIE_TTL_SECONDS,
+            path="/", secure=True, same_site="lax"
+        )
+        return True
+    except Exception as exc:
+        st.warning(f"Could not save the persistent login cookie: {exc}")
+        return False
+
+
+def _delete_auth_cookie():
+    try:
+        _auth_cookie_controller.remove(_AUTH_COOKIE_NAME)
+    except Exception:
+        pass
+
+
+def _restore_auth_cookie(client):
+    """Restore a signed-in user from an encrypted cookie after Streamlit reload."""
+    if st.session_state.get("authenticated"):
+        return True
+
+    # CookieController's browser component can return None on its first render.
+    # Stop once so Streamlit can receive the browser cookie value, then rerun.
+    try:
+        cookies = _auth_cookie_controller.getAll()
+    except Exception:
+        cookies = None
+    if cookies is None:
+        st.stop()
+
+    encrypted = cookies.get(_AUTH_COOKIE_NAME) if isinstance(cookies, dict) else None
+    if not encrypted:
+        return False
+
+    cipher = _auth_cipher()
+    if cipher is None:
+        return False
+    try:
+        payload = json.loads(cipher.decrypt(str(encrypted).encode("ascii"), ttl=_AUTH_COOKIE_TTL_SECONDS))
+    except (InvalidToken, ValueError, TypeError, json.JSONDecodeError):
+        _delete_auth_cookie()
+        return False
+    except Exception:
+        _delete_auth_cookie()
+        return False
+
+    method = payload.get("method")
+    if method == "legacy":
+        # Legacy admin sessions are encrypted and limited to the same 7-day cookie TTL.
+        username = str(payload.get("username", "")).strip()
+        if not username:
+            _delete_auth_cookie()
+            return False
+        try:
+            legacy_users = dict(st.secrets["auth"]["users"])
+        except Exception:
+            legacy_users = {}
+        env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
+        env_admin_password = os.environ.get("ADMIN_PASSWORD", "")
+        if env_admin_user and env_admin_password:
+            legacy_users.setdefault(env_admin_user, env_admin_password)
+        if username not in legacy_users:
+            _delete_auth_cookie()
+            return False
+        st.session_state["authenticated"] = True
+        st.session_state["authenticated_user"] = username
+        st.session_state["auth_method"] = "legacy"
+        return True
+
+    if method == "supabase":
+        refresh_token = str(payload.get("refresh_token", "")).strip()
+        if not refresh_token or client is None:
+            _delete_auth_cookie()
+            return False
+        try:
+            refreshed = client.auth.refresh_session(refresh_token)
+            session = getattr(refreshed, "session", None)
+            user = getattr(refreshed, "user", None)
+            if not session or not user:
+                _delete_auth_cookie()
+                return False
+            st.session_state["supabase_access_token"] = session.access_token
+            st.session_state["supabase_refresh_token"] = session.refresh_token
+            st.session_state["authenticated"] = True
+            st.session_state["authenticated_user"] = user.email or payload.get("email", "")
+            st.session_state["auth_method"] = "supabase"
+            # Supabase rotates refresh tokens; immediately persist the new one.
+            _save_auth_cookie({
+                "method": "supabase",
+                "refresh_token": session.refresh_token,
+                "email": user.email or payload.get("email", ""),
+            })
+            client.auth.set_session(session.access_token, session.refresh_token)
+            return True
+        except Exception:
+            _delete_auth_cookie()
+            return False
+
+    _delete_auth_cookie()
+    return False
 
 # The lamp pull is a small Streamlit custom component so pointer dragging can
 # redraw the real SVG cord in the browser (st.markdown scripts cannot do this).
@@ -1908,6 +2044,8 @@ def require_login():
         return
 
     client = get_supabase_client()
+    if _restore_auth_cookie(client):
+        return
     if client is None:
         st.title("Dreamztree Meta Report")
         st.error("Supabase authentication is not configured yet.")
@@ -2023,6 +2161,7 @@ def require_login():
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
                     st.session_state["login_just_succeeded"] = True
+                    _save_auth_cookie({"method": "legacy", "username": login_id})
                     st.rerun()
                 elif "@" in login_id:
                     try:
@@ -2034,6 +2173,7 @@ def require_login():
                             if getattr(response, "session", None):
                                 st.session_state["supabase_access_token"] = response.session.access_token
                                 st.session_state["supabase_refresh_token"] = response.session.refresh_token
+                                _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or login_id})
                             st.session_state["authenticated"] = True
                             st.session_state["authenticated_user"] = (
                                 response.user.email or login_id
@@ -2090,6 +2230,7 @@ def require_login():
                     if response and response.session and response.user:
                         st.session_state["supabase_access_token"] = response.session.access_token
                         st.session_state["supabase_refresh_token"] = response.session.refresh_token
+                        _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or new_email})
                         st.session_state["authenticated"] = True
                         st.session_state["authenticated_user"] = (
                             response.user.email or new_email
@@ -2850,6 +2991,7 @@ def main():
             st.rerun()
     with header_right:
         if st.button("Sign out", use_container_width=True):
+            _delete_auth_cookie()
             if st.session_state.get("auth_method") == "supabase":
                 try:
                     client = get_supabase_client()
