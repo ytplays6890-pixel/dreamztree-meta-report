@@ -76,52 +76,60 @@ def _delete_auth_cookie():
 
 
 def _restore_auth_cookie(client):
-    """Restore a signed-in user from an encrypted cookie after Streamlit reload."""
+    """Restore a signed-in user and retain a safe diagnostic if restoration fails."""
     if st.session_state.get("authenticated"):
         return True
+    st.session_state.pop("_dt_auth_restore_error", None)
 
-    # CookieController's browser component can return None on its first render.
-    # Stop once so Streamlit can receive the browser cookie value, then rerun.
     try:
         cookies = _auth_cookie_controller.getAll()
-        # CookieController initially returns its component default (often an
-        # empty dict) before the browser has sent the real cookie collection.
-        # Give the component time to hydrate, then read it again. Checking the
-        # first empty dict immediately can incorrectly send returning users to
-        # the login form after a hard refresh.
         if not isinstance(cookies, dict) or _AUTH_COOKIE_NAME not in cookies:
             time.sleep(1.0)
             cookies = _auth_cookie_controller.getAll()
-    except Exception:
-        cookies = None
+    except Exception as exc:
+        st.session_state["_dt_auth_restore_error"] = (
+            "The browser cookie component could not be read (" + type(exc).__name__ + ")."
+        )
+        return False
 
     if not isinstance(cookies, dict):
-        # A component load failure should fail closed and show the login form,
-        # not stop the entire Streamlit app on a blank screen.
+        st.session_state["_dt_auth_restore_error"] = "The browser cookie component has not finished loading."
         return False
 
     encrypted = cookies.get(_AUTH_COOKIE_NAME)
     if not encrypted:
+        st.session_state["_dt_auth_restore_error"] = "The session cookie was not returned to the app after refresh."
         return False
 
     cipher = _auth_cipher()
     if cipher is None:
+        st.session_state["_dt_auth_restore_error"] = "AUTH_COOKIE_KEY is missing or is not a valid Fernet key."
         return False
     try:
         payload = json.loads(cipher.decrypt(str(encrypted).encode("ascii"), ttl=_AUTH_COOKIE_TTL_SECONDS))
-    except (InvalidToken, ValueError, TypeError, json.JSONDecodeError):
-        _delete_auth_cookie()
+    except InvalidToken:
+        # Do not delete the cookie yet: preserve evidence while diagnosing.
+        st.session_state["_dt_auth_restore_error"] = (
+            "The cookie could not be decrypted or has expired. Check that AUTH_COOKIE_KEY "
+            "has not changed since the cookie was created."
+        )
         return False
-    except Exception:
-        _delete_auth_cookie()
+    except (ValueError, TypeError, json.JSONDecodeError):
+        st.session_state["_dt_auth_restore_error"] = "The decrypted session data is not valid JSON."
+        return False
+    except Exception as exc:
+        st.session_state["_dt_auth_restore_error"] = "Cookie decoding failed (" + type(exc).__name__ + ")."
+        return False
+
+    if not isinstance(payload, dict):
+        st.session_state["_dt_auth_restore_error"] = "The session cookie does not contain a valid session record."
         return False
 
     method = payload.get("method")
     if method == "legacy":
-        # Legacy admin sessions are encrypted and limited to the same 7-day cookie TTL.
         username = str(payload.get("username", "")).strip()
         if not username:
-            _delete_auth_cookie()
+            st.session_state["_dt_auth_restore_error"] = "The legacy session cookie has no username."
             return False
         try:
             legacy_users = dict(st.secrets["auth"]["users"])
@@ -132,7 +140,9 @@ def _restore_auth_cookie(client):
         if env_admin_user and env_admin_password:
             legacy_users.setdefault(env_admin_user, env_admin_password)
         if username not in legacy_users:
-            _delete_auth_cookie()
+            st.session_state["_dt_auth_restore_error"] = (
+                "The cookie belongs to a legacy username that is not present in the current admin configuration."
+            )
             return False
         st.session_state["authenticated"] = True
         st.session_state["authenticated_user"] = username
@@ -142,33 +152,38 @@ def _restore_auth_cookie(client):
     if method == "supabase":
         refresh_token = str(payload.get("refresh_token", "")).strip()
         if not refresh_token or client is None:
-            _delete_auth_cookie()
+            st.session_state["_dt_auth_restore_error"] = "The Supabase refresh token is missing or Supabase is not configured."
             return False
         try:
             refreshed = client.auth.refresh_session(refresh_token)
             session = getattr(refreshed, "session", None)
             user = getattr(refreshed, "user", None)
             if not session or not user:
-                _delete_auth_cookie()
+                st.session_state["_dt_auth_restore_error"] = "Supabase did not return a valid refreshed session and user."
                 return False
             st.session_state["supabase_access_token"] = session.access_token
             st.session_state["supabase_refresh_token"] = session.refresh_token
             st.session_state["authenticated"] = True
             st.session_state["authenticated_user"] = user.email or payload.get("email", "")
             st.session_state["auth_method"] = "supabase"
-            # Supabase rotates refresh tokens; immediately persist the new one.
+            try:
+                client.auth.set_session(session.access_token, session.refresh_token)
+            except Exception:
+                pass
             _save_auth_cookie({
                 "method": "supabase",
                 "refresh_token": session.refresh_token,
                 "email": user.email or payload.get("email", ""),
             })
-            client.auth.set_session(session.access_token, session.refresh_token)
             return True
-        except Exception:
-            _delete_auth_cookie()
+        except Exception as exc:
+            # Preserve the cookie during diagnosis; the next login can overwrite it.
+            st.session_state["_dt_auth_restore_error"] = (
+                "Supabase rejected or could not refresh the saved session (" + type(exc).__name__ + ")."
+            )
             return False
 
-    _delete_auth_cookie()
+    st.session_state["_dt_auth_restore_error"] = "The session cookie contains an unknown authentication method."
     return False
 
 # The lamp pull is a small Streamlit custom component so pointer dragging can
@@ -2065,6 +2080,9 @@ def require_login():
     client = get_supabase_client()
     if _restore_auth_cookie(client):
         return
+    restore_error = st.session_state.get("_dt_auth_restore_error")
+    if restore_error:
+        st.warning("Persistent login diagnostic: " + str(restore_error))
     if client is None:
         st.title("Dreamztree Meta Report")
         st.error("Supabase authentication is not configured yet.")
