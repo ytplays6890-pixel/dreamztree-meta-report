@@ -729,51 +729,15 @@ def inject_premium_theme():
       transform: none;
     }
 
-    /* Premium glass controls for expandable section headings */
     [data-testid="stExpander"] {
-      background: linear-gradient(135deg, rgba(34, 39, 55, .76), rgba(19, 25, 38, .72));
-      border: 1px solid rgba(190, 175, 255, .22);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .20), inset 0 1px 0 rgba(255,255,255,.07);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+      background: var(--dt-panel);
+      border: 1px solid var(--dt-border);
+      border-radius: 10px;
+      box-shadow: none;
     }
     [data-testid="stExpander"]:hover {
-      border-color: rgba(167, 139, 250, .58);
-      box-shadow: 0 10px 30px rgba(8, 10, 20, .28), 0 0 0 1px rgba(167,139,250,.10), inset 0 1px 0 rgba(255,255,255,.10);
-    }
-    [data-testid="stExpander"] details > summary {
-      min-height: 58px;
-      padding: 15px 19px;
-      background: linear-gradient(105deg, rgba(167,139,250,.13), rgba(94,234,212,.055) 58%, rgba(255,255,255,.025));
-      border: 0;
-      color: #f4f1ff !important;
-      font-weight: 700;
-      letter-spacing: .005em;
-      transition: background .2s ease, color .2s ease;
-    }
-    [data-testid="stExpander"] details > summary:hover {
-      background: linear-gradient(105deg, rgba(167,139,250,.22), rgba(94,234,212,.10) 58%, rgba(255,255,255,.045));
-      color: #ffffff !important;
-    }
-    [data-testid="stExpander"] details > summary p,
-    [data-testid="stExpander"] details > summary span {
-      color: #f4f1ff !important;
-      font-weight: 700 !important;
-    }
-    [data-testid="stExpander"] details > summary svg {
-      color: #c4b5fd !important;
-      fill: none;
-    }
-    [data-testid="stExpander"] details[open] > summary {
-      border-bottom: 1px solid rgba(190,175,255,.18);
-      background: linear-gradient(105deg, rgba(167,139,250,.20), rgba(94,234,212,.09) 58%, rgba(255,255,255,.035));
-    }
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-      background: rgba(12, 16, 25, .34);
-      padding: 18px;
+      border-color: #596273;
+      box-shadow: none;
     }
 
     .stButton button,
@@ -2198,297 +2162,265 @@ def require_login():
             st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
         st.stop()
 
-    # Apple-inspired, single-column login screen with restrained motion.
-    st.markdown("""
+    # Apple-inspired dark glass login. The native Streamlit form controls remain
+    # intact so authentication, password visibility, and account creation work.
+    st.markdown(r"""
     <style>
-      [data-testid="stAppViewContainer"] {
-        background:
-          radial-gradient(ellipse at 50% 12%, rgba(83,101,133,.16), transparent 42%),
-          radial-gradient(ellipse at 8% 78%, rgba(91,83,133,.10), transparent 36%),
-          #080b11 !important;
+      :root { color-scheme: dark; }
+      html, body, [data-testid="stAppViewContainer"] {
+        background: #080b12 !important;
       }
       [data-testid="stHeader"] { background: transparent !important; }
-
-      /* One unified glass login card, matching the supplied reference. */
-      /* Streamlit current and legacy main content wrappers */
-      .main .block-container,
-      [data-testid="stMainBlockContainer"],
-      .stMainBlockContainer {
-        box-sizing: border-box !important;
-        width: min(100% - 32px, 792px) !important;
-        max-width: 792px !important;
-        min-width: 0 !important;
-        margin: 8vh auto 4rem !important;
-        position: relative !important;
-        padding: 54px 56px 48px !important;
-        border: 1px solid rgba(177,190,211,.34) !important;
-        border-radius: 38px !important;
-        background:
-          radial-gradient(ellipse at 12% 5%, rgba(147,166,194,.12), transparent 42%),
-          linear-gradient(145deg, rgba(34,40,51,.90), rgba(17,21,29,.94) 58%, rgba(24,28,38,.91)) !important;
-        box-shadow:
-          0 28px 90px rgba(0,0,0,.48),
-          inset 0 1px 0 rgba(255,255,255,.10),
-          inset 0 -1px 0 rgba(255,255,255,.025) !important;
-        backdrop-filter: blur(28px) saturate(135%);
-        -webkit-backdrop-filter: blur(28px) saturate(135%);
-        animation: dtLoginEnter .9s cubic-bezier(.2,.7,.2,1) both;
+      [data-testid="stMain"] { background: transparent !important; }
+      [data-testid="stMainBlockContainer"] {
+        max-width: 100% !important;
+        padding: 5vh 24px 7vh !important;
       }
-      @keyframes dtLoginEnter {
-        from { opacity: 0; transform: translateY(18px) scale(.985); filter: blur(5px); }
-        to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      /* Reference background: a broad, softly illuminated orbital curve. */
+      [data-testid="stAppViewContainer"]::before,
+      [data-testid="stAppViewContainer"]::after {
+        content: ""; position: fixed; pointer-events: none;
+        width: 176vw; height: 112vh; left: -38vw; top: 13vh;
+        border-radius: 50%; transform: rotate(-15deg);
       }
-      @keyframes dtAmbient {
-        0%, 100% { opacity: .28; transform: translate3d(-1.5%,0,0); }
-        50%      { opacity: .52; transform: translate3d(1.5%,0,0); }
-      }
+      /* Crisp edge of the curved ribbon. */
       [data-testid="stAppViewContainer"]::before {
-        content: ""; position: fixed; inset: -18%; pointer-events: none; z-index: 0;
-        background: radial-gradient(ellipse at 50% 48%, rgba(116,132,164,.10), transparent 48%);
-        animation: dtAmbient 12s ease-in-out infinite;
+        z-index: 0;
+        border: 1.5px solid rgba(160, 174, 220, .30);
+        box-shadow: 0 0 10px rgba(130, 145, 210, .12),
+                    0 0 42px rgba(102, 112, 178, .08);
+        animation: dt-orbit-drift 18s ease-in-out infinite alternate;
       }
-      .main .block-container > div { position: relative; z-index: 1; }
-
-      .dt-auth-shell {
-        box-sizing: border-box; width: 100%; max-width: none;
-        margin: 0 auto 38px; padding: 8px 0 0;
-        background: transparent !important; border: 0 !important;
-        box-shadow: none !important; text-align: center;
-        animation: dtLoginEnter .85s cubic-bezier(.2,.7,.2,1) both;
+      /* Diffused violet-blue light around the same curve. */
+      [data-testid="stAppViewContainer"]::after {
+        z-index: 0; border: 3px solid rgba(123, 132, 205, .12);
+        filter: blur(7px);
+        box-shadow: 0 0 34px rgba(105, 112, 190, .17);
+        animation: dt-orbit-drift 18s ease-in-out infinite alternate;
       }
-      .dt-auth-title {
-        color: #f7f8fb; font-size: clamp(36px, 4vw, 48px); line-height: 1.12;
-        font-weight: 700; letter-spacing: -.045em; margin: 0 0 12px;
+      @keyframes dt-orbit-drift {
+        from { transform: rotate(-15deg) translate3d(-.25vw, -.35vh, 0); }
+        to   { transform: rotate(-13.5deg) translate3d(.25vw, .35vh, 0); }
       }
-      .dt-auth-subtitle {
-        color: #b1b8c5; font-size: 18px; line-height: 1.5; margin: 0;
+      /* Keep the foreground form above the decorative background. */
+      [data-testid="stMainBlockContainer"] { position: relative; z-index: 1; }
+      .st-key-dt_login_card {
+        position: relative; z-index: 1;
+        width: min(100%, 790px); margin: 2vh auto 0 !important;
+        padding: 58px 56px 54px !important;
+        border-radius: 42px !important;
+        background: linear-gradient(145deg, rgba(38, 47, 62, .78), rgba(15, 19, 28, .82) 58%, rgba(20, 24, 34, .78)) !important;
+        border: 1px solid rgba(196, 211, 238, .28) !important;
+        box-shadow: 0 28px 90px rgba(0,0,0,.48),
+                    inset 0 1px 0 rgba(255,255,255,.13),
+                    0 0 34px rgba(128,142,196,.07) !important;
+        backdrop-filter: blur(30px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(145%) !important;
       }
-
-      [data-testid="stTabs"] {
-        width: 100%; margin: 0 auto !important;
-        animation: dtLoginEnter .9s .08s both;
+      .st-key-dt_login_card [data-testid="stMarkdown"] { text-align: center; }
+      .dt-glass-title {
+        color: #f7f8fb; font-size: clamp(34px, 4vw, 48px);
+        line-height: 1.12; font-weight: 720; letter-spacing: -.045em;
+        text-align: center; margin: 4px 0 12px;
       }
-      [data-testid="stTabs"] [data-baseweb="tab-list"] {
-        display: flex !important; width: 100%;
-        padding: 4px !important; gap: 4px !important;
-        border: 1px solid rgba(255,255,255,.075) !important;
-        border-radius: 22px !important;
-        background: rgba(8,11,17,.26) !important;
+      .dt-glass-subtitle {
+        color: #aeb7c7; font-size: 19px; line-height: 1.5;
+        text-align: center; margin: 0 0 38px;
       }
-      [data-testid="stTabs"] [data-baseweb="tab"] {
-        flex: 1 1 50%; justify-content: center;
-        min-height: 54px; border-radius: 18px !important;
-        color: #e4e7ed !important;
-        transition: background .25s ease, box-shadow .25s ease, color .25s ease;
+      .st-key-dt_login_card [data-testid="stTabs"] > div:first-child {
+        display: flex; gap: 0; padding: 4px; margin: 0 0 28px;
+        border: 1px solid rgba(210,220,240,.10); border-radius: 22px;
+        background: rgba(8, 12, 20, .42);
       }
-      [data-testid="stTabs"] [data-baseweb="tab"] p {
-        font-size: 16px !important; font-weight: 600 !important;
+      .st-key-dt_login_card [data-testid="stTabs"] button {
+        flex: 1; justify-content: center; border: 0 !important;
+        border-radius: 18px !important; padding: 13px 10px !important;
+        color: #e4e8f0 !important; font-size: 17px !important;
+        font-weight: 600 !important; background: transparent !important;
       }
-      [data-testid="stTabs"] button[aria-selected="true"] {
-        color: #fff !important;
-        background: linear-gradient(180deg, rgba(133,145,164,.48), rgba(92,103,122,.42)) !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.17), 0 3px 12px rgba(0,0,0,.14) !important;
+      .st-key-dt_login_card [data-testid="stTabs"] button[aria-selected="true"] {
+        color: #fff !important; background: rgba(196, 207, 226, .27) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 3px 14px rgba(0,0,0,.18) !important;
       }
-      [data-testid="stTabs"] [data-baseweb="tab-highlight"],
-      [data-testid="stTabs"] [data-baseweb="tab-border"] {
-        display: none !important;
+      .st-key-dt_login_card [data-testid="stTabs"] [data-baseweb="tab-highlight"],
+      .st-key-dt_login_card [data-testid="stTabs"] [data-baseweb="tab-border"] { display:none !important; }
+      .st-key-dt_login_card [data-testid="stTextInput"] { margin-bottom: 18px; }
+      .st-key-dt_login_card [data-testid="stTextInput"] label {
+        color: #f0f2f7 !important; font-size: 16px !important;
+        font-weight: 520 !important; margin-bottom: 8px !important;
       }
-
-      [data-testid="stForm"] {
-        box-sizing: border-box; width: 100%;
-        margin: 24px auto 0 !important; padding: 0 !important;
-        background: transparent !important; border: 0 !important;
-        box-shadow: none !important;
-        animation: dtLoginEnter 1s .15s both;
+      .st-key-dt_login_card [data-testid="stTextInput"] input {
+        min-height: 62px !important; border-radius: 17px !important;
+        border: 1px solid rgba(194, 207, 230, .22) !important;
+        background: rgba(180, 193, 215, .085) !important;
+        color: #f8f9fc !important; font-size: 17px !important;
+        padding: 0 18px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.035) !important;
       }
-      [data-testid="stTextInput"] { margin-bottom: 18px; }
-      [data-testid="stTextInput"] label {
-        color: #f0f2f6 !important; font-size: 16px !important;
-        font-weight: 500 !important; margin-bottom: 8px !important;
+      .st-key-dt_login_card [data-testid="stTextInput"] input::placeholder { color:#9ca6b7 !important; }
+      .st-key-dt_login_card [data-testid="stTextInput"] input:focus {
+        border-color: rgba(207,220,246,.62) !important;
+        box-shadow: 0 0 0 3px rgba(173,190,226,.10) !important;
       }
-      [data-testid="stTextInput"] input {
-        box-sizing: border-box;
-        background: rgba(29,34,44,.78) !important;
-        border: 1px solid rgba(157,171,194,.27) !important;
-        border-radius: 17px !important; color: #f7f8fb !important;
-        min-height: 64px !important; padding: 0 18px !important;
-        font-size: 16px !important;
-        transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+      .st-key-dt_login_card [data-testid="stForm"] {
+        border: 0 !important; padding: 0 !important; background: transparent !important;
       }
-      [data-testid="stTextInput"] input::placeholder { color: #929baa !important; }
-      [data-testid="stTextInput"] input:focus {
-        border-color: rgba(206,218,237,.72) !important;
-        box-shadow: 0 0 0 3px rgba(174,190,216,.12), 0 8px 24px rgba(0,0,0,.12) !important;
-        background: rgba(37,43,55,.94) !important;
+      .st-key-dt_login_card [data-testid="stForm"] button[kind="primary"],
+      .st-key-dt_login_card [data-testid="stFormSubmitButton"] button {
+        min-height: 66px !important; border-radius: 18px !important;
+        background: linear-gradient(180deg, #fff 0%, #e9edf4 100%) !important;
+        border: 1px solid rgba(255,255,255,.9) !important;
+        color: #10141c !important; font-size: 18px !important;
+        font-weight: 700 !important; box-shadow: 0 8px 24px rgba(0,0,0,.18) !important;
+        transition: transform .18s ease, box-shadow .18s ease !important;
       }
-      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
-      [data-testid="stForm"] button[kind="primary"] {
-        background: linear-gradient(180deg, #ffffff, #e9edf3) !important;
-        color: #11151c !important; border: 1px solid rgba(255,255,255,.8) !important;
-        border-radius: 17px !important; min-height: 66px !important;
-        font-size: 18px !important; font-weight: 700 !important;
-        box-shadow: 0 8px 22px rgba(0,0,0,.18), inset 0 1px 0 #fff !important;
-        transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+      .st-key-dt_login_card [data-testid="stForm"] button[kind="primary"]:hover,
+      .st-key-dt_login_card [data-testid="stFormSubmitButton"] button:hover {
+        transform: translateY(-1px); box-shadow: 0 12px 28px rgba(0,0,0,.26) !important;
       }
-      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
-      [data-testid="stForm"] button[kind="primary"]:hover {
-        filter: brightness(1.04); transform: translateY(-2px);
-        box-shadow: 0 13px 28px rgba(0,0,0,.25), inset 0 1px 0 #fff !important;
-      }
-      [data-testid="stAlert"] { border-radius: 14px; }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation: none !important; transition: none !important; }
-      }
-      @media (max-width: 640px) {
-         .main .block-container,
-        [data-testid="stMainBlockContainer"],
-        .stMainBlockContainer {
-          width: calc(100% - 24px) !important; max-width: 792px !important; margin: 4vh auto 2rem !important;
-          padding: 32px 22px 28px !important; border-radius: 26px !important;
-        }
-        .dt-auth-shell { margin-bottom: 28px; }
-        .dt-auth-subtitle { font-size: 15px; }
-        [data-testid="stTabs"] [data-baseweb="tab"] { min-height: 48px; }
-        [data-testid="stTextInput"] input { min-height: 56px !important; }
-        [data-testid="stForm"] [data-testid="stFormSubmitButton"] button { min-height: 58px !important; }
+      .st-key-dt_login_card [data-testid="stCaptionContainer"],
+      .st-key-dt_login_card [data-testid="stAlert"] { border-radius: 14px !important; }
+      @media (max-width: 700px) {
+        [data-testid="stMainBlockContainer"] { padding: 3vh 14px 5vh !important; }
+        .st-key-dt_login_card { margin-top: 1vh !important; padding: 34px 22px 30px !important; border-radius: 28px !important; }
+        .dt-glass-subtitle { font-size: 16px; margin-bottom: 28px; }
+        .st-key-dt_login_card [data-testid="stTabs"] button { font-size: 15px !important; }
       }
     </style>
-    <div class="dt-auth-shell">
-      <div class="dt-auth-title">Welcome back.</div>
-      <div class="dt-auth-subtitle">Sign in to access your campaign reports.</div>
-    </div>
     """, unsafe_allow_html=True)
 
-    sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
+    with st.container(key="dt_login_card"):
+        st.markdown("<div class='dt-glass-title'>Welcome back.</div><div class='dt-glass-subtitle'>Sign in to access your campaign reports.</div>", unsafe_allow_html=True)
+        sign_in_tab, create_tab = st.tabs(["Sign in", "Create account"])
 
-    with sign_in_tab:
-        with st.form("supabase_signin_form", clear_on_submit=False):
-            email_or_admin = st.text_input("Email address or username", placeholder="Enter your email or username")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            signin_clicked = st.form_submit_button(
-                "Sign in", type="primary", use_container_width=True
-            )
+        with sign_in_tab:
+            with st.form("supabase_signin_form", clear_on_submit=False):
+                email_or_admin = st.text_input("Email address Or Username")
+                password = st.text_input("Password", type="password")
+                signin_clicked = st.form_submit_button(
+                    "Sign in", type="primary", use_container_width=True
+                )
 
-        if signin_clicked:
-            login_id = email_or_admin.strip()
-            if not login_id or not password:
-                st.error("Enter your email/username and password.")
-            else:
-                # Keep the existing private admin login working during migration.
-                try:
-                    legacy_users = dict(st.secrets["auth"]["users"])
-                except Exception:
-                    legacy_users = {}
-                # Optional single admin login for hosts that use environment variables.
-                env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
-                env_admin_password = os.environ.get("ADMIN_PASSWORD", "")
-                if env_admin_user and env_admin_password:
-                    legacy_users.setdefault(env_admin_user, env_admin_password)
-
-                legacy_password = legacy_users.get(login_id)
-                if legacy_password is not None and hmac.compare_digest(
-                    password, str(legacy_password)
-                ):
-                    st.session_state["authenticated"] = True
-                    st.session_state["authenticated_user"] = login_id
-                    st.session_state["auth_method"] = "legacy"
-                    st.session_state["login_just_succeeded"] = True
-                    _save_auth_cookie({"method": "legacy", "username": login_id})
-                    st.rerun()
-                elif "@" in login_id:
+            if signin_clicked:
+                login_id = email_or_admin.strip()
+                if not login_id or not password:
+                    st.error("Enter your email/username and password.")
+                else:
+                    # Keep the existing private admin login working during migration.
                     try:
-                        with st.spinner("Authenticating securely…"):
-                            response = client.auth.sign_in_with_password(
-                                {"email": login_id, "password": password}
+                        legacy_users = dict(st.secrets["auth"]["users"])
+                    except Exception:
+                        legacy_users = {}
+                    # Optional single admin login for hosts that use environment variables.
+                    env_admin_user = os.environ.get("ADMIN_USERNAME", "").strip()
+                    env_admin_password = os.environ.get("ADMIN_PASSWORD", "")
+                    if env_admin_user and env_admin_password:
+                        legacy_users.setdefault(env_admin_user, env_admin_password)
+
+                    legacy_password = legacy_users.get(login_id)
+                    if legacy_password is not None and hmac.compare_digest(
+                        password, str(legacy_password)
+                    ):
+                        st.session_state["authenticated"] = True
+                        st.session_state["authenticated_user"] = login_id
+                        st.session_state["auth_method"] = "legacy"
+                        st.session_state["login_just_succeeded"] = True
+                        _save_auth_cookie({"method": "legacy", "username": login_id})
+                        st.rerun()
+                    elif "@" in login_id:
+                        try:
+                            with st.spinner("Authenticating securely…"):
+                                response = client.auth.sign_in_with_password(
+                                    {"email": login_id, "password": password}
+                                )
+                            if response and response.user:
+                                if getattr(response, "session", None):
+                                    st.session_state["supabase_access_token"] = response.session.access_token
+                                    st.session_state["supabase_refresh_token"] = response.session.refresh_token
+                                    _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or login_id})
+                                st.session_state["authenticated"] = True
+                                st.session_state["authenticated_user"] = (
+                                    response.user.email or login_id
+                                )
+                                st.session_state["auth_method"] = "supabase"
+                                st.session_state["login_just_succeeded"] = True
+                                st.rerun()
+                            else:
+                                st.error("Sign-in failed. Check your email and password.")
+                        except Exception:
+                            st.error(
+                                "Could not sign in. Check your email and password, and "
+                                "confirm your email address if verification is enabled."
                             )
-                        if response and response.user:
-                            if getattr(response, "session", None):
-                                st.session_state["supabase_access_token"] = response.session.access_token
-                                st.session_state["supabase_refresh_token"] = response.session.refresh_token
-                                _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or login_id})
+                    else:
+                        st.error("Incorrect username or password.")
+
+        with create_tab:
+            st.caption("Create a personal account using your work email address.")
+            with st.form("supabase_signup_form", clear_on_submit=True):
+                new_email = st.text_input("Work email address", key="signup_email")
+                new_username = st.text_input("Your name", key="signup_name")
+                new_password = st.text_input(
+                    "Create password", type="password", key="signup_password"
+                )
+                confirm_password = st.text_input(
+                    "Confirm password", type="password", key="signup_confirm_password"
+                )
+                signup_clicked = st.form_submit_button(
+                    "Create account", type="primary", use_container_width=True
+                )
+
+            if signup_clicked:
+                new_email = new_email.strip().lower()
+                new_username = new_username.strip()
+                if not new_email or "@" not in new_email:
+                    st.error("Enter a valid email address.")
+                elif not new_username:
+                    st.error("Enter your name.")
+                elif len(new_password) < 8:
+                    st.error("Use a password with at least 8 characters.")
+                elif new_password != confirm_password:
+                    st.error("The passwords do not match.")
+                else:
+                    try:
+                        with st.spinner("Creating your secure account…"):
+                            response = client.auth.sign_up(
+                                {
+                                    "email": new_email,
+                                    "password": new_password,
+                                    "options": {"data": {"username": new_username}},
+                                }
+                            )
+                        if response and response.session and response.user:
+                            st.session_state["supabase_access_token"] = response.session.access_token
+                            st.session_state["supabase_refresh_token"] = response.session.refresh_token
+                            _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or new_email})
                             st.session_state["authenticated"] = True
                             st.session_state["authenticated_user"] = (
-                                response.user.email or login_id
+                                response.user.email or new_email
                             )
                             st.session_state["auth_method"] = "supabase"
                             st.session_state["login_just_succeeded"] = True
+                            # Profile details are optional; Auth remains the source of truth.
+                            try:
+                                client.table("profiles").upsert(
+                                    {
+                                        "id": response.user.id,
+                                        "username": new_username,
+                                    }
+                                ).execute()
+                            except Exception:
+                                pass
+                            st.success("Account created. Signing you in…")
                             st.rerun()
                         else:
-                            st.error("Sign-in failed. Check your email and password.")
-                    except Exception:
-                        st.error(
-                            "Could not sign in. Check your email and password, and "
-                            "confirm your email address if verification is enabled."
-                        )
-                else:
-                    st.error("Incorrect username or password.")
-
-    with create_tab:
-        st.caption("Create a personal account using your work email address.")
-        with st.form("supabase_signup_form", clear_on_submit=True):
-            new_email = st.text_input("Work email address", key="signup_email")
-            new_username = st.text_input("Your name", key="signup_name")
-            new_password = st.text_input(
-                "Create password", type="password", key="signup_password"
-            )
-            confirm_password = st.text_input(
-                "Confirm password", type="password", key="signup_confirm_password"
-            )
-            signup_clicked = st.form_submit_button(
-                "Create account", type="primary", use_container_width=True
-            )
-
-        if signup_clicked:
-            new_email = new_email.strip().lower()
-            new_username = new_username.strip()
-            if not new_email or "@" not in new_email:
-                st.error("Enter a valid email address.")
-            elif not new_username:
-                st.error("Enter your name.")
-            elif len(new_password) < 8:
-                st.error("Use a password with at least 8 characters.")
-            elif new_password != confirm_password:
-                st.error("The passwords do not match.")
-            else:
-                try:
-                    with st.spinner("Creating your secure account…"):
-                        response = client.auth.sign_up(
-                            {
-                                "email": new_email,
-                                "password": new_password,
-                                "options": {"data": {"username": new_username}},
-                            }
-                        )
-                    if response and response.session and response.user:
-                        st.session_state["supabase_access_token"] = response.session.access_token
-                        st.session_state["supabase_refresh_token"] = response.session.refresh_token
-                        _save_auth_cookie({"method": "supabase", "refresh_token": response.session.refresh_token, "email": response.user.email or new_email})
-                        st.session_state["authenticated"] = True
-                        st.session_state["authenticated_user"] = (
-                            response.user.email or new_email
-                        )
-                        st.session_state["auth_method"] = "supabase"
-                        st.session_state["login_just_succeeded"] = True
-                        # Profile details are optional; Auth remains the source of truth.
-                        try:
-                            client.table("profiles").upsert(
-                                {
-                                    "id": response.user.id,
-                                    "username": new_username,
-                                }
-                            ).execute()
-                        except Exception:
-                            pass
-                        st.success("Account created. Signing you in…")
-                        st.rerun()
-                    else:
-                        st.success(
-                            "Registration received. Check your email for a verification "
-                            "link, then return here and sign in."
-                        )
+                            st.success(
+                                "Registration received. Check your email for a verification "
+                                "link, then return here and sign in."
+                            )
                 
-                except Exception as e:
-                    st.error(f"Account creation failed: {e}")
+                    except Exception as e:
+                        st.error(f"Account creation failed: {e}")
 
 
     st.stop()
@@ -3149,25 +3081,17 @@ def inject_performance_patch():
 
 def main():
     require_login()
-    st.session_state.pop("login_just_succeeded", False)
+    just_logged_in = st.session_state.pop("login_just_succeeded", False)
+    if just_logged_in:
+        st.toast("Welcome to Dreamztree Marketing Intelligence", icon="✨")
     inject_premium_theme()
+    if just_logged_in:
+        render_post_login_transition()
     inject_performance_patch()
-    st.markdown(r"""
-    <style>
-      [data-testid="stExpander"] { border:1px solid rgba(145,164,190,.20)!important; border-radius:12px!important; overflow:hidden; background:rgba(18,24,34,.78)!important; box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035)!important; transition:border-color .18s ease,box-shadow .18s ease!important; }
-      [data-testid="stExpander"]:hover { border-color:rgba(103,216,208,.38)!important; box-shadow:0 10px 28px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.045)!important; }
-      [data-testid="stExpander"] details > summary { min-height:54px!important; padding:13px 17px!important; background:linear-gradient(90deg,rgba(103,216,208,.075),rgba(255,255,255,.018))!important; color:#e8eef7!important; font-weight:680!important; letter-spacing:.015em!important; }
-      [data-testid="stExpander"] details > summary:hover { background:linear-gradient(90deg,rgba(103,216,208,.12),rgba(255,255,255,.035))!important; }
-      [data-testid="stExpander"] details > summary p,[data-testid="stExpander"] details > summary span { color:#e8eef7!important; font-weight:680!important; }
-      [data-testid="stExpander"] details > summary svg { color:#86dcd4!important; }
-      [data-testid="stExpander"] details[open] > summary { border-bottom:1px solid rgba(145,164,190,.16)!important; }
-      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { background:rgba(9,13,20,.30)!important; padding:18px!important; }
-      .stButton button,[data-testid="stDownloadButton"] button { border-radius:9px!important; border:1px solid rgba(145,164,190,.23)!important; background:rgba(255,255,255,.045)!important; color:#e7edf6!important; box-shadow:none!important; transition:transform .16s ease,border-color .16s ease,background .16s ease!important; }
-      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { transform:translateY(-1px)!important; border-color:rgba(103,216,208,.42)!important; background:rgba(103,216,208,.075)!important; }
-      @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],.stButton button,[data-testid="stDownloadButton"] button { transition:none!important; } }
-    </style>
-    """, unsafe_allow_html=True)
     page = st.query_params.get("page", "dashboard")
+    # Keep the Game Zone invitation/notification active on every non-game page.
+    # The fragment itself suppresses the popup while the Game Zone is open.
+    _game_zone_popup()
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
@@ -3180,111 +3104,45 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    # Premium, compact landing experience. Keep report functionality below unchanged.
+    # Dreamztree landing page with a clean hero; global particle animation is applied in inject_premium_theme().
     st.markdown("""
     <style>
-      /* Consistent page grid: hero, settings, report content and utility actions share one alignment. */
-      .stApp [data-testid="stMainBlockContainer"] { max-width: 1460px !important; padding-left: clamp(18px, 3.2vw, 48px) !important; padding-right: clamp(18px, 3.2vw, 48px) !important; }
-      .dt-landing-wrap { width:100%; max-width:100%; margin: 8px auto 22px !important; }
-      .dt-landing { width:100%; min-height:360px; grid-template-columns:minmax(0,1fr) minmax(300px,.9fr); align-items:center; }
-      .dt-landing-main { max-width:680px; justify-self:start; text-align:left; }
-      .dt-landing-title, .dt-landing-copy { text-align:left; }
-      .dt-landing-actions { justify-content:flex-start; align-items:center; }
-      [data-testid="stExpander"] { width:100%; margin: 10px 0 18px !important; }
-      [data-testid="stExpander"] details > summary { display:flex; align-items:center; }
-      .stApp [data-testid="stHorizontalBlock"] { align-items:center; }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; min-height:unset; } .dt-landing-main { max-width:none; } .dt-visual { min-height:205px; } }
-      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
-      :root { --linear-bg:#0b0e14; --linear-panel:rgba(19,25,36,.78); --linear-line:rgba(155,174,202,.17); --linear-text:#edf2fa; --linear-muted:#98a6ba; --linear-cyan:#67d8d0; --linear-violet:#9b8cff; }
-      .dt-landing-wrap { margin: 8px 0 18px; }
-      .dt-landing { position:relative; isolation:isolate; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr); align-items:center; gap:28px; padding:clamp(28px,4vw,52px); border:1px solid var(--linear-line); border-radius:22px; background:linear-gradient(115deg,rgba(22,29,42,.96),rgba(12,19,29,.92)); box-shadow:0 22px 60px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.055); }
-      .dt-landing:before { content:""; position:absolute; z-index:-1; width:420px; height:420px; right:-130px; top:-250px; border-radius:50%; background:radial-gradient(circle,rgba(103,216,208,.15),transparent 68%); }
-      .dt-landing:after { content:""; position:absolute; z-index:-1; width:360px; height:360px; left:-220px; bottom:-260px; border-radius:50%; background:radial-gradient(circle,rgba(155,140,255,.12),transparent 70%); }
-      .dt-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid rgba(103,216,208,.20); border-radius:999px; background:rgba(103,216,208,.07); color:#91e7df; font-size:.72rem; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
-      .dt-eyebrow:before { content:""; width:6px; height:6px; border-radius:50%; background:#67d8d0; box-shadow:0 0 12px rgba(103,216,208,.65); }
-      .dt-landing-title { max-width:680px; margin:18px 0 12px; color:#f2f5fb; font-size:clamp(2rem,4vw,3.35rem); line-height:1.08; font-weight:760; letter-spacing:-.055em; }
-      .dt-landing-title span { color:#8ddfd8; background:linear-gradient(90deg,#9ae7df,#9ca9ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-      .dt-landing-copy { max-width:610px; margin:0 0 23px; color:#aab6c8; font-size:1rem; line-height:1.7; }
-      .dt-landing-pills { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 25px; }
-      .dt-landing-pills span { padding:7px 10px; border:1px solid rgba(155,174,202,.14); border-radius:8px; background:rgba(255,255,255,.035); color:#c5cfdd; font-size:.75rem; }
-      .dt-landing-actions { display:flex; flex-wrap:wrap; gap:10px; }
-      .dt-landing-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 17px; border-radius:9px; text-decoration:none!important; font-size:.88rem; font-weight:680; transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease; }
-      .dt-landing-actions .primary { color:#07151a!important; background:linear-gradient(110deg,#9ae7df,#80cfd0); border:1px solid rgba(190,255,250,.32); box-shadow:0 7px 20px rgba(60,190,180,.15); }
-      .dt-landing-actions .primary:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(60,190,180,.24); }
-      .dt-landing-actions .secondary { color:#e5ebf5!important; background:rgba(255,255,255,.045); border:1px solid rgba(155,174,202,.22); }
-      .dt-landing-actions .secondary:hover { transform:translateY(-2px); background:rgba(255,255,255,.075); border-color:rgba(155,174,202,.38); }
-      .dt-visual { position:relative; min-height:250px; display:flex; align-items:center; justify-content:center; }
-      .dt-visual-panel { width:min(100%,420px); padding:18px; border:1px solid rgba(160,184,220,.22); border-radius:17px; background:linear-gradient(145deg,rgba(31,42,59,.88),rgba(14,22,34,.88)); box-shadow:0 24px 55px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08); transform:rotate(-2deg); animation:dt-panel-in .7s cubic-bezier(.2,.8,.2,1) both; }
-      .dt-visual-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; color:#dce6f4; font-size:.82rem; font-weight:650; }
-      .dt-live-dot { display:inline-flex; align-items:center; gap:6px; color:#91d9ce; font-size:.68rem; font-weight:600; }
-      .dt-live-dot:before { content:""; width:6px; height:6px; border-radius:50%; background:#69d6bd; box-shadow:0 0 10px rgba(105,214,189,.65); }
-      .dt-bars { height:125px; display:flex; align-items:end; gap:10px; padding:0 8px 4px; border-bottom:1px solid rgba(155,174,202,.16); background:repeating-linear-gradient(to bottom,transparent 0,transparent 30px,rgba(155,174,202,.07) 31px); }
-      .dt-bars i { flex:1; min-width:12px; height:var(--h); border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#86e1d7,rgba(96,160,190,.28)); box-shadow:0 0 18px rgba(103,216,208,.10); transform-origin:bottom; animation:dt-bar-rise .8s cubic-bezier(.2,.8,.2,1) both; }
-      .dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#a7a1ff,rgba(117,111,200,.28)); }
-      .dt-visual-foot { display:flex; justify-content:space-between; gap:10px; margin-top:13px; color:#8e9db2; font-size:.7rem; }
-      .dt-visual-foot strong { color:#e3ebf6; font-weight:650; }
-      @keyframes dt-panel-in { from { opacity:0; transform:translateY(12px) rotate(-2deg); } to { opacity:1; transform:translateY(0) rotate(-2deg); } }
-      @keyframes dt-bar-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; }  }
-      @media(max-width:520px) { .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
-      @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i { animation:none !important; } }
-
-      /* Apple-inspired minimal refinement: precise grid, quiet surfaces, restrained motion. */
-      :root { --linear-bg:#0b0c0f; --linear-panel:#15171b; --linear-line:rgba(255,255,255,.09); --linear-text:#f5f5f7; --linear-muted:#a1a1a6; --linear-cyan:#a8b0bb; --linear-violet:#a8b0bb; }
-      .stApp { background:#0b0c0f !important; }
-      .stApp [data-testid="stMainBlockContainer"] { max-width:1320px !important; padding-top:2rem !important; padding-bottom:3rem !important; }
-      .dt-landing-wrap { width:100%; margin:0 0 24px !important; }
-      .dt-landing { width:100%; min-height:290px; grid-template-columns:minmax(0,1.1fr) minmax(250px,.9fr); gap:36px; padding:clamp(28px,3.6vw,46px); border:1px solid rgba(255,255,255,.09); border-radius:20px; background:#15171b; box-shadow:0 1px 0 rgba(255,255,255,.035) inset; }
-      .dt-landing:before,.dt-landing:after { display:none; }
-      .dt-eyebrow { padding:0; border:0; border-radius:0; background:none; color:#a1a1a6; font-size:.7rem; letter-spacing:.13em; }
-      .dt-eyebrow:before { width:5px; height:5px; background:#a1a1a6; box-shadow:none; }
-      .dt-landing-title { max-width:620px; margin:17px 0 13px; color:#f5f5f7; font-size:clamp(2rem,3.6vw,3rem); line-height:1.08; letter-spacing:-.045em; font-weight:700; }
-      .dt-landing-title span { color:#c7cbd1; background:none; -webkit-text-fill-color:currentColor; }
-      .dt-landing-copy { max-width:560px; margin:0 0 24px; color:#a1a1a6; font-size:.98rem; line-height:1.65; }
-      .dt-landing-actions { gap:10px; }
-      .dt-landing-actions a { min-height:43px; padding:0 17px; border-radius:11px; font-size:.86rem; font-weight:620; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
-      .dt-landing-actions .primary { color:#111214 !important; background:#f5f5f7; border:1px solid #f5f5f7; box-shadow:none; }
-      .dt-landing-actions .primary:hover { background:#dedee2; box-shadow:none; transform:translateY(-1px); }
-      .dt-landing-actions .secondary { color:#e5e5e7 !important; background:#202226; border:1px solid rgba(255,255,255,.11); }
-      .dt-landing-actions .secondary:hover { background:#292b30; border-color:rgba(255,255,255,.2); transform:translateY(-1px); }
-      .dt-visual { min-height:210px; }
-      .dt-visual-panel { width:min(100%,390px); padding:18px; border:1px solid rgba(255,255,255,.10); border-radius:16px; background:#1b1e23; box-shadow:0 16px 36px rgba(0,0,0,.20); transform:none; animation:none; }
-      .dt-visual-top { color:#dedee2; margin-bottom:18px; }
-      .dt-live-dot { color:#a1a1a6; }
-      .dt-live-dot:before { background:#a1a1a6; box-shadow:none; }
-      .dt-bars { height:108px; gap:9px; background:repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(255,255,255,.045) 27px); }
-      .dt-bars i,.dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#b9bec7,#737983); box-shadow:none; animation:none; }
-      .dt-visual-foot { color:#92949a; }
-      .dt-visual-foot strong { color:#d9dadd; }
-      [data-testid="stExpander"] { margin:0 0 22px !important; }
-      [data-testid="stExpander"] details { border:1px solid rgba(255,255,255,.10) !important; border-radius:14px !important; overflow:hidden; background:#15171b !important; }
-      [data-testid="stExpander"] details > summary { min-height:58px !important; padding:0 18px !important; background:#191b20 !important; color:#f0f0f2 !important; font-weight:620 !important; }
-      [data-testid="stExpander"] details > summary:hover { background:#202227 !important; }
-      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { padding:20px !important; background:#121418 !important; }
-      .stApp [data-testid="stHorizontalBlock"] { gap:18px !important; align-items:center !important; }
-      .stButton button,[data-testid="stDownloadButton"] button { min-height:42px; border-radius:10px !important; border:1px solid rgba(255,255,255,.12) !important; background:#202227 !important; color:#ededf0 !important; box-shadow:none !important; }
-      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { background:#2a2c32 !important; border-color:rgba(255,255,255,.23) !important; transform:translateY(-1px) !important; }
-      [data-testid="stCaptionContainer"] { color:#92949a !important; }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; gap:18px; min-height:unset; } .dt-visual { min-height:175px; } .dt-visual-panel { transform:none; } }
-      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:155px; } }
+      .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
+        border-radius:28px; background:linear-gradient(125deg,rgba(124,58,237,.25),rgba(37,99,235,.18) 48%,rgba(13,148,136,.20));
+        border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
+      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+        background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
+      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
+      .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
+      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
+      .dt-landing-kicker {text-align:center;color:#77f3df;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;position:relative;}
+      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;position:relative;}
+      .dt-landing-copy {text-align:center;color:#d2def2;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;position:relative;}
+      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;position:relative;}
+      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:16px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
+      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(96,165,250,.18);}
+      .dt-landing-actions .primary {background:linear-gradient(100deg,#ec4899,#8b5cf6 55%,#2563eb);color:#fff!important;border:1px solid rgba(255,255,255,.18);font-weight:750;}
+      .dt-landing-actions .secondary {background:rgba(15,23,42,.25);color:#f8f9fc!important;border:1px solid rgba(167,139,250,.55);}
+      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(167,139,250,.32);border-radius:24px;background:linear-gradient(120deg,rgba(99,102,241,.14),rgba(20,184,166,.08));}
+      .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
+      .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
+      .dt-landing + div {scroll-margin-top:24px;}
+      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
+      @media(prefers-reduced-motion:reduce){.dt-landing-actions a{animation:none;transition:none}}
     </style>
-    <div class="dt-landing-wrap">
-      <section class="dt-landing">
-        <div class="dt-landing-main">
-          <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
-          <h1 class="dt-landing-title">Make every campaign <span>count.</span></h1>
-          <p class="dt-landing-copy">One clear view of Meta Ads leads, advertising spend and branch performance. Turn campaign exports into reports your team can act on.</p>
-          <div class="dt-landing-actions"><a class="primary" href="#report-form">Create a report&nbsp; →</a><a class="secondary" href="#campaign-insights">Configure reporting&nbsp; ↗</a></div>
-        </div>
-        <div class="dt-visual" aria-hidden="true">
-          <div class="dt-visual-panel">
-            <div class="dt-visual-top"><span>Campaign overview</span><span class="dt-live-dot">Reporting workspace</span></div>
-            <div class="dt-bars"><i style="--h:34%"></i><i style="--h:48%"></i><i style="--h:42%"></i><i style="--h:64%"></i><i style="--h:57%"></i><i style="--h:76%"></i><i style="--h:88%"></i><i style="--h:96%"></i></div>
-            <div class="dt-visual-foot"><span>Meta Ads data</span><strong>Leads · Spend · Branches</strong></div>
-          </div>
-        </div>
-      </section>
-    </div>
+    <section class="dt-landing">
+      <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
+      <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
+      <p class="dt-landing-copy">Track leads. Analyze ad spend. Discover winning campaigns.</p>
+      <div class="dt-landing-actions">
+        <a class="primary" href="#report-form">Explore Reports ↓</a>
+        <a class="secondary" href="#campaign-insights">Campaign Insights</a>
+      </div>
+    </section>
+    <section class="dt-report-intro" id="report-form">
+      <h2>↓ Scroll down to create a report</h2>
+      <p>The existing report-making form and dashboard features remain below the landing page.</p>
+    </section>
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
     with game_col:
@@ -3313,13 +3171,13 @@ def main():
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
-    st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
-    with st.expander("Report settings     ·     Date, currency and campaign mapping", expanded=False):
+    st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
+    with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
         settings_left, settings_right = st.columns(2, gap="large")
         with settings_left:
-            st.subheader("Currency conversion · USD to KWD")
+            st.subheader("USD → KWD exchange rate")
             use_manual_rate = st.checkbox(
                 "Use manual fallback rate instead",
                 value=False,
@@ -3372,7 +3230,7 @@ def main():
         )
     if uploaded is None:
         st.info("Upload today's Meta Ads Excel export to begin. Add yesterday's report for a day-over-day comparison.")
-        with st.expander("Campaign mapping preview · Review assigned teams and courses", expanded=False):
+        with st.expander("Campaign mapping preview", expanded=False):
             st.dataframe(mappings, use_container_width=True, hide_index=True)
         st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
