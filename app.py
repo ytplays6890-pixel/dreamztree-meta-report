@@ -3060,6 +3060,18 @@ def main():
     # Premium, compact landing experience. Keep report functionality below unchanged.
     st.markdown("""
     <style>
+      /* Consistent page grid: hero, settings, report content and utility actions share one alignment. */
+      .stApp [data-testid="stMainBlockContainer"] { max-width: 1460px !important; padding-left: clamp(18px, 3.2vw, 48px) !important; padding-right: clamp(18px, 3.2vw, 48px) !important; }
+      .dt-landing-wrap { width:100%; max-width:100%; margin: 8px auto 22px !important; }
+      .dt-landing { width:100%; min-height:360px; grid-template-columns:minmax(0,1fr) minmax(300px,.9fr); align-items:center; }
+      .dt-landing-main { max-width:680px; justify-self:start; text-align:left; }
+      .dt-landing-title, .dt-landing-copy { text-align:left; }
+      .dt-landing-actions { justify-content:flex-start; align-items:center; }
+      [data-testid="stExpander"] { width:100%; margin: 10px 0 18px !important; }
+      [data-testid="stExpander"] details > summary { display:flex; align-items:center; }
+      .stApp [data-testid="stHorizontalBlock"] { align-items:center; }
+      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; min-height:unset; } .dt-landing-main { max-width:none; } .dt-visual { min-height:205px; } }
+      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
       :root { --linear-bg:#0b0e14; --linear-panel:rgba(19,25,36,.78); --linear-line:rgba(155,174,202,.17); --linear-text:#edf2fa; --linear-muted:#98a6ba; --linear-cyan:#67d8d0; --linear-violet:#9b8cff; }
       .dt-landing-wrap { margin: 8px 0 18px; }
       .dt-landing { position:relative; isolation:isolate; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr); align-items:center; gap:28px; padding:clamp(28px,4vw,52px); border:1px solid var(--linear-line); border-radius:22px; background:linear-gradient(115deg,rgba(22,29,42,.96),rgba(12,19,29,.92)); box-shadow:0 22px 60px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.055); }
@@ -3088,26 +3100,11 @@ def main():
       .dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#a7a1ff,rgba(117,111,200,.28)); }
       .dt-visual-foot { display:flex; justify-content:space-between; gap:10px; margin-top:13px; color:#8e9db2; font-size:.7rem; }
       .dt-visual-foot strong { color:#e3ebf6; font-weight:650; }
-      .dt-section-intro { margin:0 0 15px; padding:20px 22px; border:1px solid var(--linear-line); border-radius:14px; background:rgba(18,24,35,.68); box-shadow:inset 0 1px 0 rgba(255,255,255,.035); }
-      .dt-section-kicker { color:#83d9d2; font-size:.68rem; font-weight:750; letter-spacing:.13em; text-transform:uppercase; margin-bottom:6px; }
-      .dt-section-title { color:#edf2fa; font-size:clamp(1.2rem,2vw,1.55rem); font-weight:720; letter-spacing:-.035em; margin:0 0 5px; }
-      .dt-section-copy { color:#9eacbf; font-size:.9rem; line-height:1.6; margin:0; }
-      .dt-feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 22px; }
-      .dt-feature { position:relative; overflow:hidden; padding:17px 18px; border:1px solid rgba(155,174,202,.16); border-radius:13px; background:linear-gradient(145deg,rgba(27,35,49,.82),rgba(16,22,33,.82)); min-height:126px; box-shadow:0 10px 26px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.04); transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease; animation:dt-card-in .55s ease both; }
-      .dt-feature:nth-child(2) { animation-delay:.08s; } .dt-feature:nth-child(3) { animation-delay:.16s; }
-      .dt-feature:hover { transform:translateY(-4px); border-color:rgba(103,216,208,.34); background:linear-gradient(145deg,rgba(31,45,58,.92),rgba(17,26,38,.92)); box-shadow:0 16px 32px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.06); }
-      .dt-feature-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
-      .dt-feature-mark { width:34px; height:34px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(103,216,208,.20); border-radius:10px; background:rgba(103,216,208,.08); color:#8ce1d8; font-size:1rem; }
-      .dt-feature:nth-child(2) .dt-feature-mark { border-color:rgba(155,140,255,.22); background:rgba(155,140,255,.09); color:#b7adff; }
-      .dt-feature:nth-child(3) .dt-feature-mark { border-color:rgba(113,174,255,.22); background:rgba(113,174,255,.09); color:#9bc8ff; }
-      .dt-feature-title { color:#e7edf6; font-weight:680; font-size:.9rem; margin:0; }
-      .dt-feature-copy { color:#9ba9bc; font-size:.79rem; line-height:1.55; margin:0; }
       @keyframes dt-panel-in { from { opacity:0; transform:translateY(12px) rotate(-2deg); } to { opacity:1; transform:translateY(0) rotate(-2deg); } }
       @keyframes dt-bar-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
-      @keyframes dt-card-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; } .dt-feature-grid { grid-template-columns:1fr; } }
+      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; }  }
       @media(max-width:520px) { .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
-      @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i,.dt-feature { animation:none!important; transition:none!important; } }
+      @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i { animation:none !important; } }
     </style>
     <div class="dt-landing-wrap">
       <section class="dt-landing">
@@ -3115,7 +3112,6 @@ def main():
           <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
           <h1 class="dt-landing-title">Make every campaign <span>count.</span></h1>
           <p class="dt-landing-copy">One clear view of Meta Ads leads, advertising spend and branch performance. Turn campaign exports into reports your team can act on.</p>
-          <div class="dt-landing-pills"><span>Lead tracking</span><span>Branch-wise insights</span><span>Spend analysis</span></div>
           <div class="dt-landing-actions"><a class="primary" href="#report-form">Create a report&nbsp; →</a><a class="secondary" href="#campaign-insights">Configure reporting&nbsp; ↗</a></div>
         </div>
         <div class="dt-visual" aria-hidden="true">
@@ -3127,16 +3123,6 @@ def main():
         </div>
       </section>
     </div>
-    <section class="dt-section-intro" id="report-form">
-      <div class="dt-section-kicker">Reporting workspace</div>
-      <h2 class="dt-section-title">From campaign export to team-ready report.</h2>
-      <p class="dt-section-copy">Upload your Meta Ads Excel export, set the reporting date and currency rate, then apply campaign mapping to organize results by branch, staff member and course.</p>
-    </section>
-    <section class="dt-feature-grid" aria-label="Reporting capabilities">
-      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">↗</div><h3 class="dt-feature-title">Campaign performance</h3></div><p class="dt-feature-copy">See lead volume alongside advertising costs. Identify which campaigns are delivering results and which need attention.</p></article>
-      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">▦</div><h3 class="dt-feature-title">Team & branch visibility</h3></div><p class="dt-feature-copy">Connect campaign names to staff, courses and branches for a consistent view across your locations and team.</p></article>
-      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">◎</div><h3 class="dt-feature-title">Spend intelligence</h3></div><p class="dt-feature-copy">Keep USD-to-KWD conversion and campaign costs together so reporting stays clear and comparable.</p></article>
-    </section>
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
     with game_col:
@@ -3165,7 +3151,7 @@ def main():
             st.rerun()
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
-    st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
+    st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
     with st.expander("⚙  REPORT SETUP     ·     Date  /  Currency  /  Campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
