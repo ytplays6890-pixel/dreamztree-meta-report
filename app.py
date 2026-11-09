@@ -3029,6 +3029,21 @@ def main():
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
+    st.markdown(r"""
+    <style>
+      [data-testid="stExpander"] { border:1px solid rgba(145,164,190,.20)!important; border-radius:12px!important; overflow:hidden; background:rgba(18,24,34,.78)!important; box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035)!important; transition:border-color .18s ease,box-shadow .18s ease!important; }
+      [data-testid="stExpander"]:hover { border-color:rgba(103,216,208,.38)!important; box-shadow:0 10px 28px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.045)!important; }
+      [data-testid="stExpander"] details > summary { min-height:54px!important; padding:13px 17px!important; background:linear-gradient(90deg,rgba(103,216,208,.075),rgba(255,255,255,.018))!important; color:#e8eef7!important; font-weight:680!important; letter-spacing:.015em!important; }
+      [data-testid="stExpander"] details > summary:hover { background:linear-gradient(90deg,rgba(103,216,208,.12),rgba(255,255,255,.035))!important; }
+      [data-testid="stExpander"] details > summary p,[data-testid="stExpander"] details > summary span { color:#e8eef7!important; font-weight:680!important; }
+      [data-testid="stExpander"] details > summary svg { color:#86dcd4!important; }
+      [data-testid="stExpander"] details[open] > summary { border-bottom:1px solid rgba(145,164,190,.16)!important; }
+      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { background:rgba(9,13,20,.30)!important; padding:18px!important; }
+      .stButton button,[data-testid="stDownloadButton"] button { border-radius:9px!important; border:1px solid rgba(145,164,190,.23)!important; background:rgba(255,255,255,.045)!important; color:#e7edf6!important; box-shadow:none!important; transition:transform .16s ease,border-color .16s ease,background .16s ease!important; }
+      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { transform:translateY(-1px)!important; border-color:rgba(103,216,208,.42)!important; background:rgba(103,216,208,.075)!important; }
+      @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],.stButton button,[data-testid="stDownloadButton"] button { transition:none!important; } }
+    </style>
+    """, unsafe_allow_html=True)
     page = st.query_params.get("page", "dashboard")
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
@@ -3045,111 +3060,82 @@ def main():
     # Premium, compact landing experience. Keep report functionality below unchanged.
     st.markdown("""
     <style>
-      .dt-landing-wrap { margin: 10px 0 18px; }
-      .dt-landing {
-        position: relative; overflow: hidden; isolation: isolate;
-        padding: clamp(34px,5vw,64px) clamp(22px,5vw,68px);
-        border-radius: 28px;
-        border: 1px solid rgba(218,232,255,.22);
-        background: linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 48%,rgba(94,234,212,.065)),
-                    linear-gradient(120deg,rgba(31,27,55,.78),rgba(13,27,43,.72) 58%,rgba(13,48,48,.72));
-        -webkit-backdrop-filter: blur(22px) saturate(145%);
-        backdrop-filter: blur(22px) saturate(145%);
-        box-shadow: 0 28px 80px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.035);
-      }
-      .dt-landing > * { position:relative; z-index:1; }
-      .dt-landing-wrap { position:relative; }
-      .dt-landing-wrap:before { content:""; position:absolute; inset:12px 5% -10px; z-index:-1;
-        border-radius:32px; background:linear-gradient(90deg,rgba(168,85,247,.22),rgba(45,212,191,.18));
-        filter:blur(34px); opacity:.7; }
-      .dt-landing:before {
-        content:""; position:absolute; z-index:-1; width:440px; height:440px;
-        right:-150px; top:-260px; border-radius:50%;
-        background:radial-gradient(circle,rgba(94,234,212,.28),transparent 68%);
-        filter:blur(8px);
-      }
-      .dt-landing:after {
-        content:""; position:absolute; z-index:-1; width:420px; height:420px;
-        left:-210px; bottom:-300px; border-radius:50%;
-        background:radial-gradient(circle,rgba(168,85,247,.25),transparent 68%);
-        filter:blur(8px);
-      }
-      .dt-eyebrow { display:flex; align-items:center; justify-content:center; gap:9px;
-        color:#7ee7d4; font-size:.76rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
-      .dt-eyebrow:before { content:""; width:22px; height:1px; background:#5eead4; opacity:.8; }
-      .dt-landing-title { max-width:900px; margin:20px auto 14px; text-align:center;
-        color:#f8fafc; font-size:clamp(2rem,4.2vw,3.55rem); line-height:1.08;
-        font-weight:820; letter-spacing:-.055em; }
-      .dt-landing-copy { max-width:690px; margin:0 auto 25px; text-align:center;
-        color:#b8c5d6; font-size:clamp(.98rem,1.5vw,1.15rem); line-height:1.7; }
-      .dt-landing-pills { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin:0 auto 28px; }
-      .dt-landing-pills span { padding:8px 14px; border:1px solid rgba(226,237,255,.19);
-        border-radius:999px; background:rgba(255,255,255,.075); color:#e3edf8; font-size:.78rem;
-        -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); box-shadow:inset 0 1px 0 rgba(255,255,255,.10); }
-      .dt-landing-actions { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
-      .dt-landing-actions a { display:inline-flex; align-items:center; justify-content:center;
-        min-height:46px; padding:0 21px; border-radius:12px; text-decoration:none!important;
-        font-size:.94rem; font-weight:700; transition:background .18s ease,border-color .18s ease; }
-      .dt-landing-actions .primary { color:#07151a!important; background:linear-gradient(135deg,#9bf2e2,#61d9c8); border:1px solid rgba(255,255,255,.42);
-        box-shadow:0 10px 28px rgba(45,212,191,.20),inset 0 1px 0 rgba(255,255,255,.55); }
-      .dt-landing-actions .primary:hover { background:linear-gradient(135deg,#b4fff1,#78e8d8); transform:translateY(-1px); }
-      .dt-landing-actions .secondary { color:#f0f5fc!important; background:rgba(255,255,255,.075); border:1px solid rgba(226,237,255,.25);
-        -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
-      .dt-landing-actions .secondary:hover { background:rgba(255,255,255,.13); }
-      .dt-section-intro { position:relative; overflow:hidden; margin:0 0 18px; padding:24px 26px;
-        border:1px solid rgba(210,228,255,.19); border-radius:20px;
-        background:linear-gradient(125deg,rgba(255,255,255,.085),rgba(255,255,255,.025)),rgba(20,29,44,.48);
-        -webkit-backdrop-filter:blur(20px) saturate(135%); backdrop-filter:blur(20px) saturate(135%);
-        box-shadow:0 18px 48px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.13); }
-      .dt-section-kicker { color:#78dcca; font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; margin-bottom:7px; }
-      .dt-section-title { color:#f1f5f9; font-size:clamp(1.25rem,2vw,1.65rem); font-weight:750; letter-spacing:-.03em; margin:0 0 6px; }
-      .dt-section-copy { color:#aab7c8; font-size:.94rem; line-height:1.6; margin:0; }
-      .dt-feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 24px; }
-      .dt-feature { position:relative; overflow:hidden; padding:19px 20px; border:1px solid rgba(210,228,255,.17); border-radius:18px;
-        background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025)),rgba(18,27,41,.48); min-height:118px;
-        -webkit-backdrop-filter:blur(18px) saturate(135%); backdrop-filter:blur(18px) saturate(135%);
-        box-shadow:0 14px 38px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.12);
-        transition:transform .2s ease,border-color .2s ease,background .2s ease; }
-      .dt-feature:hover { transform:translateY(-3px); border-color:rgba(125,230,218,.34); background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035)),rgba(18,27,41,.58); }
-      .dt-feature-mark { width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-        border:1px solid rgba(126,231,212,.20); border-radius:10px; background:rgba(94,234,212,.12); color:#8cf1df; font-size:.95rem; margin-bottom:12px;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 5px 18px rgba(45,212,191,.08); }
-      .dt-feature-title { color:#e8eef6; font-weight:700; font-size:.92rem; margin:0 0 5px; }
-      .dt-feature-copy { color:#9eacbe; font-size:.81rem; line-height:1.5; margin:0; }
-      @media(max-width:700px) {
-        .dt-landing { border-radius:19px; padding:30px 18px; }
-        .dt-feature-grid { grid-template-columns:1fr; }
-        .dt-landing-actions a { width:100%; box-sizing:border-box; }
-        .dt-section-intro { padding:18px; }
-      }
-      @media(prefers-reduced-motion:reduce) { .dt-landing-actions a,.dt-feature { transition:none; } }
-      @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
-        .dt-landing,.dt-section-intro,.dt-feature { background-color:rgba(20,29,44,.94); }
-      }
+      :root { --linear-bg:#0b0e14; --linear-panel:rgba(19,25,36,.78); --linear-line:rgba(155,174,202,.17); --linear-text:#edf2fa; --linear-muted:#98a6ba; --linear-cyan:#67d8d0; --linear-violet:#9b8cff; }
+      .dt-landing-wrap { margin: 8px 0 18px; }
+      .dt-landing { position:relative; isolation:isolate; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr); align-items:center; gap:28px; padding:clamp(28px,4vw,52px); border:1px solid var(--linear-line); border-radius:22px; background:linear-gradient(115deg,rgba(22,29,42,.96),rgba(12,19,29,.92)); box-shadow:0 22px 60px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.055); }
+      .dt-landing:before { content:""; position:absolute; z-index:-1; width:420px; height:420px; right:-130px; top:-250px; border-radius:50%; background:radial-gradient(circle,rgba(103,216,208,.15),transparent 68%); }
+      .dt-landing:after { content:""; position:absolute; z-index:-1; width:360px; height:360px; left:-220px; bottom:-260px; border-radius:50%; background:radial-gradient(circle,rgba(155,140,255,.12),transparent 70%); }
+      .dt-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid rgba(103,216,208,.20); border-radius:999px; background:rgba(103,216,208,.07); color:#91e7df; font-size:.72rem; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
+      .dt-eyebrow:before { content:""; width:6px; height:6px; border-radius:50%; background:#67d8d0; box-shadow:0 0 12px rgba(103,216,208,.65); }
+      .dt-landing-title { max-width:680px; margin:18px 0 12px; color:#f2f5fb; font-size:clamp(2rem,4vw,3.35rem); line-height:1.08; font-weight:760; letter-spacing:-.055em; }
+      .dt-landing-title span { color:#8ddfd8; background:linear-gradient(90deg,#9ae7df,#9ca9ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+      .dt-landing-copy { max-width:610px; margin:0 0 23px; color:#aab6c8; font-size:1rem; line-height:1.7; }
+      .dt-landing-pills { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 25px; }
+      .dt-landing-pills span { padding:7px 10px; border:1px solid rgba(155,174,202,.14); border-radius:8px; background:rgba(255,255,255,.035); color:#c5cfdd; font-size:.75rem; }
+      .dt-landing-actions { display:flex; flex-wrap:wrap; gap:10px; }
+      .dt-landing-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 17px; border-radius:9px; text-decoration:none!important; font-size:.88rem; font-weight:680; transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease; }
+      .dt-landing-actions .primary { color:#07151a!important; background:linear-gradient(110deg,#9ae7df,#80cfd0); border:1px solid rgba(190,255,250,.32); box-shadow:0 7px 20px rgba(60,190,180,.15); }
+      .dt-landing-actions .primary:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(60,190,180,.24); }
+      .dt-landing-actions .secondary { color:#e5ebf5!important; background:rgba(255,255,255,.045); border:1px solid rgba(155,174,202,.22); }
+      .dt-landing-actions .secondary:hover { transform:translateY(-2px); background:rgba(255,255,255,.075); border-color:rgba(155,174,202,.38); }
+      .dt-visual { position:relative; min-height:250px; display:flex; align-items:center; justify-content:center; }
+      .dt-visual-panel { width:min(100%,420px); padding:18px; border:1px solid rgba(160,184,220,.22); border-radius:17px; background:linear-gradient(145deg,rgba(31,42,59,.88),rgba(14,22,34,.88)); box-shadow:0 24px 55px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08); transform:rotate(-2deg); animation:dt-panel-in .7s cubic-bezier(.2,.8,.2,1) both; }
+      .dt-visual-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; color:#dce6f4; font-size:.82rem; font-weight:650; }
+      .dt-live-dot { display:inline-flex; align-items:center; gap:6px; color:#91d9ce; font-size:.68rem; font-weight:600; }
+      .dt-live-dot:before { content:""; width:6px; height:6px; border-radius:50%; background:#69d6bd; box-shadow:0 0 10px rgba(105,214,189,.65); }
+      .dt-bars { height:125px; display:flex; align-items:end; gap:10px; padding:0 8px 4px; border-bottom:1px solid rgba(155,174,202,.16); background:repeating-linear-gradient(to bottom,transparent 0,transparent 30px,rgba(155,174,202,.07) 31px); }
+      .dt-bars i { flex:1; min-width:12px; height:var(--h); border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#86e1d7,rgba(96,160,190,.28)); box-shadow:0 0 18px rgba(103,216,208,.10); transform-origin:bottom; animation:dt-bar-rise .8s cubic-bezier(.2,.8,.2,1) both; }
+      .dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#a7a1ff,rgba(117,111,200,.28)); }
+      .dt-visual-foot { display:flex; justify-content:space-between; gap:10px; margin-top:13px; color:#8e9db2; font-size:.7rem; }
+      .dt-visual-foot strong { color:#e3ebf6; font-weight:650; }
+      .dt-section-intro { margin:0 0 15px; padding:20px 22px; border:1px solid var(--linear-line); border-radius:14px; background:rgba(18,24,35,.68); box-shadow:inset 0 1px 0 rgba(255,255,255,.035); }
+      .dt-section-kicker { color:#83d9d2; font-size:.68rem; font-weight:750; letter-spacing:.13em; text-transform:uppercase; margin-bottom:6px; }
+      .dt-section-title { color:#edf2fa; font-size:clamp(1.2rem,2vw,1.55rem); font-weight:720; letter-spacing:-.035em; margin:0 0 5px; }
+      .dt-section-copy { color:#9eacbf; font-size:.9rem; line-height:1.6; margin:0; }
+      .dt-feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 22px; }
+      .dt-feature { position:relative; overflow:hidden; padding:17px 18px; border:1px solid rgba(155,174,202,.16); border-radius:13px; background:linear-gradient(145deg,rgba(27,35,49,.82),rgba(16,22,33,.82)); min-height:126px; box-shadow:0 10px 26px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.04); transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease; animation:dt-card-in .55s ease both; }
+      .dt-feature:nth-child(2) { animation-delay:.08s; } .dt-feature:nth-child(3) { animation-delay:.16s; }
+      .dt-feature:hover { transform:translateY(-4px); border-color:rgba(103,216,208,.34); background:linear-gradient(145deg,rgba(31,45,58,.92),rgba(17,26,38,.92)); box-shadow:0 16px 32px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.06); }
+      .dt-feature-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+      .dt-feature-mark { width:34px; height:34px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(103,216,208,.20); border-radius:10px; background:rgba(103,216,208,.08); color:#8ce1d8; font-size:1rem; }
+      .dt-feature:nth-child(2) .dt-feature-mark { border-color:rgba(155,140,255,.22); background:rgba(155,140,255,.09); color:#b7adff; }
+      .dt-feature:nth-child(3) .dt-feature-mark { border-color:rgba(113,174,255,.22); background:rgba(113,174,255,.09); color:#9bc8ff; }
+      .dt-feature-title { color:#e7edf6; font-weight:680; font-size:.9rem; margin:0; }
+      .dt-feature-copy { color:#9ba9bc; font-size:.79rem; line-height:1.55; margin:0; }
+      @keyframes dt-panel-in { from { opacity:0; transform:translateY(12px) rotate(-2deg); } to { opacity:1; transform:translateY(0) rotate(-2deg); } }
+      @keyframes dt-bar-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
+      @keyframes dt-card-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; } .dt-feature-grid { grid-template-columns:1fr; } }
+      @media(max-width:520px) { .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
+      @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i,.dt-feature { animation:none!important; transition:none!important; } }
     </style>
     <div class="dt-landing-wrap">
       <section class="dt-landing">
-        <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
-        <h1 class="dt-landing-title">Turn campaign activity into clear decisions.</h1>
-        <p class="dt-landing-copy">A focused workspace for tracking Meta Ads leads, understanding spend and seeing performance across your branches, teams and courses.</p>
-        <div class="dt-landing-pills">
-          <span>Lead performance</span><span>Ad spend visibility</span><span>Branch-wise reporting</span>
+        <div class="dt-landing-main">
+          <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
+          <h1 class="dt-landing-title">Make every campaign <span>count.</span></h1>
+          <p class="dt-landing-copy">One clear view of Meta Ads leads, advertising spend and branch performance. Turn campaign exports into reports your team can act on.</p>
+          <div class="dt-landing-pills"><span>Lead tracking</span><span>Branch-wise insights</span><span>Spend analysis</span></div>
+          <div class="dt-landing-actions"><a class="primary" href="#report-form">Create a report&nbsp; →</a><a class="secondary" href="#campaign-insights">Configure reporting&nbsp; ↗</a></div>
         </div>
-        <div class="dt-landing-actions">
-          <a class="primary" href="#report-form">Create a report&nbsp; ↓</a>
-          <a class="secondary" href="#campaign-insights">Explore report settings</a>
+        <div class="dt-visual" aria-hidden="true">
+          <div class="dt-visual-panel">
+            <div class="dt-visual-top"><span>Campaign overview</span><span class="dt-live-dot">Reporting workspace</span></div>
+            <div class="dt-bars"><i style="--h:34%"></i><i style="--h:48%"></i><i style="--h:42%"></i><i style="--h:64%"></i><i style="--h:57%"></i><i style="--h:76%"></i><i style="--h:88%"></i><i style="--h:96%"></i></div>
+            <div class="dt-visual-foot"><span>Meta Ads data</span><strong>Leads · Spend · Branches</strong></div>
+          </div>
         </div>
       </section>
     </div>
     <section class="dt-section-intro" id="report-form">
-      <div class="dt-section-kicker">Your reporting workspace</div>
-      <h2 class="dt-section-title">From raw ad data to actionable insight.</h2>
-      <p class="dt-section-copy">Upload your Meta Ads export to build a structured view of leads and campaign costs. Configure the report date, currency rate and campaign mapping below.</p>
+      <div class="dt-section-kicker">Reporting workspace</div>
+      <h2 class="dt-section-title">From campaign export to team-ready report.</h2>
+      <p class="dt-section-copy">Upload your Meta Ads Excel export, set the reporting date and currency rate, then apply campaign mapping to organize results by branch, staff member and course.</p>
     </section>
     <section class="dt-feature-grid" aria-label="Reporting capabilities">
-      <article class="dt-feature"><div class="dt-feature-mark">↗</div><h3 class="dt-feature-title">Campaign performance</h3><p class="dt-feature-copy">Review lead volume and advertising costs to understand which campaigns are contributing results.</p></article>
-      <article class="dt-feature"><div class="dt-feature-mark">▦</div><h3 class="dt-feature-title">Team & branch visibility</h3><p class="dt-feature-copy">Organize results by branch, staff member and course using your campaign mapping.</p></article>
-      <article class="dt-feature"><div class="dt-feature-mark">◎</div><h3 class="dt-feature-title">Spend intelligence</h3><p class="dt-feature-copy">Keep currency conversion and campaign costs together for a clearer reporting view.</p></article>
+      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">↗</div><h3 class="dt-feature-title">Campaign performance</h3></div><p class="dt-feature-copy">See lead volume alongside advertising costs. Identify which campaigns are delivering results and which need attention.</p></article>
+      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">▦</div><h3 class="dt-feature-title">Team & branch visibility</h3></div><p class="dt-feature-copy">Connect campaign names to staff, courses and branches for a consistent view across your locations and team.</p></article>
+      <article class="dt-feature"><div class="dt-feature-head"><div class="dt-feature-mark">◎</div><h3 class="dt-feature-title">Spend intelligence</h3></div><p class="dt-feature-copy">Keep USD-to-KWD conversion and campaign costs together so reporting stays clear and comparable.</p></article>
     </section>
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
@@ -3180,12 +3166,12 @@ def main():
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
     st.markdown('<div id="campaign-insights"></div>', unsafe_allow_html=True)
-    with st.expander("⚙️ Report settings · date, exchange rate and campaign mapping", expanded=False):
+    with st.expander("⚙  REPORT SETUP     ·     Date  /  Currency  /  Campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
         settings_left, settings_right = st.columns(2, gap="large")
         with settings_left:
-            st.subheader("USD → KWD exchange rate")
+            st.subheader("Currency conversion · USD to KWD")
             use_manual_rate = st.checkbox(
                 "Use manual fallback rate instead",
                 value=False,
@@ -3238,7 +3224,7 @@ def main():
         )
     if uploaded is None:
         st.info("Upload today's Meta Ads Excel export to begin. Add yesterday's report for a day-over-day comparison.")
-        with st.expander("Campaign mapping preview", expanded=False):
+        with st.expander("Campaign mapping preview · Review assigned teams and courses", expanded=False):
             st.dataframe(mappings, use_container_width=True, hide_index=True)
         st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
