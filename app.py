@@ -2016,7 +2016,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
 
 
 def inject_christmas_snow():
-    """Render falling snow and the Santa peek animation without any music controls."""
+    """Render falling snow and the Santa peek animation with optional Christmas music and a silent Santa animation."""
     import random
     random.seed(24)
     flakes = []
@@ -2032,6 +2032,50 @@ def inject_christmas_snow():
             f'--fall-duration:{duration}s;--fall-delay:{delay}s;--snow-drift:{drift}px;'
             f'--snow-opacity:{opacity:.2f};"></span>'
         )
+
+    # Compact Christmas music player. Music starts only when the user presses Play.
+    components.html(r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
+.player{position:fixed;top:0;right:0;display:flex;gap:6px;align-items:center;justify-content:flex-end;width:100%;}
+select,button{height:36px;border:1px solid rgba(205,220,245,.30);border-radius:999px;
+ background:rgba(28,35,48,.97);color:#edf4ff;font-size:11px;font-weight:650;padding:0 11px;
+ box-shadow:0 5px 20px rgba(0,0,0,.24);outline:none}
+select{width:145px;cursor:pointer}button{cursor:pointer;white-space:nowrap}
+button:hover,select:hover{background:rgba(48,59,78,.99)}
+</style></head><body>
+<div class="player"><select id="song" aria-label="Choose Christmas song">
+<option value="jingle">Jingle Bells</option><option value="wewish">We Wish You a Merry Christmas</option>
+<option value="deck">Deck the Halls</option><option value="silent">Silent Night</option>
+</select><button id="soundToggle" type="button">▶ Play</button></div>
+<script>
+(()=>{
+ const frame=window.frameElement;
+ if(frame){frame.style.position='fixed';frame.style.top='18px';frame.style.right='22px';frame.style.width='310px';frame.style.height='44px';frame.style.zIndex='1000000';frame.style.border='0';frame.style.background='transparent';frame.style.overflow='hidden';}
+ const btn=document.getElementById('soundToggle'),picker=document.getElementById('song');
+ let ctx=null,master=null,on=false,runId=0;
+ const N={C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880};
+ const tunes={
+  jingle:[[N.E5,1],[N.E5,1],[N.E5,2],[N.E5,1],[N.E5,1],[N.E5,2],[N.E5,1],[N.G5,1],[N.C5,1.5],[N.D5,.5],[N.E5,3],[N.F5,1],[N.F5,1],[N.F5,1],[N.F5,1],[N.F5,1],[N.E5,1],[N.E5,1],[N.E5,.5],[N.E5,.5],[N.D5,1],[N.D5,1],[N.E5,1],[N.D5,2],[N.G5,2]],
+  wewish:[[N.C4,1],[N.F4,1],[N.F4,1],[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,2],[N.D4,1],[N.G4,1],[N.G4,1],[N.A4,1],[N.G4,1],[N.F4,1],[N.E4,2],[N.E4,1],[N.A4,1],[N.A4,1],[N.B4,1],[N.A4,1],[N.G4,1],[N.F4,2]],
+  deck:[[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,1],[N.C4,1],[N.D4,1],[N.E4,1],[N.C4,1],[N.D4,1],[N.E4,1],[N.F4,1],[N.D4,1],[N.E4,1],[N.F4,1],[N.G4,1],[N.A4,1],[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,1],[N.C4,2]],
+  silent:[[N.G4,2],[N.A4,2],[N.G4,1],[N.E4,2],[N.G4,2],[N.A4,2],[N.G4,1],[N.E4,2],[N.D5,2],[N.D5,1],[N.B4,2],[N.C5,2],[N.C5,1],[N.G4,2]]
+ };
+ function note(freq,when,duration){
+  const osc=ctx.createOscillator(),gain=ctx.createGain(),harm=ctx.createOscillator(),hg=ctx.createGain();
+  osc.type='sine';osc.frequency.setValueAtTime(freq,when);harm.type='sine';harm.frequency.setValueAtTime(freq*2.01,when);
+  gain.gain.setValueAtTime(.0001,when);gain.gain.exponentialRampToValueAtTime(.105,when+.02);gain.gain.exponentialRampToValueAtTime(.0001,when+duration*.88);
+  hg.gain.setValueAtTime(.0001,when);hg.gain.exponentialRampToValueAtTime(.027,when+.015);hg.gain.exponentialRampToValueAtTime(.0001,when+Math.min(duration*.65,.4));
+  osc.connect(gain);gain.connect(master);harm.connect(hg);hg.connect(master);osc.start(when);harm.start(when);osc.stop(when+duration);harm.stop(when+Math.min(duration,.45));
+ }
+ function phrase(){let t=ctx.currentTime+.06;const beat=.31;for(const [freq,b] of tunes[picker.value]){const d=b*beat;note(freq,t,d);t+=d+.025;}return t-ctx.currentTime;}
+ async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();master=ctx.createGain();master.gain.value=.48;master.connect(ctx.destination);on=true;const id=++runId;
+  const play=()=>{if(!on||id!==runId)return;const duration=phrase();setTimeout(play,(duration+.55)*1000);};play();btn.textContent='Ⅱ Stop';}
+ function stop(){on=false;runId++;if(master&&ctx)master.gain.setTargetAtTime(0,ctx.currentTime,.035);btn.textContent='▶ Play';}
+ btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='Audio unavailable';}}});
+ picker.addEventListener('change',()=>{if(on){stop();start();}});
+})();
+</script></body></html>''', height=1, scrolling=False)
 
     # Use a transparent full-viewport component iframe so HTML is rendered,
     # never displayed as literal text in the Streamlit page.
@@ -2052,7 +2096,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
     components.html(snow_html, height=1, scrolling=False)
 
     # Santa uses the supplied transparent 3D reference image and peeks from a random
-    # vertical edge position every 30 seconds, with a spoken Santa-style greeting.
+    # vertical edge position every 30 seconds, silently, without voice or sound effects.
     components.html(r'''<!doctype html><html><head><style>
       html,body{margin:0;background:transparent;overflow:hidden}
       #santa{position:fixed;left:0;top:0;width:min(14vw,132px);height:auto;
