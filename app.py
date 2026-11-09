@@ -2202,11 +2202,23 @@ def require_login():
     # dim overlay, theme cycling, or interaction gate before the form appears.
     st.markdown("""
     <style>
-      [data-testid="stAppViewContainer"] { background: #101214 !important; }
+      [data-testid="stAppViewContainer"] {
+        background: radial-gradient(ellipse at 50% 38%, rgba(75,88,105,.16), transparent 48%), #101214 !important;
+      }
       [data-testid="stHeader"] { background: transparent !important; }
       .block-container { max-width: 1120px; padding-top: 3rem; }
+      @keyframes dtLoginEnter { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes dtAmbient { 0%,100% { opacity:.55; } 50% { opacity:.9; } }
       .dt-auth-shell { max-width: 440px; margin: 3vh auto 0; padding: 30px;
-        background: #191c20; border: 1px solid #30353b; border-radius: 16px; }
+        background: rgba(25,28,32,.88); backdrop-filter: blur(18px);
+        border: 1px solid #30353b; border-radius: 16px;
+        box-shadow: 0 18px 55px rgba(0,0,0,.24);
+        animation: dtLoginEnter .75s cubic-bezier(.2,.7,.2,1) both; }
+      .dt-auth-shell:after { content:""; display:block; height:1px; margin-top:18px;
+        background:linear-gradient(90deg,transparent,rgba(220,226,235,.22),transparent);
+        animation:dtAmbient 4s ease-in-out infinite; }
+      [data-testid="stTabs"] { animation: dtLoginEnter .85s .12s both; }
+      [data-testid="stForm"] { animation: dtLoginEnter .9s .2s both; }
       .dt-auth-kicker { color: #a3aab4; font-size: 12px; letter-spacing: .12em;
         text-transform: uppercase; margin-bottom: 8px; }
       .dt-auth-title { color: #f5f6f7; font-size: 28px; font-weight: 650;
@@ -2217,14 +2229,19 @@ def require_login():
       [data-testid="stTextInput"] label { color: #d7dbe0; }
       [data-testid="stTextInput"] input { background: #111417; border: 1px solid #39414a;
         border-radius: 9px; color: #f5f6f7; min-height: 44px; }
-      [data-testid="stTextInput"] input:focus { border-color: #8b95a3;
-        box-shadow: 0 0 0 1px #8b95a3; }
+      [data-testid="stTextInput"] input { transition: border-color .22s ease, box-shadow .22s ease, background .22s ease; }
+      [data-testid="stTextInput"] input:focus { border-color: #aeb8c5;
+        box-shadow: 0 0 0 3px rgba(174,184,197,.12); background:#15191e; }
       [data-testid="stForm"] button[kind="primary"],
       [data-testid="stForm"] button[data-testid="stFormSubmitButton"] {
         background: #f1f3f5 !important; color: #17191c !important;
         border: 1px solid #f1f3f5 !important; border-radius: 9px;
-        min-height: 44px; font-weight: 600; box-shadow: none !important; }
-      [data-testid="stForm"] button[kind="primary"]:hover { background: #dfe3e7 !important; }
+        min-height: 44px; font-weight: 600; box-shadow: none !important;
+        transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+      [data-testid="stForm"] button[kind="primary"]:hover { background: #dfe3e7 !important;
+        transform:translateY(-1px); box-shadow:0 7px 18px rgba(0,0,0,.18) !important; }
+      [data-testid="stTabs"] button { transition: color .2s ease, background .2s ease; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
       [data-testid="stAlert"] { border-radius: 10px; }
       @media (max-width: 640px) { .block-container { padding: 1.2rem 1rem; }
         .dt-auth-shell { margin-top: 1rem; padding: 22px; } }
