@@ -3105,6 +3105,45 @@ def main():
       @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; }  }
       @media(max-width:520px) { .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
       @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i { animation:none !important; } }
+
+      /* Apple-inspired minimal refinement: precise grid, quiet surfaces, restrained motion. */
+      :root { --linear-bg:#0b0c0f; --linear-panel:#15171b; --linear-line:rgba(255,255,255,.09); --linear-text:#f5f5f7; --linear-muted:#a1a1a6; --linear-cyan:#a8b0bb; --linear-violet:#a8b0bb; }
+      .stApp { background:#0b0c0f !important; }
+      .stApp [data-testid="stMainBlockContainer"] { max-width:1320px !important; padding-top:2rem !important; padding-bottom:3rem !important; }
+      .dt-landing-wrap { width:100%; margin:0 0 24px !important; }
+      .dt-landing { width:100%; min-height:290px; grid-template-columns:minmax(0,1.1fr) minmax(250px,.9fr); gap:36px; padding:clamp(28px,3.6vw,46px); border:1px solid rgba(255,255,255,.09); border-radius:20px; background:#15171b; box-shadow:0 1px 0 rgba(255,255,255,.035) inset; }
+      .dt-landing:before,.dt-landing:after { display:none; }
+      .dt-eyebrow { padding:0; border:0; border-radius:0; background:none; color:#a1a1a6; font-size:.7rem; letter-spacing:.13em; }
+      .dt-eyebrow:before { width:5px; height:5px; background:#a1a1a6; box-shadow:none; }
+      .dt-landing-title { max-width:620px; margin:17px 0 13px; color:#f5f5f7; font-size:clamp(2rem,3.6vw,3rem); line-height:1.08; letter-spacing:-.045em; font-weight:700; }
+      .dt-landing-title span { color:#c7cbd1; background:none; -webkit-text-fill-color:currentColor; }
+      .dt-landing-copy { max-width:560px; margin:0 0 24px; color:#a1a1a6; font-size:.98rem; line-height:1.65; }
+      .dt-landing-actions { gap:10px; }
+      .dt-landing-actions a { min-height:43px; padding:0 17px; border-radius:11px; font-size:.86rem; font-weight:620; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
+      .dt-landing-actions .primary { color:#111214 !important; background:#f5f5f7; border:1px solid #f5f5f7; box-shadow:none; }
+      .dt-landing-actions .primary:hover { background:#dedee2; box-shadow:none; transform:translateY(-1px); }
+      .dt-landing-actions .secondary { color:#e5e5e7 !important; background:#202226; border:1px solid rgba(255,255,255,.11); }
+      .dt-landing-actions .secondary:hover { background:#292b30; border-color:rgba(255,255,255,.2); transform:translateY(-1px); }
+      .dt-visual { min-height:210px; }
+      .dt-visual-panel { width:min(100%,390px); padding:18px; border:1px solid rgba(255,255,255,.10); border-radius:16px; background:#1b1e23; box-shadow:0 16px 36px rgba(0,0,0,.20); transform:none; animation:none; }
+      .dt-visual-top { color:#dedee2; margin-bottom:18px; }
+      .dt-live-dot { color:#a1a1a6; }
+      .dt-live-dot:before { background:#a1a1a6; box-shadow:none; }
+      .dt-bars { height:108px; gap:9px; background:repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(255,255,255,.045) 27px); }
+      .dt-bars i,.dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#b9bec7,#737983); box-shadow:none; animation:none; }
+      .dt-visual-foot { color:#92949a; }
+      .dt-visual-foot strong { color:#d9dadd; }
+      [data-testid="stExpander"] { margin:0 0 22px !important; }
+      [data-testid="stExpander"] details { border:1px solid rgba(255,255,255,.10) !important; border-radius:14px !important; overflow:hidden; background:#15171b !important; }
+      [data-testid="stExpander"] details > summary { min-height:58px !important; padding:0 18px !important; background:#191b20 !important; color:#f0f0f2 !important; font-weight:620 !important; }
+      [data-testid="stExpander"] details > summary:hover { background:#202227 !important; }
+      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { padding:20px !important; background:#121418 !important; }
+      .stApp [data-testid="stHorizontalBlock"] { gap:18px !important; align-items:center !important; }
+      .stButton button,[data-testid="stDownloadButton"] button { min-height:42px; border-radius:10px !important; border:1px solid rgba(255,255,255,.12) !important; background:#202227 !important; color:#ededf0 !important; box-shadow:none !important; }
+      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { background:#2a2c32 !important; border-color:rgba(255,255,255,.23) !important; transform:translateY(-1px) !important; }
+      [data-testid="stCaptionContainer"] { color:#92949a !important; }
+      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; gap:18px; min-height:unset; } .dt-visual { min-height:175px; } .dt-visual-panel { transform:none; } }
+      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:155px; } }
     </style>
     <div class="dt-landing-wrap">
       <section class="dt-landing">
@@ -3152,7 +3191,7 @@ def main():
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
     st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
-    with st.expander("⚙  REPORT SETUP     ·     Date  /  Currency  /  Campaign mapping", expanded=False):
+    with st.expander("Report settings     ·     Date, currency and campaign mapping", expanded=False):
         date_value = st.date_input("Report date", value=datetime.today().date())
 
         settings_left, settings_right = st.columns(2, gap="large")
