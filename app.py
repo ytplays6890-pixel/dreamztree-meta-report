@@ -2059,6 +2059,58 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
     st.markdown("<style>" + css + "</style>" + markup, unsafe_allow_html=True)
 
 
+
+
+def inject_diwali_theme():
+    """Elegant, temporary Diwali accents for the login screen and dashboard."""
+    st.markdown(r'''
+    <style>
+      :root { --dt-diwali-gold:#e5b65b; --dt-diwali-glow:rgba(229,182,91,.16); }
+      .stApp {
+        background-image:
+          radial-gradient(ellipse at 92% 7%, rgba(229,182,91,.075), transparent 26%),
+          radial-gradient(ellipse at 5% 92%, rgba(192,126,53,.055), transparent 30%),
+          radial-gradient(ellipse at 12% 8%,rgba(139,92,246,.045),transparent 35%),
+          linear-gradient(145deg,#17191d,#171820 62%,#1b191b) !important;
+      }
+      .dt-diwali-greeting {
+        position:fixed; top:84px; right:24px; z-index:999; pointer-events:none;
+        padding:8px 13px; border:1px solid rgba(229,182,91,.32);
+        border-radius:999px; color:#f1d69d;
+        background:rgba(37,31,25,.82); backdrop-filter:blur(12px);
+        box-shadow:0 5px 24px rgba(0,0,0,.18),0 0 22px var(--dt-diwali-glow);
+        font:600 12px/1.2 sans-serif; letter-spacing:.035em;
+        animation:dt-diwali-enter .8s ease-out both;
+      }
+      .dt-diwali-diya {
+        position:fixed; right:25px; bottom:24px; z-index:998; pointer-events:none;
+        font-size:30px; line-height:1; filter:drop-shadow(0 0 10px rgba(244,177,75,.48));
+        animation:dt-diya-float 3.8s ease-in-out infinite;
+      }
+      .dt-diwali-spark {
+        position:fixed; right:67px; bottom:52px; z-index:998; pointer-events:none;
+        color:#e9c276; font-size:13px; text-shadow:0 0 12px rgba(240,190,100,.8);
+        animation:dt-sparkle 2.4s ease-in-out infinite;
+      }
+      [data-testid="stMetric"] {
+        border-color:rgba(229,182,91,.13);
+      }
+      .stButton>button:hover,.stDownloadButton>button:hover {
+        border-color:rgba(229,182,91,.48) !important;
+        box-shadow:0 5px 18px rgba(229,182,91,.09) !important;
+      }
+      @keyframes dt-diwali-enter { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+      @keyframes dt-diya-float { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-6px) rotate(2deg)} }
+      @keyframes dt-sparkle { 0%,100%{opacity:.25;transform:scale(.8)} 50%{opacity:1;transform:scale(1.25)} }
+      @media(max-width:700px) { .dt-diwali-greeting{top:70px;right:12px;font-size:10px;padding:7px 9px}.dt-diwali-diya{right:14px;bottom:14px;font-size:25px} }
+      @media(prefers-reduced-motion:reduce) { .dt-diwali-greeting,.dt-diwali-diya,.dt-diwali-spark{animation:none!important} }
+    </style>
+    <div class="dt-diwali-greeting">🪔 &nbsp; Happy Diwali</div>
+    <div class="dt-diwali-diya" aria-hidden="true">🪔</div>
+    <div class="dt-diwali-spark" aria-hidden="true">✦</div>
+    ''', unsafe_allow_html=True)
+
+
 def require_login():
     """Use Supabase Auth for colleague registration and sign-in.
 
@@ -2068,6 +2120,7 @@ def require_login():
     if st.session_state.get("authenticated"):
         return
 
+    inject_diwali_theme()
     client = get_supabase_client()
     if _restore_auth_cookie(client):
         return
@@ -2972,6 +3025,7 @@ def inject_performance_patch():
 
 def main():
     require_login()
+    inject_diwali_theme()
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
