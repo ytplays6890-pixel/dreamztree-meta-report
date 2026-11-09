@@ -2202,100 +2202,153 @@ def require_login():
     st.markdown("""
     <style>
       [data-testid="stAppViewContainer"] {
-        background: #0f1114 !important;
+        background:
+          radial-gradient(ellipse at 50% 12%, rgba(83,101,133,.16), transparent 42%),
+          radial-gradient(ellipse at 8% 78%, rgba(91,83,133,.10), transparent 36%),
+          #080b11 !important;
       }
       [data-testid="stHeader"] { background: transparent !important; }
-      /* Keep the header, tabs and form on one shared, centred grid. */
+
+      /* One unified glass login card, matching the supplied reference. */
       .main .block-container {
-        width: min(100% - 32px, 520px) !important;
-        max-width: 520px !important;
-        margin: 0 auto !important;
-        padding: 8vh 0 3rem !important;
+        box-sizing: border-box !important;
+        width: min(100% - 32px, 792px) !important;
+        max-width: 792px !important;
+        margin: 8vh auto 4rem !important;
+        padding: 54px 56px 48px !important;
+        border: 1px solid rgba(177,190,211,.34) !important;
+        border-radius: 38px !important;
+        background:
+          radial-gradient(ellipse at 12% 5%, rgba(147,166,194,.12), transparent 42%),
+          linear-gradient(145deg, rgba(34,40,51,.90), rgba(17,21,29,.94) 58%, rgba(24,28,38,.91)) !important;
+        box-shadow:
+          0 28px 90px rgba(0,0,0,.48),
+          inset 0 1px 0 rgba(255,255,255,.10),
+          inset 0 -1px 0 rgba(255,255,255,.025) !important;
+        backdrop-filter: blur(28px) saturate(135%);
+        -webkit-backdrop-filter: blur(28px) saturate(135%);
+        animation: dtLoginEnter .9s cubic-bezier(.2,.7,.2,1) both;
       }
       @keyframes dtLoginEnter {
-        from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
-        to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+        from { opacity: 0; transform: translateY(18px) scale(.985); filter: blur(5px); }
+        to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
       }
       @keyframes dtAmbient {
-        0%, 100% { opacity: .25; transform: translate3d(-2%,0,0); }
-        50%      { opacity: .55; transform: translate3d(2%,0,0); }
+        0%, 100% { opacity: .28; transform: translate3d(-1.5%,0,0); }
+        50%      { opacity: .52; transform: translate3d(1.5%,0,0); }
       }
       [data-testid="stAppViewContainer"]::before {
-        content: ""; position: fixed; inset: -20%; pointer-events: none; z-index: 0;
-        background: radial-gradient(ellipse at 50% 35%, rgba(150,160,175,.10), transparent 48%);
-        animation: dtAmbient 9s ease-in-out infinite;
+        content: ""; position: fixed; inset: -18%; pointer-events: none; z-index: 0;
+        background: radial-gradient(ellipse at 50% 48%, rgba(116,132,164,.10), transparent 48%);
+        animation: dtAmbient 12s ease-in-out infinite;
       }
       .main .block-container > div { position: relative; z-index: 1; }
+
       .dt-auth-shell {
-        box-sizing: border-box; width: 100%; max-width: 520px;
-        margin: 0 auto 18px; padding: 30px 30px 24px;
-        background: rgba(27,30,35,.88); backdrop-filter: blur(20px);
-        border: 1px solid #30353c; border-radius: 18px;
-        box-shadow: 0 18px 50px rgba(0,0,0,.22);
+        box-sizing: border-box; width: 100%; max-width: none;
+        margin: 0 auto 38px; padding: 8px 0 0;
+        background: transparent !important; border: 0 !important;
+        box-shadow: none !important; text-align: center;
         animation: dtLoginEnter .85s cubic-bezier(.2,.7,.2,1) both;
       }
       .dt-auth-title {
-        color: #f5f6f7; font-size: 30px; line-height: 1.15;
-        font-weight: 650; letter-spacing: -.045em; margin: 0 0 8px;
+        color: #f7f8fb; font-size: clamp(36px, 4vw, 48px); line-height: 1.12;
+        font-weight: 700; letter-spacing: -.045em; margin: 0 0 12px;
       }
-      .dt-auth-subtitle { color: #a4aab3; font-size: 14px; margin: 0; }
+      .dt-auth-subtitle {
+        color: #b1b8c5; font-size: 18px; line-height: 1.5; margin: 0;
+      }
+
       [data-testid="stTabs"] {
         width: 100%; margin: 0 auto !important;
-        animation: dtLoginEnter .9s .10s both;
+        animation: dtLoginEnter .9s .08s both;
       }
       [data-testid="stTabs"] [data-baseweb="tab-list"] {
-        border-bottom: 1px solid #30353c; gap: 22px;
+        display: flex !important; width: 100%;
+        padding: 4px !important; gap: 4px !important;
+        border: 1px solid rgba(255,255,255,.075) !important;
+        border-radius: 22px !important;
+        background: rgba(8,11,17,.26) !important;
       }
-      [data-testid="stTabs"] button {
-        color: #aeb4bd !important; transition: color .2s ease, opacity .2s ease;
+      [data-testid="stTabs"] [data-baseweb="tab"] {
+        flex: 1 1 50%; justify-content: center;
+        min-height: 54px; border-radius: 18px !important;
+        color: #e4e7ed !important;
+        transition: background .25s ease, box-shadow .25s ease, color .25s ease;
+      }
+      [data-testid="stTabs"] [data-baseweb="tab"] p {
+        font-size: 16px !important; font-weight: 600 !important;
       }
       [data-testid="stTabs"] button[aria-selected="true"] {
-        color: #f5f6f7 !important;
+        color: #fff !important;
+        background: linear-gradient(180deg, rgba(133,145,164,.48), rgba(92,103,122,.42)) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.17), 0 3px 12px rgba(0,0,0,.14) !important;
       }
+      [data-testid="stTabs"] [data-baseweb="tab-highlight"],
+      [data-testid="stTabs"] [data-baseweb="tab-border"] {
+        display: none !important;
+      }
+
       [data-testid="stForm"] {
         box-sizing: border-box; width: 100%;
-        margin: 14px auto 0; padding: 22px;
-        background: rgba(27,30,35,.72); backdrop-filter: blur(16px);
-        border: 1px solid #30353c !important; border-radius: 16px;
-        animation: dtLoginEnter 1s .18s both;
+        margin: 24px auto 0 !important; padding: 0 !important;
+        background: transparent !important; border: 0 !important;
+        box-shadow: none !important;
+        animation: dtLoginEnter 1s .15s both;
       }
-      [data-testid="stTextInput"] label { color: #d5d9df !important; }
+      [data-testid="stTextInput"] { margin-bottom: 18px; }
+      [data-testid="stTextInput"] label {
+        color: #f0f2f6 !important; font-size: 16px !important;
+        font-weight: 500 !important; margin-bottom: 8px !important;
+      }
       [data-testid="stTextInput"] input {
-        background: #14171b !important; border: 1px solid #3a414a !important;
-        border-radius: 10px !important; color: #f5f6f7 !important; min-height: 46px;
+        box-sizing: border-box;
+        background: rgba(29,34,44,.78) !important;
+        border: 1px solid rgba(157,171,194,.27) !important;
+        border-radius: 17px !important; color: #f7f8fb !important;
+        min-height: 64px !important; padding: 0 18px !important;
+        font-size: 16px !important;
         transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
       }
+      [data-testid="stTextInput"] input::placeholder { color: #929baa !important; }
       [data-testid="stTextInput"] input:focus {
-        border-color: #aeb8c5 !important;
-        box-shadow: 0 0 0 3px rgba(174,184,197,.12) !important;
-        background: #181c21 !important;
+        border-color: rgba(206,218,237,.72) !important;
+        box-shadow: 0 0 0 3px rgba(174,190,216,.12), 0 8px 24px rgba(0,0,0,.12) !important;
+        background: rgba(37,43,55,.94) !important;
       }
-      /* Override Streamlit's theme primary red on the actual submit control. */
       [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
       [data-testid="stForm"] button[kind="primary"] {
-        background: #e8eaed !important; color: #17191c !important;
-        border: 1px solid #e8eaed !important; border-radius: 10px !important;
-        min-height: 46px; font-weight: 600 !important; box-shadow: none !important;
-        transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+        background: linear-gradient(180deg, #ffffff, #e9edf3) !important;
+        color: #11151c !important; border: 1px solid rgba(255,255,255,.8) !important;
+        border-radius: 17px !important; min-height: 66px !important;
+        font-size: 18px !important; font-weight: 700 !important;
+        box-shadow: 0 8px 22px rgba(0,0,0,.18), inset 0 1px 0 #fff !important;
+        transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
       }
       [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
       [data-testid="stForm"] button[kind="primary"]:hover {
-        background: #fff !important; transform: translateY(-1px);
-        box-shadow: 0 8px 20px rgba(0,0,0,.2) !important;
+        filter: brightness(1.04); transform: translateY(-2px);
+        box-shadow: 0 13px 28px rgba(0,0,0,.25), inset 0 1px 0 #fff !important;
       }
-      [data-testid="stAlert"] { border-radius: 10px; }
+      [data-testid="stAlert"] { border-radius: 14px; }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation: none !important; transition: none !important; }
       }
       @media (max-width: 640px) {
-        .main .block-container { width: calc(100% - 28px) !important; padding-top: 5vh !important; }
-        .dt-auth-shell { padding: 24px 22px 20px; }
-        [data-testid="stForm"] { padding: 18px; }
+        .main .block-container {
+          width: calc(100% - 24px) !important; margin: 4vh auto 2rem !important;
+          padding: 32px 22px 28px !important; border-radius: 26px !important;
+        }
+        .dt-auth-shell { margin-bottom: 28px; }
+        .dt-auth-subtitle { font-size: 15px; }
+        [data-testid="stTabs"] [data-baseweb="tab"] { min-height: 48px; }
+        [data-testid="stTextInput"] input { min-height: 56px !important; }
+        [data-testid="stForm"] [data-testid="stFormSubmitButton"] button { min-height: 58px !important; }
       }
     </style>
     <div class="dt-auth-shell">
       <div class="dt-auth-title">Welcome back.</div>
-      <div class="dt-auth-subtitle">Sign in to continue to your workspace.</div>
+      <div class="dt-auth-subtitle">Sign in to access your campaign reports.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -2303,8 +2356,8 @@ def require_login():
 
     with sign_in_tab:
         with st.form("supabase_signin_form", clear_on_submit=False):
-            email_or_admin = st.text_input("Email address Or Username")
-            password = st.text_input("Password", type="password")
+            email_or_admin = st.text_input("Email address or username", placeholder="Enter your email or username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
             signin_clicked = st.form_submit_button(
                 "Sign in", type="primary", use_container_width=True
             )
