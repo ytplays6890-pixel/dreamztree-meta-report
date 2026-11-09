@@ -2210,11 +2210,16 @@ def require_login():
       [data-testid="stHeader"] { background: transparent !important; }
 
       /* One unified glass login card, matching the supplied reference. */
-      .main .block-container {
+      /* Streamlit current and legacy main content wrappers */
+      .main .block-container,
+      [data-testid="stMainBlockContainer"],
+      .stMainBlockContainer {
         box-sizing: border-box !important;
         width: min(100% - 32px, 792px) !important;
         max-width: 792px !important;
+        min-width: 0 !important;
         margin: 8vh auto 4rem !important;
+        position: relative !important;
         padding: 54px 56px 48px !important;
         border: 1px solid rgba(177,190,211,.34) !important;
         border-radius: 38px !important;
@@ -2335,8 +2340,10 @@ def require_login():
         *, *::before, *::after { animation: none !important; transition: none !important; }
       }
       @media (max-width: 640px) {
-        .main .block-container {
-          width: calc(100% - 24px) !important; margin: 4vh auto 2rem !important;
+         .main .block-container,
+        [data-testid="stMainBlockContainer"],
+        .stMainBlockContainer {
+          width: calc(100% - 24px) !important; max-width: 792px !important; margin: 4vh auto 2rem !important;
           padding: 32px 22px 28px !important; border-radius: 26px !important;
         }
         .dt-auth-shell { margin-bottom: 28px; }
