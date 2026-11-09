@@ -598,7 +598,7 @@ def inject_premium_theme():
     [data-testid="stHeader"]{background:rgba(20,22,25,.9);border-bottom:1px solid var(--dt-border);backdrop-filter:blur(12px)}
     [data-testid="stSidebar"]{background:var(--dt-sidebar);border-right:1px solid var(--dt-border);transition:width var(--dt-slow) ease}
     [data-testid="stSidebar"] *{color:var(--dt-text)}
-    .block-container{max-width:1460px;padding-top:1.5rem;padding-bottom:2.5rem}
+    .block-container{max-width:1460px;padding-top:.55rem;padding-bottom:2.5rem}
     h1,h2,h3,h4{color:var(--dt-text);letter-spacing:-.025em;font-weight:650}
     p,label,[data-testid="stMarkdownContainer"]{color:var(--dt-text)}
     [data-testid="stCaptionContainer"],.section-note{color:var(--dt-muted)}
@@ -3034,8 +3034,9 @@ def main():
             st.query_params["page"] = "game"; st.rerun()
         st.markdown('<div class="dt-side-label">Account</div><div class="dt-side-foot">● &nbsp; Secure session<br><span style="color:#a69bb6">Dreamztree reporting workspace</span></div>', unsafe_allow_html=True)
 
-    # Compact dashboard actions; decorative brand/hero header removed as requested.
-    page_title_col, game_col, chat_col, signout_col = st.columns([4.2, 1.1, 1.1, .9], vertical_alignment="center")
+    # Compact utility row: actions and editable reporting date share one line,
+    # eliminating the large empty area left by the removed hero/header.
+    game_col, chat_col, signout_col, date_col = st.columns([1.0,  1.0, .82, 1.35], vertical_alignment="center")
     with game_col:
         if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
             st.query_params["page"] = "game"; st.rerun()
@@ -3054,8 +3055,7 @@ def main():
             st.session_state.pop("authenticated_user", None); st.session_state.pop("auth_method", None)
             st.session_state.pop("supabase_access_token", None); st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
-    date_spacer, date_right = st.columns([4.5, 1.35], vertical_alignment="center")
-    with date_right:
+    with date_col:
         st.markdown('<div class="dt-date-shell"><div class="dt-date-caption">Reporting date · Editable</div>', unsafe_allow_html=True)
         date_value = st.date_input("Reporting date", value=datetime.today().date(), key="reporting_date_selector", label_visibility="collapsed", help="Choose the date used in report headings and downloaded files.")
         st.markdown('</div>', unsafe_allow_html=True)
