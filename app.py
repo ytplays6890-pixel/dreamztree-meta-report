@@ -2990,15 +2990,10 @@ def inject_performance_patch():
 
 def main():
     require_login()
-    just_logged_in = st.session_state.pop("login_just_succeeded", False)
+    st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
-    if just_logged_in:
-        render_post_login_transition()
     inject_performance_patch()
     page = st.query_params.get("page", "dashboard")
-    # Keep the Game Zone invitation/notification active on every non-game page.
-    # The fragment itself suppresses the popup while the Game Zone is open.
-    _game_zone_popup()
     if page == "game":
         if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
             st.query_params["page"] = "dashboard"
@@ -3011,44 +3006,91 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    # Dreamztree landing page with a clean hero; global particle animation is applied in inject_premium_theme().
+    # Premium, compact landing experience. Keep report functionality below unchanged.
     st.markdown("""
     <style>
-      .dt-landing { position:relative; overflow:hidden; margin:10px 0 22px; padding:30px clamp(20px,4vw,46px) 34px;
-        border-radius:28px; background:linear-gradient(125deg,rgba(124,58,237,.25),rgba(37,99,235,.18) 48%,rgba(13,148,136,.20));
-        border:1px solid rgba(167,139,250,.38); box-shadow:0 22px 70px rgba(0,0,0,.22); }
-      .dt-landing:before {content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-        background:radial-gradient(ellipse at 12% 10%,rgba(236,72,153,.16),transparent 42%),radial-gradient(ellipse at 88% 85%,rgba(94,234,212,.12),transparent 42%);}
-      .dt-brand-row {display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:54px;position:relative;}
-      .dt-brand {display:flex;align-items:center;gap:14px;color:#fff;font-size:clamp(1.25rem,2.4vw,2rem);font-weight:800;letter-spacing:-.04em;}
-      .dt-brand-tag {font-size:clamp(.75rem,1.6vw,1.25rem);color:#5eead4;letter-spacing:.035em;text-align:right;}
-      .dt-landing-kicker {text-align:center;color:#77f3df;font-size:clamp(.8rem,1.4vw,1.1rem);font-weight:800;margin-bottom:24px;position:relative;}
-      .dt-landing-title {text-align:center;color:#f8f9fc;font-size:clamp(1.6rem,3.2vw,2.8rem);line-height:1.16;font-weight:850;letter-spacing:-.035em;margin:0 auto 20px;max-width:1100px;position:relative;}
-      .dt-landing-copy {text-align:center;color:#d2def2;font-size:clamp(1rem,1.8vw,1.5rem);line-height:1.5;margin:0 auto 26px;position:relative;}
-      .dt-landing-actions {display:flex;justify-content:center;gap:14px;flex-wrap:wrap;position:relative;}
-      .dt-landing-actions a {display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border-radius:16px;text-decoration:none!important;font-size:clamp(1rem,1.7vw,1.35rem);transition:transform .22s ease,box-shadow .22s ease;}
-      .dt-landing-actions a:hover {transform:translateY(-3px);box-shadow:0 12px 32px rgba(96,165,250,.18);}
-      .dt-landing-actions .primary {background:linear-gradient(100deg,#ec4899,#8b5cf6 55%,#2563eb);color:#fff!important;border:1px solid rgba(255,255,255,.18);font-weight:750;}
-      .dt-landing-actions .secondary {background:rgba(15,23,42,.25);color:#f8f9fc!important;border:1px solid rgba(167,139,250,.55);}
-      .dt-report-intro {margin:0 0 22px;padding:26px 24px;border:1px solid rgba(167,139,250,.32);border-radius:24px;background:linear-gradient(120deg,rgba(99,102,241,.14),rgba(20,184,166,.08));}
-      .dt-report-intro h2 {margin:0 0 10px;color:#f8f9fc;font-size:clamp(1.3rem,2.2vw,2rem);}
-      .dt-report-intro p {margin:0;color:#d2def2;font-size:1rem;}
-      .dt-landing + div {scroll-margin-top:24px;}
-      @media(max-width:650px){.dt-landing{padding:22px 16px}.dt-brand-row{margin-bottom:38px;align-items:flex-start}.dt-brand{gap:10px}.dt-landing-actions a{width:100%;box-sizing:border-box}}
-      @media(prefers-reduced-motion:reduce){.dt-landing-actions a{animation:none;transition:none}}
+      .dt-landing-wrap { margin: 10px 0 18px; }
+      .dt-landing {
+        position: relative; overflow: hidden; isolation: isolate;
+        padding: clamp(30px,5vw,58px) clamp(22px,5vw,64px);
+        border-radius: 26px;
+        border: 1px solid rgba(148,163,184,.20);
+        background: linear-gradient(118deg,#171827 0%,#121d2c 55%,#102b2b 100%);
+        box-shadow: 0 24px 70px rgba(0,0,0,.24);
+      }
+      .dt-landing:before {
+        content:""; position:absolute; z-index:-1; width:440px; height:440px;
+        right:-150px; top:-260px; border-radius:50%;
+        background:radial-gradient(circle,rgba(45,212,191,.18),transparent 68%);
+      }
+      .dt-landing:after {
+        content:""; position:absolute; z-index:-1; width:420px; height:420px;
+        left:-210px; bottom:-300px; border-radius:50%;
+        background:radial-gradient(circle,rgba(139,92,246,.18),transparent 68%);
+      }
+      .dt-eyebrow { display:flex; align-items:center; justify-content:center; gap:9px;
+        color:#7ee7d4; font-size:.76rem; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+      .dt-eyebrow:before { content:""; width:22px; height:1px; background:#5eead4; opacity:.8; }
+      .dt-landing-title { max-width:900px; margin:20px auto 14px; text-align:center;
+        color:#f8fafc; font-size:clamp(2rem,4.2vw,3.55rem); line-height:1.08;
+        font-weight:820; letter-spacing:-.055em; }
+      .dt-landing-copy { max-width:690px; margin:0 auto 25px; text-align:center;
+        color:#b8c5d6; font-size:clamp(.98rem,1.5vw,1.15rem); line-height:1.7; }
+      .dt-landing-pills { display:flex; justify-content:center; flex-wrap:wrap; gap:9px; margin:0 auto 28px; }
+      .dt-landing-pills span { padding:7px 12px; border:1px solid rgba(148,163,184,.20);
+        border-radius:999px; background:rgba(15,23,42,.35); color:#d4deeb; font-size:.78rem; }
+      .dt-landing-actions { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
+      .dt-landing-actions a { display:inline-flex; align-items:center; justify-content:center;
+        min-height:46px; padding:0 21px; border-radius:12px; text-decoration:none!important;
+        font-size:.94rem; font-weight:700; transition:background .18s ease,border-color .18s ease; }
+      .dt-landing-actions .primary { color:#07151a!important; background:#72e0ce; border:1px solid #72e0ce; }
+      .dt-landing-actions .primary:hover { background:#9af0e2; border-color:#9af0e2; }
+      .dt-landing-actions .secondary { color:#e7edf5!important; background:rgba(255,255,255,.035); border:1px solid rgba(203,213,225,.28); }
+      .dt-landing-actions .secondary:hover { background:rgba(255,255,255,.09); }
+      .dt-section-intro { margin:0 0 18px; padding:22px 24px;
+        border:1px solid rgba(148,163,184,.16); border-radius:18px;
+        background:linear-gradient(110deg,rgba(30,41,59,.48),rgba(15,23,42,.28)); }
+      .dt-section-kicker { color:#78dcca; font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; margin-bottom:7px; }
+      .dt-section-title { color:#f1f5f9; font-size:clamp(1.25rem,2vw,1.65rem); font-weight:750; letter-spacing:-.03em; margin:0 0 6px; }
+      .dt-section-copy { color:#aab7c8; font-size:.94rem; line-height:1.6; margin:0; }
+      .dt-feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 24px; }
+      .dt-feature { padding:17px 18px; border:1px solid rgba(148,163,184,.15); border-radius:15px;
+        background:rgba(22,29,41,.62); min-height:112px; }
+      .dt-feature-mark { width:29px; height:29px; display:flex; align-items:center; justify-content:center;
+        border-radius:9px; background:rgba(94,234,212,.10); color:#7ee7d4; font-size:.9rem; margin-bottom:11px; }
+      .dt-feature-title { color:#e8eef6; font-weight:700; font-size:.92rem; margin:0 0 5px; }
+      .dt-feature-copy { color:#9eacbe; font-size:.81rem; line-height:1.5; margin:0; }
+      @media(max-width:700px) {
+        .dt-landing { border-radius:19px; padding:30px 18px; }
+        .dt-feature-grid { grid-template-columns:1fr; }
+        .dt-landing-actions a { width:100%; box-sizing:border-box; }
+        .dt-section-intro { padding:18px; }
+      }
+      @media(prefers-reduced-motion:reduce) { .dt-landing-actions a { transition:none; } }
     </style>
-    <section class="dt-landing">
-      <div class="dt-landing-kicker">DIGITAL MARKETING ANALYTICS</div>
-      <h1 class="dt-landing-title">TURN YOUR CAMPAIGN DATA INTO GROWTH</h1>
-      <p class="dt-landing-copy">Track leads. Analyze ad spend. Discover winning campaigns.</p>
-      <div class="dt-landing-actions">
-        <a class="primary" href="#report-form">Explore Reports ↓</a>
-        <a class="secondary" href="#campaign-insights">Campaign Insights</a>
-      </div>
+    <div class="dt-landing-wrap">
+      <section class="dt-landing">
+        <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
+        <h1 class="dt-landing-title">Turn campaign activity into clear decisions.</h1>
+        <p class="dt-landing-copy">A focused workspace for tracking Meta Ads leads, understanding spend and seeing performance across your branches, teams and courses.</p>
+        <div class="dt-landing-pills">
+          <span>Lead performance</span><span>Ad spend visibility</span><span>Branch-wise reporting</span>
+        </div>
+        <div class="dt-landing-actions">
+          <a class="primary" href="#report-form">Create a report&nbsp; ↓</a>
+          <a class="secondary" href="#campaign-insights">Explore report settings</a>
+        </div>
+      </section>
+    </div>
+    <section class="dt-section-intro" id="report-form">
+      <div class="dt-section-kicker">Your reporting workspace</div>
+      <h2 class="dt-section-title">From raw ad data to actionable insight.</h2>
+      <p class="dt-section-copy">Upload your Meta Ads export to build a structured view of leads and campaign costs. Configure the report date, currency rate and campaign mapping below.</p>
     </section>
-    <section class="dt-report-intro" id="report-form">
-      <h2>↓ Scroll down to create a report</h2>
-      <p>The existing report-making form and dashboard features remain below the landing page.</p>
+    <section class="dt-feature-grid" aria-label="Reporting capabilities">
+      <article class="dt-feature"><div class="dt-feature-mark">↗</div><h3 class="dt-feature-title">Campaign performance</h3><p class="dt-feature-copy">Review lead volume and advertising costs to understand which campaigns are contributing results.</p></article>
+      <article class="dt-feature"><div class="dt-feature-mark">▦</div><h3 class="dt-feature-title">Team & branch visibility</h3><p class="dt-feature-copy">Organize results by branch, staff member and course using your campaign mapping.</p></article>
+      <article class="dt-feature"><div class="dt-feature-mark">◎</div><h3 class="dt-feature-title">Spend intelligence</h3><p class="dt-feature-copy">Keep currency conversion and campaign costs together for a clearer reporting view.</p></article>
     </section>
     """, unsafe_allow_html=True)
     header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
