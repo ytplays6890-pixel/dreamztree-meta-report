@@ -567,303 +567,125 @@ def infer_campaign(name, mappings):
     return staff, course, branch, "Needs review"
 
 def inject_premium_theme():
-    """Apply a restrained, minimal dark theme without changing app functionality."""
-    st.markdown("""
+    """Dreamztree charcoal premium theme with restrained, app-wide motion."""
+    st.markdown(r"""
     <style>
     :root {
-      --dt-bg: #111318;
-      --dt-panel: #191d24;
-      --dt-panel-soft: #202630;
-      --dt-border: #303743;
-      --dt-text: #edf0f5;
-      --dt-muted: #9aa4b2;
-      --dt-accent: #a78bfa;
-      --dt-accent-soft: rgba(167,139,250,.12);
+      --dt-bg:#17191c; --dt-sidebar:#141619; --dt-panel:#202328;
+      --dt-panel-raised:#272b31; --dt-border:#30353c; --dt-text:#f5f6f7;
+      --dt-muted:#9ba2ac; --dt-accent:#8580e8; --dt-accent-soft:rgba(133,128,232,.14);
+      --dt-success:#35b879; --dt-warning:#e6a943; --dt-danger:#e26767;
+      --dt-fast:150ms; --dt-motion:180ms; --dt-slow:250ms;
+      color-scheme:dark;
     }
+    @keyframes dt-enter { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes dt-ambient {
+      0%,100%{background-position:0% 0%,100% 100%}
+      50%{background-position:5% 4%,95% 96%}
+    }
+    @keyframes dt-shimmer { 0%{background-position:-180% 0} 100%{background-position:180% 0} }
 
     .stApp {
-      background: var(--dt-bg);
-      color: var(--dt-text);
+      background:
+        radial-gradient(ellipse at 12% 8%,rgba(133,128,232,.055),transparent 35%),
+        radial-gradient(ellipse at 88% 82%,rgba(74,115,151,.045),transparent 38%),
+        var(--dt-bg) !important;
+      background-size:120% 120%,120% 120%,auto;
+      animation:dt-ambient 36s ease-in-out infinite;
+      color:var(--dt-text);
+    }
+    [data-testid="stAppViewContainer"],[data-testid="stMainBlockContainer"]{background:transparent}
+    [data-testid="stHeader"]{background:rgba(20,22,25,.9);border-bottom:1px solid var(--dt-border);backdrop-filter:blur(12px)}
+    [data-testid="stSidebar"]{background:var(--dt-sidebar);border-right:1px solid var(--dt-border);transition:width var(--dt-slow) ease}
+    [data-testid="stSidebar"] *{color:var(--dt-text)}
+    .block-container{max-width:1460px;padding-top:1.5rem;padding-bottom:2.5rem}
+    h1,h2,h3,h4{color:var(--dt-text);letter-spacing:-.025em;font-weight:650}
+    p,label,[data-testid="stMarkdownContainer"]{color:var(--dt-text)}
+    [data-testid="stCaptionContainer"],.section-note{color:var(--dt-muted)}
+
+    .hero{
+      background:linear-gradient(145deg,#24282e,#1d2025);
+      border:1px solid var(--dt-border);border-left:3px solid var(--dt-accent);
+      border-radius:14px;padding:22px 24px;margin-bottom:20px;
+      box-shadow:0 8px 26px rgba(0,0,0,.12);
+      animation:dt-enter 420ms ease-out both;
+    }
+    .eyebrow{color:#aaa6f4;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+    .hero-title{color:var(--dt-text);font-size:clamp(1.55rem,2.5vw,2.1rem);line-height:1.2;font-weight:700;margin:.4rem 0 .5rem}
+    .hero-copy{color:var(--dt-muted);font-size:.94rem}
+
+    [data-testid="stMetric"]{
+      background:linear-gradient(145deg,#24282e,#1d2025);
+      border:1px solid var(--dt-border);border-radius:14px;padding:16px 18px;
+      box-shadow:0 5px 18px rgba(0,0,0,.10);
+      animation:dt-enter 420ms ease-out both;
+      transition:transform var(--dt-motion) ease,border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease;
+    }
+    [data-testid="stMetric"]:hover{border-color:rgba(133,128,232,.62);transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.2)}
+    [data-testid="stMetricLabel"]{color:var(--dt-muted)!important;font-size:.82rem}
+    [data-testid="stMetricValue"]{color:var(--dt-text)!important;font-weight:700}
+    [data-testid="stMetricDelta"]{font-weight:600}
+
+    .stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"]>button{
+      border-radius:10px;border:1px solid #3a4049;
+      transition:transform var(--dt-fast) ease,border-color var(--dt-motion) ease,background var(--dt-motion) ease,box-shadow var(--dt-motion) ease;
+    }
+    .stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"]>button:hover{
+      transform:translateY(-1px);border-color:var(--dt-accent);
+      box-shadow:0 5px 16px rgba(133,128,232,.12)
+    }
+    .stButton>button:active,.stDownloadButton>button:active{transform:scale(.985)}
+    input,textarea,[data-baseweb="select"]>div{transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease}
+    input:focus,textarea:focus,[data-baseweb="select"]>div:focus-within{
+      border-color:var(--dt-accent)!important;box-shadow:0 0 0 2px var(--dt-accent-soft)!important
     }
 
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMainBlockContainer"] {
-      background: transparent;
+    div[data-testid="stTabs"]{border-bottom:1px solid var(--dt-border)}
+    div[data-testid="stTabs"] button{color:var(--dt-muted);border-radius:8px 8px 0 0;transition:color var(--dt-motion) ease,background var(--dt-motion) ease}
+    div[data-testid="stTabs"] button:hover{color:var(--dt-text);background:var(--dt-accent-soft)}
+    div[data-testid="stTabs"] button[aria-selected="true"]{color:#d8d4ff;background:var(--dt-accent-soft);border-bottom:2px solid var(--dt-accent)}
+    [data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid var(--dt-border);border-radius:12px;overflow:hidden}
+    [data-testid="stExpander"]{
+      background:rgba(32,35,40,.82);border:1px solid var(--dt-border);border-radius:12px;
+      transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease
     }
-
-    [data-testid="stHeader"] {
-      background: rgba(17,19,24,.94);
-      border-bottom: 1px solid var(--dt-border);
+    [data-testid="stExpander"]:hover{border-color:#505765;box-shadow:0 7px 20px rgba(0,0,0,.12)}
+    [data-testid="stExpander"] details>summary{background:rgba(133,128,232,.055);color:var(--dt-text);transition:background var(--dt-motion) ease}
+    [data-testid="stExpander"] details>summary:hover{background:rgba(133,128,232,.11)}
+    [data-testid="stAlert"]{border-radius:12px;animation:dt-enter 240ms ease-out both}
+    [data-testid="stPlotlyChart"]{
+      border:1px solid rgba(48,53,60,.72);border-radius:14px;overflow:hidden;
+      animation:dt-enter 520ms ease-out both;transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease
     }
-
-    [data-testid="stSidebar"] {
-      background: #151920;
-      border-right: 1px solid var(--dt-border);
+    [data-testid="stPlotlyChart"]:hover{border-color:rgba(133,128,232,.45);box-shadow:0 8px 24px rgba(0,0,0,.13)}
+    [data-testid="stFileUploader"] section{
+      border:1px dashed #555d69;border-radius:14px;background:rgba(32,35,40,.62);
+      transition:border-color var(--dt-motion) ease,background var(--dt-motion) ease
     }
-    [data-testid="stSidebar"] * {
-      color: var(--dt-text);
+    [data-testid="stFileUploader"] section:hover{border-color:var(--dt-accent);background:rgba(133,128,232,.07)}
+    [data-testid="stProgressBar"]>div>div{
+      background:linear-gradient(90deg,#7772d8,#a19df4,#7772d8);
+      background-size:200% 100%;animation:dt-shimmer 1.5s linear infinite
     }
-
-    .block-container {
-      max-width: 1440px;
-      padding-top: 1.5rem;
-      padding-bottom: 2.5rem;
+    .dt-landing,.dt-report-intro{
+      background:linear-gradient(135deg,#202329,#1a1d22)!important;
+      border:1px solid var(--dt-border)!important;
+      box-shadow:0 10px 32px rgba(0,0,0,.14)!important;
+      animation:dt-enter 420ms ease-out both
     }
-
-    h1, h2, h3, h4 {
-      color: #f5f6f8;
-      letter-spacing: -.025em;
-      font-weight: 650;
+    .dt-landing-kicker,.dt-brand-tag{color:#aaa6f4!important}
+    .dt-landing-copy,.dt-report-intro p{color:#b5bdc8!important}
+    .dt-landing-actions a{transition:transform var(--dt-motion) ease,border-color var(--dt-motion) ease,background var(--dt-motion) ease!important}
+    .dt-landing-actions a:hover{transform:translateY(-2px)}
+    @media(max-width:768px){
+      .block-container{padding-top:1rem;padding-left:1rem;padding-right:1rem}
+      [data-testid="stMetric"]{padding:12px}
     }
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.45rem; }
-    h3 { font-size: 1.12rem; }
-
-    p, label, [data-testid="stMarkdownContainer"] {
-      color: var(--dt-text);
-    }
-    [data-testid="stCaptionContainer"], .section-note {
-      color: var(--dt-muted);
-    }
-
-    .hero {
-      background: #191e27;
-      border: 1px solid var(--dt-border);
-      border-left: 3px solid var(--dt-accent);
-      border-radius: 12px;
-      padding: 22px 24px;
-      margin-bottom: 20px;
-      box-shadow: none;
-      animation: none;
-    }
-    .eyebrow {
-      color: #b9a5ff;
-      font-size: .72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-    }
-    .hero-title {
-      color: #f5f6f8;
-      font-size: clamp(1.55rem, 2.5vw, 2.1rem);
-      line-height: 1.2;
-      font-weight: 700;
-      margin: .4rem 0 .5rem;
-      background: none;
-      -webkit-text-fill-color: currentColor;
-      animation: none;
-    }
-    .hero-copy {
-      color: var(--dt-muted);
-      font-size: .94rem;
-    }
-
-    [data-testid="stMetric"] {
-      background: var(--dt-panel);
-      border: 1px solid var(--dt-border);
-      border-radius: 12px;
-      padding: 16px 18px;
-      box-shadow: none;
-      animation: none;
-      transition: border-color .15s ease;
-    }
-    [data-testid="stMetric"]:hover {
-      border-color: #596273;
-      transform: none;
-      box-shadow: none;
-    }
-    [data-testid="stMetricLabel"] {
-      color: var(--dt-muted) !important;
-      font-size: .82rem;
-    }
-    [data-testid="stMetricValue"] {
-      color: #f5f6f8 !important;
-      font-weight: 700;
-    }
-    [data-testid="stMetricDelta"] {
-      font-weight: 600;
-    }
-
-    div[data-testid="stTabs"] {
-      border-bottom: 1px solid var(--dt-border);
-    }
-    div[data-testid="stTabs"] button {
-      color: var(--dt-muted);
-      border-radius: 7px 7px 0 0;
-      padding: 9px 13px;
-      transition: color .15s ease, background .15s ease;
-    }
-    div[data-testid="stTabs"] button:hover {
-      color: var(--dt-text);
-      background: var(--dt-accent-soft);
-      transform: none;
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-      color: #d8ccff;
-      background: var(--dt-accent-soft);
-      border-bottom: 2px solid var(--dt-accent);
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] p {
-      color: #d8ccff !important;
-      font-weight: 650;
-    }
-
-    [data-testid="stDataFrame"],
-    [data-testid="stTable"] {
-      border: 1px solid var(--dt-border);
-      border-radius: 10px;
-      overflow: hidden;
-      animation: none;
-      box-shadow: none;
-    }
-
-    [data-testid="stFileUploader"] {
-      background: var(--dt-panel);
-      border: 1px dashed #596273;
-      border-radius: 10px;
-      padding: 8px;
-      animation: none;
-    }
-    [data-testid="stFileUploader"]:hover {
-      border-color: var(--dt-accent);
-      transform: none;
-    }
-
-    /* Premium glass controls for expandable section headings */
-    [data-testid="stExpander"] {
-      background: linear-gradient(135deg, rgba(34, 39, 55, .76), rgba(19, 25, 38, .72));
-      border: 1px solid rgba(190, 175, 255, .22);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, .20), inset 0 1px 0 rgba(255,255,255,.07);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-    }
-    [data-testid="stExpander"]:hover {
-      border-color: rgba(167, 139, 250, .58);
-      box-shadow: 0 10px 30px rgba(8, 10, 20, .28), 0 0 0 1px rgba(167,139,250,.10), inset 0 1px 0 rgba(255,255,255,.10);
-    }
-    [data-testid="stExpander"] details > summary {
-      min-height: 58px;
-      padding: 15px 19px;
-      background: linear-gradient(105deg, rgba(167,139,250,.13), rgba(94,234,212,.055) 58%, rgba(255,255,255,.025));
-      border: 0;
-      color: #f4f1ff !important;
-      font-weight: 700;
-      letter-spacing: .005em;
-      transition: background .2s ease, color .2s ease;
-    }
-    [data-testid="stExpander"] details > summary:hover {
-      background: linear-gradient(105deg, rgba(167,139,250,.22), rgba(94,234,212,.10) 58%, rgba(255,255,255,.045));
-      color: #ffffff !important;
-    }
-    [data-testid="stExpander"] details > summary p,
-    [data-testid="stExpander"] details > summary span {
-      color: #f4f1ff !important;
-      font-weight: 700 !important;
-    }
-    [data-testid="stExpander"] details > summary svg {
-      color: #c4b5fd !important;
-      fill: none;
-    }
-    [data-testid="stExpander"] details[open] > summary {
-      border-bottom: 1px solid rgba(190,175,255,.18);
-      background: linear-gradient(105deg, rgba(167,139,250,.20), rgba(94,234,212,.09) 58%, rgba(255,255,255,.035));
-    }
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-      background: rgba(12, 16, 25, .34);
-      padding: 18px;
-    }
-
-    .stButton button,
-    [data-testid="stDownloadButton"] button {
-      background: #29243a;
-      color: #eee9ff;
-      border: 1px solid #51466f;
-      border-radius: 8px;
-      font-weight: 600;
-      box-shadow: none;
-      animation: none;
-      transition: background .15s ease, border-color .15s ease;
-    }
-    .stButton button:hover,
-    [data-testid="stDownloadButton"] button:hover {
-      background: #352d4a;
-      border-color: var(--dt-accent);
-      color: #fff;
-      transform: none;
-      box-shadow: none;
-    }
-    .stButton button[kind="primary"],
-    button[kind="primary"] {
-      background: #7658c8;
-      color: #fff;
-      border: 1px solid #7658c8;
-      box-shadow: none;
-      font-weight: 650;
-    }
-    .stButton button[kind="primary"]:hover,
-    button[kind="primary"]:hover {
-      background: #866bd2;
-      border-color: #866bd2;
-    }
-
-    [data-testid="stTextInput"] input,
-    [data-testid="stNumberInput"] input,
-    [data-testid="stDateInput"] input,
-    [data-testid="stSelectbox"] div[data-baseweb="select"],
-    [data-testid="stMultiSelect"] div[data-baseweb="select"] {
-      border-radius: 8px;
-    }
-
-    [data-testid="stAlert"] {
-      border-radius: 9px;
-      border: 1px solid var(--dt-border);
-    }
-
-    hr {
-      border-color: var(--dt-border);
-    }
-    a { color: #b9a5ff !important; }
-
-    .arcade-banner {
-      margin: 1rem 0;
-      padding: 1.2rem 1.4rem;
-      border-radius: 12px;
-      border: 1px solid #51466f;
-      background: #211d2d;
-      box-shadow: none;
-      animation: none;
-    }
-    .arcade-banner h2 {
-      margin: .3rem 0;
-      color: #f5f1ff;
-    }
-    .arcade-banner p { color: #c9c1d9; }
-    .arcade-kicker {
-      color: #c7b6ff;
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .12em;
-    }
-
-    @media (max-width: 700px) {
-      .block-container { padding-top: 1rem; }
-      .hero { padding: 18px; }
-      [data-testid="stMetric"] { padding: 13px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
-        scroll-behavior: auto !important;
-      }
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
     }
     </style>
     """, unsafe_allow_html=True)
-
 
 def load_campaign_report(upload, mappings):
     """Load and classify a Meta export using the same rules as the main report."""
@@ -3070,79 +2892,16 @@ def render_post_login_transition():
 
 
 def inject_performance_patch():
-    """Reduce GPU-heavy ambient effects while retaining a lightweight welcome fade."""
+    """Keep effects lightweight without globally disabling dashboard animations."""
     st.markdown(r"""
     <style>
-      /* The original theme animates several full-screen layers continuously.
-         Disable those effects to keep Streamlit reruns and scrolling responsive. */
-      .stApp, .stApp::before, .stApp::after,
-      [data-testid="stAppViewContainer"]::before,
-      [data-testid="stAppViewContainer"]::after,
-      .hero, .hero::before, .hero::after, .hero-title,
-      [data-testid="stMetric"], [data-testid="stMetric"]::after,
-      [data-testid="stFileUploader"], .stButton button,
-      [data-testid="stDownloadButton"] button, .arcade-banner,
-      .block-container, [data-testid="stTabs"],
-      [data-testid="stDataFrame"], [data-testid="stTable"] {
-        animation: none !important;
-        background-attachment: scroll !important;
+      /* Prevent expensive full-screen filters while retaining small UI transitions. */
+      .fireflies,.stars-cluster,.night-sky,.lamp-glow,.light-beam,.desk-surface {
+        filter:none;
       }
-      /* Avoid expensive blur/filter transitions on the login scene. */
-      .fireflies, .fireflies *, .stars-cluster, .stars-cluster *,
-      .night-sky, .lamp-glow, .light-beam, .desk-surface {
-        animation: none !important;
-        transition: none !important;
-        filter: none !important;
-      }
-      /* Lightweight post-login logo: opacity only, no scaling, blur or bounce. */
-      @keyframes dt-welcome-overlay-fade {
-        0% { opacity: 0; visibility: visible; }
-        12% { opacity: 1; }
-        72% { opacity: 1; }
-        100% { opacity: 0; visibility: hidden; }
-      }
-      @keyframes dt-welcome-mark-fade {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      /* The overlay must fade OUT as well as in, or it can cover the app forever. */
-      .dt-welcome-overlay {
-        animation: dt-welcome-overlay-fade 1.8s ease-out forwards !important;
-        background: #080d15 !important;
-        will-change: opacity;
-      }
-      .dt-welcome-mark {
-        animation: dt-welcome-mark-fade .65s ease-out both !important;
-        transform: none !important;
-        filter: none !important;
-        will-change: opacity;
-      }
-      .dt-welcome-mark img {
-        transform: none !important;
-        filter: none !important;
-      }
-      .dt-welcome-subtitle {
-        animation: dt-welcome-mark-fade .5s ease-out .12s both !important;
-        transform: none !important;
-      }
-      /* Stop all ambient infinite effects; retain only the short welcome transition. */
-      .stApp *, .stApp *::before, .stApp *::after {
-        animation-iteration-count: 1 !important;
-      }
-      .hero, .hero::before, .hero::after, .hero-title,
-      [data-testid="stMetric"], [data-testid="stMetric"]::after,
-      [data-testid="stFileUploader"], .stButton button,
-      [data-testid="stDownloadButton"] button, .arcade-banner,
-      .room, .room *, .fireflies, .fireflies *, .stars-cluster,
-      .night-sky, .room-light, .firefly, .stApp::before, .stApp::after {
-        animation: none !important;
-        transition: none !important;
-      }
-      .dt-welcome-overlay { animation: dt-welcome-overlay-fade 1.8s ease-out forwards !important; }
-      .dt-welcome-mark { animation: dt-welcome-mark-fade .65s ease-out both !important; }
-      .dt-welcome-subtitle { animation: dt-welcome-mark-fade .5s ease-out .12s both !important; }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation: none !important; transition: none !important; }
+      .dt-welcome-overlay { will-change:opacity; }
+      @media(prefers-reduced-motion:reduce) {
+        *,*::before,*::after { animation:none!important; transition:none!important; }
       }
     </style>
     """, unsafe_allow_html=True)
