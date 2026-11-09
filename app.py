@@ -2078,31 +2078,50 @@ def inject_christmas_snow():
             f'--fall-duration:{duration}s;--fall-delay:{delay}s;--snow-drift:{drift}px;'
             f'--snow-opacity:{opacity:.2f};"></span>'
         )
-    # Browser audio requires a user gesture. Generate an original, gentle bell pattern
-    # locally with Web Audio so no external audio file or copyrighted song is needed.
+    # Browser audio requires a user gesture. Play the public-domain Jingle Bells melody
+    # with Web Audio; keep the sound control in a fixed, separate top-right position.
     components.html(r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
-#soundToggle{position:fixed;right:22px;top:8px;z-index:999999;border:1px solid rgba(205,220,245,.25);
- border-radius:999px;padding:8px 12px;background:rgba(28,35,48,.88);color:#edf4ff;
- font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;backdrop-filter:blur(10px);
- box-shadow:0 5px 20px rgba(0,0,0,.18)}
-#soundToggle:hover{background:rgba(48,59,78,.96)}
-@media(max-width:700px){#soundToggle{right:10px;top:5px;padding:7px 10px;font-size:11px}}
+#soundToggle{position:fixed;right:0;top:0;z-index:999999;border:1px solid rgba(205,220,245,.28);
+ border-radius:999px;padding:9px 14px;background:rgba(28,35,48,.94);color:#edf4ff;
+ font-size:12px;font-weight:650;letter-spacing:.02em;cursor:pointer;white-space:nowrap;
+ box-shadow:0 5px 20px rgba(0,0,0,.24)}
+#soundToggle:hover{background:rgba(48,59,78,.98)}
 </style></head><body>
-<button id="soundToggle" type="button" aria-label="Turn Christmas sound on">🔔 Christmas sound: Off</button>
+<button id="soundToggle" type="button" aria-label="Play Jingle Bells">🔔 Play Jingle Bells</button>
 <script>
-(()=>{const btn=document.getElementById('soundToggle');let ctx=null,master=null,timer=null,on=false,step=0;
- const notes=[ [659,0],[784,0.22],[988,0.44],[784,0.68],[880,1.05],[1047,1.28],[880,1.52],[784,1.82], [659,2.35],[784,2.58],[880,2.82],[784,3.08] ];
- function chime(freq,when){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,when);
- gain.gain.setValueAtTime(0.0001,when);gain.gain.exponentialRampToValueAtTime(.10,when+.025);
- gain.gain.exponentialRampToValueAtTime(.0001,when+1.05);osc.connect(gain);gain.connect(master);osc.start(when);osc.stop(when+1.08);}
- function playPhrase(){if(!on||!ctx)return;const start=ctx.currentTime+.05;notes.forEach(([f,t])=>chime(f,start+t));}
- async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();master=ctx.createGain();master.gain.value=.22;master.connect(ctx.destination);on=true;playPhrase();timer=setInterval(playPhrase,4800);btn.textContent='🔔 Christmas sound: On';btn.setAttribute('aria-label','Turn Christmas sound off');}
- function stop(){on=false;if(timer)clearInterval(timer);timer=null;if(master){master.gain.setTargetAtTime(0,ctx.currentTime,.04);}btn.textContent='🔔 Christmas sound: Off';btn.setAttribute('aria-label','Turn Christmas sound on');}
- btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='🔔 Sound unavailable';}}});
+(()=>{
+ const frame=window.frameElement;
+ if(frame){frame.style.position='fixed';frame.style.top='16px';frame.style.right='22px';frame.style.width='190px';frame.style.height='48px';frame.style.zIndex='1000000';frame.style.border='0';frame.style.background='transparent';frame.style.overflow='hidden';}
+ const btn=document.getElementById('soundToggle');let ctx=null,master=null,on=false,runId=0;
+ // Public-domain Jingle Bells opening melody, in C major.
+ const E=659.25,F=698.46,G=783.99,C=523.25,D=587.33;
+ const beat=.29;
+ const melody=[
+  [E,1],[E,1],[E,2],[E,1],[E,1],[E,2],[E,1],[G,1],[C,1.5],[D,.5],[E,3],
+  [F,1],[F,1],[F,1],[F,1],[F,1],[E,1],[E,1],[E,.5],[E,.5],[D,1],[D,1],[E,1],[D,2],[G,2]
+ ];
+ function note(freq,when,duration){
+  const osc=ctx.createOscillator(),gain=ctx.createGain(),bell=ctx.createOscillator(),bellGain=ctx.createGain();
+  osc.type='sine';osc.frequency.setValueAtTime(freq,when);
+  bell.type='sine';bell.frequency.setValueAtTime(freq*2.01,when);
+  gain.gain.setValueAtTime(.0001,when);gain.gain.exponentialRampToValueAtTime(.12,when+.018);
+  gain.gain.exponentialRampToValueAtTime(.0001,when+duration*.88);
+  bellGain.gain.setValueAtTime(.0001,when);bellGain.gain.exponentialRampToValueAtTime(.035,when+.012);
+  bellGain.gain.exponentialRampToValueAtTime(.0001,when+Math.min(duration*.65,.42));
+  osc.connect(gain);gain.connect(master);bell.connect(bellGain);bellGain.connect(master);
+  osc.start(when);bell.start(when);osc.stop(when+duration);bell.stop(when+Math.min(duration,.45));
+ }
+ function phrase(){let t=ctx.currentTime+.08;for(const [freq,beats] of melody){const dur=beats*beat;note(freq,t,dur);t+=dur+.025;}return t-(ctx.currentTime);}
+ async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();
+  master=ctx.createGain();master.gain.value=.52;master.connect(ctx.destination);on=true;const id=++runId;
+  const play=()=>{if(!on||id!==runId)return;const duration=phrase();setTimeout(play,(duration+.65)*1000);};play();
+  btn.textContent='⏸ Stop Jingle Bells';btn.setAttribute('aria-label','Stop Jingle Bells');}
+ function stop(){on=false;runId++;if(master&&ctx){master.gain.setTargetAtTime(0,ctx.currentTime,.035);}btn.textContent='🔔 Play Jingle Bells';btn.setAttribute('aria-label','Play Jingle Bells');}
+ btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='🔔 Audio unavailable';}}});
 })();
-</script></body></html>''', height=48, scrolling=False)
+</script></body></html>''', height=1, scrolling=False)
 
     st.markdown(r'''    <style>
       .dt-christmas-snow {
@@ -2117,7 +2136,7 @@ html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans
         will-change:transform;
       }
       .dt-christmas-greeting {
-        position:fixed; top:84px; right:24px; z-index:9998; pointer-events:none;
+        position:fixed; top:76px; right:22px; z-index:9998; pointer-events:none;
         padding:8px 13px; border:1px solid rgba(190,215,245,.22);
         border-radius:999px; color:#e7efff; background:rgba(28,35,48,.72);
         backdrop-filter:blur(10px); font:600 12px/1.2 sans-serif;
@@ -2133,7 +2152,7 @@ html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans
         100% { transform:translate3d(calc(var(--snow-drift) * -0.45),110vh,0); }
       }
       @media(max-width:700px) {
-        .dt-christmas-greeting { top:70px; right:12px; font-size:10px; padding:7px 9px; }
+        .dt-christmas-greeting { top:72px; right:12px; font-size:10px; padding:7px 9px; }
         .dt-snowflake { box-shadow:none; }
       }
       @media(prefers-reduced-motion:reduce) {
