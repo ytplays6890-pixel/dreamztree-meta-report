@@ -2198,58 +2198,104 @@ def require_login():
             st.caption("Connection detail: " + st.session_state["supabase_setup_error"])
         st.stop()
 
-    # Minimal, accessible authentication screen. No decorative animation,
-    # dim overlay, theme cycling, or interaction gate before the form appears.
+    # Apple-inspired, single-column login screen with restrained motion.
     st.markdown("""
     <style>
       [data-testid="stAppViewContainer"] {
-        background: radial-gradient(ellipse at 50% 38%, rgba(75,88,105,.16), transparent 48%), #101214 !important;
+        background: #0f1114 !important;
       }
       [data-testid="stHeader"] { background: transparent !important; }
-      .block-container { max-width: 1120px; padding-top: 3rem; }
-      @keyframes dtLoginEnter { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-      @keyframes dtAmbient { 0%,100% { opacity:.55; } 50% { opacity:.9; } }
-      .dt-auth-shell { max-width: 440px; margin: 3vh auto 0; padding: 30px;
-        background: rgba(25,28,32,.88); backdrop-filter: blur(18px);
-        border: 1px solid #30353b; border-radius: 16px;
-        box-shadow: 0 18px 55px rgba(0,0,0,.24);
-        animation: dtLoginEnter .75s cubic-bezier(.2,.7,.2,1) both; }
-      .dt-auth-shell:after { content:""; display:block; height:1px; margin-top:18px;
-        background:linear-gradient(90deg,transparent,rgba(220,226,235,.22),transparent);
-        animation:dtAmbient 4s ease-in-out infinite; }
-      [data-testid="stTabs"] { animation: dtLoginEnter .85s .12s both; }
-      [data-testid="stForm"] { animation: dtLoginEnter .9s .2s both; }
-      .dt-auth-kicker { color: #a3aab4; font-size: 12px; letter-spacing: .12em;
-        text-transform: uppercase; margin-bottom: 8px; }
-      .dt-auth-title { color: #f5f6f7; font-size: 28px; font-weight: 650;
-        letter-spacing: -.04em; margin: 0 0 6px; }
-      .dt-auth-subtitle { color: #a3aab4; font-size: 14px; margin: 0 0 22px; }
-      [data-testid="stTabs"] button { color: #b8bec7; }
-      [data-testid="stTabs"] button[aria-selected="true"] { color: #f5f6f7; }
-      [data-testid="stTextInput"] label { color: #d7dbe0; }
-      [data-testid="stTextInput"] input { background: #111417; border: 1px solid #39414a;
-        border-radius: 9px; color: #f5f6f7; min-height: 44px; }
-      [data-testid="stTextInput"] input { transition: border-color .22s ease, box-shadow .22s ease, background .22s ease; }
-      [data-testid="stTextInput"] input:focus { border-color: #aeb8c5;
-        box-shadow: 0 0 0 3px rgba(174,184,197,.12); background:#15191e; }
-      [data-testid="stForm"] button[kind="primary"],
-      [data-testid="stForm"] button[data-testid="stFormSubmitButton"] {
-        background: #f1f3f5 !important; color: #17191c !important;
-        border: 1px solid #f1f3f5 !important; border-radius: 9px;
-        min-height: 44px; font-weight: 600; box-shadow: none !important;
-        transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
-      [data-testid="stForm"] button[kind="primary"]:hover { background: #dfe3e7 !important;
-        transform:translateY(-1px); box-shadow:0 7px 18px rgba(0,0,0,.18) !important; }
-      [data-testid="stTabs"] button { transition: color .2s ease, background .2s ease; }
-      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+      /* Keep the header, tabs and form on one shared, centred grid. */
+      .main .block-container {
+        width: min(100% - 32px, 520px) !important;
+        max-width: 520px !important;
+        margin: 0 auto !important;
+        padding: 8vh 0 3rem !important;
+      }
+      @keyframes dtLoginEnter {
+        from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+        to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+      }
+      @keyframes dtAmbient {
+        0%, 100% { opacity: .25; transform: translate3d(-2%,0,0); }
+        50%      { opacity: .55; transform: translate3d(2%,0,0); }
+      }
+      [data-testid="stAppViewContainer"]::before {
+        content: ""; position: fixed; inset: -20%; pointer-events: none; z-index: 0;
+        background: radial-gradient(ellipse at 50% 35%, rgba(150,160,175,.10), transparent 48%);
+        animation: dtAmbient 9s ease-in-out infinite;
+      }
+      .main .block-container > div { position: relative; z-index: 1; }
+      .dt-auth-shell {
+        box-sizing: border-box; width: 100%; max-width: 520px;
+        margin: 0 auto 18px; padding: 30px 30px 24px;
+        background: rgba(27,30,35,.88); backdrop-filter: blur(20px);
+        border: 1px solid #30353c; border-radius: 18px;
+        box-shadow: 0 18px 50px rgba(0,0,0,.22);
+        animation: dtLoginEnter .85s cubic-bezier(.2,.7,.2,1) both;
+      }
+      .dt-auth-title {
+        color: #f5f6f7; font-size: 30px; line-height: 1.15;
+        font-weight: 650; letter-spacing: -.045em; margin: 0 0 8px;
+      }
+      .dt-auth-subtitle { color: #a4aab3; font-size: 14px; margin: 0; }
+      [data-testid="stTabs"] {
+        width: 100%; margin: 0 auto !important;
+        animation: dtLoginEnter .9s .10s both;
+      }
+      [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #30353c; gap: 22px;
+      }
+      [data-testid="stTabs"] button {
+        color: #aeb4bd !important; transition: color .2s ease, opacity .2s ease;
+      }
+      [data-testid="stTabs"] button[aria-selected="true"] {
+        color: #f5f6f7 !important;
+      }
+      [data-testid="stForm"] {
+        box-sizing: border-box; width: 100%;
+        margin: 14px auto 0; padding: 22px;
+        background: rgba(27,30,35,.72); backdrop-filter: blur(16px);
+        border: 1px solid #30353c !important; border-radius: 16px;
+        animation: dtLoginEnter 1s .18s both;
+      }
+      [data-testid="stTextInput"] label { color: #d5d9df !important; }
+      [data-testid="stTextInput"] input {
+        background: #14171b !important; border: 1px solid #3a414a !important;
+        border-radius: 10px !important; color: #f5f6f7 !important; min-height: 46px;
+        transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+      }
+      [data-testid="stTextInput"] input:focus {
+        border-color: #aeb8c5 !important;
+        box-shadow: 0 0 0 3px rgba(174,184,197,.12) !important;
+        background: #181c21 !important;
+      }
+      /* Override Streamlit's theme primary red on the actual submit control. */
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
+      [data-testid="stForm"] button[kind="primary"] {
+        background: #e8eaed !important; color: #17191c !important;
+        border: 1px solid #e8eaed !important; border-radius: 10px !important;
+        min-height: 46px; font-weight: 600 !important; box-shadow: none !important;
+        transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+      }
+      [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
+      [data-testid="stForm"] button[kind="primary"]:hover {
+        background: #fff !important; transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(0,0,0,.2) !important;
+      }
       [data-testid="stAlert"] { border-radius: 10px; }
-      @media (max-width: 640px) { .block-container { padding: 1.2rem 1rem; }
-        .dt-auth-shell { margin-top: 1rem; padding: 22px; } }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+      }
+      @media (max-width: 640px) {
+        .main .block-container { width: calc(100% - 28px) !important; padding-top: 5vh !important; }
+        .dt-auth-shell { padding: 24px 22px 20px; }
+        [data-testid="stForm"] { padding: 18px; }
+      }
     </style>
     <div class="dt-auth-shell">
-      <div class="dt-auth-kicker">Dreamztree · Marketing Analytics</div>
-      <div class="dt-auth-title">Welcome back</div>
-      <div class="dt-auth-subtitle">Sign in to access your campaign reports.</div>
+      <div class="dt-auth-title">Welcome back.</div>
+      <div class="dt-auth-subtitle">Sign in to continue to your workspace.</div>
     </div>
     """, unsafe_allow_html=True)
 
