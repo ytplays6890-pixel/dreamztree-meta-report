@@ -573,7 +573,7 @@ def inject_premium_theme():
     :root {
       --dt-bg:#17191c; --dt-sidebar:#141619; --dt-panel:#202328;
       --dt-panel-raised:#272b31; --dt-border:#30353c; --dt-text:#f5f6f7;
-      --dt-muted:#9ba2ac; --dt-accent:#8580e8; --dt-accent-soft:rgba(133,128,232,.14);
+      --dt-muted:#9ba2ac; --dt-accent:#8b5cf6; --dt-accent-soft:rgba(139,92,246,.16);
       --dt-success:#35b879; --dt-warning:#e6a943; --dt-danger:#e26767;
       --dt-fast:150ms; --dt-motion:180ms; --dt-slow:250ms;
       color-scheme:dark;
@@ -587,7 +587,7 @@ def inject_premium_theme():
 
     .stApp {
       background:
-        radial-gradient(ellipse at 12% 8%,rgba(133,128,232,.055),transparent 35%),
+        radial-gradient(ellipse at 12% 8%,rgba(139,92,246,.055),transparent 35%),
         radial-gradient(ellipse at 88% 82%,rgba(74,115,151,.045),transparent 38%),
         var(--dt-bg) !important;
       background-size:120% 120%,120% 120%,auto;
@@ -650,7 +650,7 @@ def inject_premium_theme():
       transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease
     }
     [data-testid="stExpander"]:hover{border-color:#505765;box-shadow:0 7px 20px rgba(0,0,0,.12)}
-    [data-testid="stExpander"] details>summary{background:rgba(133,128,232,.055);color:var(--dt-text);transition:background var(--dt-motion) ease}
+    [data-testid="stExpander"] details>summary{background:rgba(139,92,246,.055);color:var(--dt-text);transition:background var(--dt-motion) ease}
     [data-testid="stExpander"] details>summary:hover{background:rgba(133,128,232,.11)}
     [data-testid="stAlert"]{border-radius:12px;animation:dt-enter 240ms ease-out both}
     [data-testid="stPlotlyChart"]{
@@ -664,7 +664,7 @@ def inject_premium_theme():
     }
     [data-testid="stFileUploader"] section:hover{border-color:var(--dt-accent);background:rgba(133,128,232,.07)}
     [data-testid="stProgressBar"]>div>div{
-      background:linear-gradient(90deg,#7772d8,#a19df4,#7772d8);
+      background:linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed);
       background-size:200% 100%;animation:dt-shimmer 1.5s linear infinite
     }
     .dt-landing,.dt-report-intro{
@@ -3003,113 +3003,40 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    # Premium, compact landing experience. Keep report functionality below unchanged.
-    st.markdown("""
+    # Compact analytics-workspace header (replaces the oversized welcome banner).
+    st.markdown(r"""
     <style>
-      /* Consistent page grid: hero, settings, report content and utility actions share one alignment. */
-      .stApp [data-testid="stMainBlockContainer"] { max-width: 1460px !important; padding-left: clamp(18px, 3.2vw, 48px) !important; padding-right: clamp(18px, 3.2vw, 48px) !important; }
-      .dt-landing-wrap { width:100%; max-width:100%; margin: 8px auto 22px !important; }
-      .dt-landing { width:100%; min-height:360px; grid-template-columns:minmax(0,1fr) minmax(300px,.9fr); align-items:center; }
-      .dt-landing-main { max-width:680px; justify-self:start; text-align:left; }
-      .dt-landing-title, .dt-landing-copy { text-align:left; }
-      .dt-landing-actions { justify-content:flex-start; align-items:center; }
-      [data-testid="stExpander"] { width:100%; margin: 10px 0 18px !important; }
-      [data-testid="stExpander"] details > summary { display:flex; align-items:center; }
-      .stApp [data-testid="stHorizontalBlock"] { align-items:center; }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; min-height:unset; } .dt-landing-main { max-width:none; } .dt-visual { min-height:205px; } }
-      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
-      :root { --linear-bg:#0b0e14; --linear-panel:rgba(19,25,36,.78); --linear-line:rgba(155,174,202,.17); --linear-text:#edf2fa; --linear-muted:#98a6ba; --linear-cyan:#67d8d0; --linear-violet:#9b8cff; }
-      .dt-landing-wrap { margin: 8px 0 18px; }
-      .dt-landing { position:relative; isolation:isolate; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.12fr) minmax(260px,.88fr); align-items:center; gap:28px; padding:clamp(28px,4vw,52px); border:1px solid var(--linear-line); border-radius:22px; background:linear-gradient(115deg,rgba(22,29,42,.96),rgba(12,19,29,.92)); box-shadow:0 22px 60px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.055); }
-      .dt-landing:before { content:""; position:absolute; z-index:-1; width:420px; height:420px; right:-130px; top:-250px; border-radius:50%; background:radial-gradient(circle,rgba(103,216,208,.15),transparent 68%); }
-      .dt-landing:after { content:""; position:absolute; z-index:-1; width:360px; height:360px; left:-220px; bottom:-260px; border-radius:50%; background:radial-gradient(circle,rgba(155,140,255,.12),transparent 70%); }
-      .dt-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid rgba(103,216,208,.20); border-radius:999px; background:rgba(103,216,208,.07); color:#91e7df; font-size:.72rem; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }
-      .dt-eyebrow:before { content:""; width:6px; height:6px; border-radius:50%; background:#67d8d0; box-shadow:0 0 12px rgba(103,216,208,.65); }
-      .dt-landing-title { max-width:680px; margin:18px 0 12px; color:#f2f5fb; font-size:clamp(2rem,4vw,3.35rem); line-height:1.08; font-weight:760; letter-spacing:-.055em; }
-      .dt-landing-title span { color:#8ddfd8; background:linear-gradient(90deg,#9ae7df,#9ca9ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-      .dt-landing-copy { max-width:610px; margin:0 0 23px; color:#aab6c8; font-size:1rem; line-height:1.7; }
-      .dt-landing-pills { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 25px; }
-      .dt-landing-pills span { padding:7px 10px; border:1px solid rgba(155,174,202,.14); border-radius:8px; background:rgba(255,255,255,.035); color:#c5cfdd; font-size:.75rem; }
-      .dt-landing-actions { display:flex; flex-wrap:wrap; gap:10px; }
-      .dt-landing-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 17px; border-radius:9px; text-decoration:none!important; font-size:.88rem; font-weight:680; transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease; }
-      .dt-landing-actions .primary { color:#07151a!important; background:linear-gradient(110deg,#9ae7df,#80cfd0); border:1px solid rgba(190,255,250,.32); box-shadow:0 7px 20px rgba(60,190,180,.15); }
-      .dt-landing-actions .primary:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(60,190,180,.24); }
-      .dt-landing-actions .secondary { color:#e5ebf5!important; background:rgba(255,255,255,.045); border:1px solid rgba(155,174,202,.22); }
-      .dt-landing-actions .secondary:hover { transform:translateY(-2px); background:rgba(255,255,255,.075); border-color:rgba(155,174,202,.38); }
-      .dt-visual { position:relative; min-height:250px; display:flex; align-items:center; justify-content:center; }
-      .dt-visual-panel { width:min(100%,420px); padding:18px; border:1px solid rgba(160,184,220,.22); border-radius:17px; background:linear-gradient(145deg,rgba(31,42,59,.88),rgba(14,22,34,.88)); box-shadow:0 24px 55px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08); transform:rotate(-2deg); animation:dt-panel-in .7s cubic-bezier(.2,.8,.2,1) both; }
-      .dt-visual-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; color:#dce6f4; font-size:.82rem; font-weight:650; }
-      .dt-live-dot { display:inline-flex; align-items:center; gap:6px; color:#91d9ce; font-size:.68rem; font-weight:600; }
-      .dt-live-dot:before { content:""; width:6px; height:6px; border-radius:50%; background:#69d6bd; box-shadow:0 0 10px rgba(105,214,189,.65); }
-      .dt-bars { height:125px; display:flex; align-items:end; gap:10px; padding:0 8px 4px; border-bottom:1px solid rgba(155,174,202,.16); background:repeating-linear-gradient(to bottom,transparent 0,transparent 30px,rgba(155,174,202,.07) 31px); }
-      .dt-bars i { flex:1; min-width:12px; height:var(--h); border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#86e1d7,rgba(96,160,190,.28)); box-shadow:0 0 18px rgba(103,216,208,.10); transform-origin:bottom; animation:dt-bar-rise .8s cubic-bezier(.2,.8,.2,1) both; }
-      .dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#a7a1ff,rgba(117,111,200,.28)); }
-      .dt-visual-foot { display:flex; justify-content:space-between; gap:10px; margin-top:13px; color:#8e9db2; font-size:.7rem; }
-      .dt-visual-foot strong { color:#e3ebf6; font-weight:650; }
-      @keyframes dt-panel-in { from { opacity:0; transform:translateY(12px) rotate(-2deg); } to { opacity:1; transform:translateY(0) rotate(-2deg); } }
-      @keyframes dt-bar-rise { from { transform:scaleY(.15); opacity:.35; } to { transform:scaleY(1); opacity:1; } }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; } .dt-visual { min-height:205px; }  }
-      @media(max-width:520px) { .dt-landing { padding:24px 18px; border-radius:16px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:180px; } }
-      @media(prefers-reduced-motion:reduce) { .dt-visual-panel,.dt-bars i { animation:none !important; } }
-
-      /* Apple-inspired minimal refinement: precise grid, quiet surfaces, restrained motion. */
-      :root { --linear-bg:#0b0c0f; --linear-panel:#15171b; --linear-line:rgba(255,255,255,.09); --linear-text:#f5f5f7; --linear-muted:#a1a1a6; --linear-cyan:#a8b0bb; --linear-violet:#a8b0bb; }
-      .stApp { background:#0b0c0f !important; }
-      .stApp [data-testid="stMainBlockContainer"] { max-width:1320px !important; padding-top:2rem !important; padding-bottom:3rem !important; }
-      .dt-landing-wrap { width:100%; margin:0 0 24px !important; }
-      .dt-landing { width:100%; min-height:290px; grid-template-columns:minmax(0,1.1fr) minmax(250px,.9fr); gap:36px; padding:clamp(28px,3.6vw,46px); border:1px solid rgba(255,255,255,.09); border-radius:20px; background:#15171b; box-shadow:0 1px 0 rgba(255,255,255,.035) inset; }
-      .dt-landing:before,.dt-landing:after { display:none; }
-      .dt-eyebrow { padding:0; border:0; border-radius:0; background:none; color:#a1a1a6; font-size:.7rem; letter-spacing:.13em; }
-      .dt-eyebrow:before { width:5px; height:5px; background:#a1a1a6; box-shadow:none; }
-      .dt-landing-title { max-width:620px; margin:17px 0 13px; color:#f5f5f7; font-size:clamp(2rem,3.6vw,3rem); line-height:1.08; letter-spacing:-.045em; font-weight:700; }
-      .dt-landing-title span { color:#c7cbd1; background:none; -webkit-text-fill-color:currentColor; }
-      .dt-landing-copy { max-width:560px; margin:0 0 24px; color:#a1a1a6; font-size:.98rem; line-height:1.65; }
-      .dt-landing-actions { gap:10px; }
-      .dt-landing-actions a { min-height:43px; padding:0 17px; border-radius:11px; font-size:.86rem; font-weight:620; transition:background .16s ease,border-color .16s ease,transform .16s ease; }
-      .dt-landing-actions .primary { color:#111214 !important; background:#f5f5f7; border:1px solid #f5f5f7; box-shadow:none; }
-      .dt-landing-actions .primary:hover { background:#dedee2; box-shadow:none; transform:translateY(-1px); }
-      .dt-landing-actions .secondary { color:#e5e5e7 !important; background:#202226; border:1px solid rgba(255,255,255,.11); }
-      .dt-landing-actions .secondary:hover { background:#292b30; border-color:rgba(255,255,255,.2); transform:translateY(-1px); }
-      .dt-visual { min-height:210px; }
-      .dt-visual-panel { width:min(100%,390px); padding:18px; border:1px solid rgba(255,255,255,.10); border-radius:16px; background:#1b1e23; box-shadow:0 16px 36px rgba(0,0,0,.20); transform:none; animation:none; }
-      .dt-visual-top { color:#dedee2; margin-bottom:18px; }
-      .dt-live-dot { color:#a1a1a6; }
-      .dt-live-dot:before { background:#a1a1a6; box-shadow:none; }
-      .dt-bars { height:108px; gap:9px; background:repeating-linear-gradient(to bottom,transparent 0,transparent 26px,rgba(255,255,255,.045) 27px); }
-      .dt-bars i,.dt-bars i:nth-child(2n) { background:linear-gradient(180deg,#b9bec7,#737983); box-shadow:none; animation:none; }
-      .dt-visual-foot { color:#92949a; }
-      .dt-visual-foot strong { color:#d9dadd; }
-      [data-testid="stExpander"] { margin:0 0 22px !important; }
-      [data-testid="stExpander"] details { border:1px solid rgba(255,255,255,.10) !important; border-radius:14px !important; overflow:hidden; background:#15171b !important; }
-      [data-testid="stExpander"] details > summary { min-height:58px !important; padding:0 18px !important; background:#191b20 !important; color:#f0f0f2 !important; font-weight:620 !important; }
-      [data-testid="stExpander"] details > summary:hover { background:#202227 !important; }
-      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { padding:20px !important; background:#121418 !important; }
-      .stApp [data-testid="stHorizontalBlock"] { gap:18px !important; align-items:center !important; }
-      .stButton button,[data-testid="stDownloadButton"] button { min-height:42px; border-radius:10px !important; border:1px solid rgba(255,255,255,.12) !important; background:#202227 !important; color:#ededf0 !important; box-shadow:none !important; }
-      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { background:#2a2c32 !important; border-color:rgba(255,255,255,.23) !important; transform:translateY(-1px) !important; }
-      [data-testid="stCaptionContainer"] { color:#92949a !important; }
-      @media(max-width:800px) { .dt-landing { grid-template-columns:1fr; gap:18px; min-height:unset; } .dt-visual { min-height:175px; } .dt-visual-panel { transform:none; } }
-      @media(max-width:520px) { .stApp [data-testid="stMainBlockContainer"] { padding-left:14px !important; padding-right:14px !important; } .dt-landing { padding:24px 18px; } .dt-landing-actions a { width:100%; } .dt-visual { min-height:155px; } }
+      :root{--dt-purple:#8b5cf6;--dt-purple-soft:rgba(139,92,246,.16);--dt-panel:#171a21;--dt-border:#2b303a;--dt-muted:#9ca3af}
+      .stApp [data-testid="stMainBlockContainer"]{max-width:1600px!important;padding-top:1.1rem!important;padding-left:clamp(16px,2.2vw,34px)!important;padding-right:clamp(16px,2.2vw,34px)!important}
+      .dt-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:5px 0 20px;margin-bottom:18px;border-bottom:1px solid var(--dt-border);animation:dt-enter .55s cubic-bezier(.2,.8,.2,1) both}
+      .dt-brand{display:flex;align-items:center;gap:12px;min-width:0}
+      .dt-brand-mark{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#a78bfa,#6d28d9);color:white;font-size:23px;font-weight:850;box-shadow:0 7px 24px rgba(139,92,246,.28)}
+      .dt-brand-name{color:#f5f5f7;font-weight:760;font-size:1.03rem;line-height:1.1;letter-spacing:-.025em}
+      .dt-brand-sub{color:#9ca3af;font-size:.74rem;margin-top:4px}
+      .dt-top-status{display:flex;align-items:center;gap:8px;color:#aeb5c2;font-size:.78rem;padding:9px 12px;border:1px solid var(--dt-border);border-radius:10px;background:#171a20}
+      .dt-status-dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 12px rgba(52,211,153,.7)}
+      .dt-section-label{display:flex;align-items:center;gap:9px;color:#f3f4f6;font-size:1.12rem;font-weight:720;letter-spacing:-.025em;margin:8px 0 14px}
+      .dt-section-label:before{content:"";width:4px;height:19px;border-radius:9px;background:linear-gradient(#a78bfa,#6d28d9)}
+      [data-testid="stMetric"]{background:linear-gradient(145deg,#1c2028,#171a21)!important;border:1px solid #2d3340!important;border-radius:15px!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important}
+      [data-testid="stMetric"]:hover{border-color:rgba(167,139,250,.65)!important;box-shadow:0 12px 28px rgba(0,0,0,.24),0 0 0 1px rgba(139,92,246,.10)!important;transform:translateY(-3px)!important}
+      [data-testid="stPlotlyChart"],[data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid #2b303a!important;border-radius:14px!important;background:#171a21!important;overflow:hidden}
+      [data-testid="stExpander"] details{border:1px solid #2b303a!important;border-radius:13px!important;background:#171a21!important;overflow:hidden}
+      [data-testid="stExpander"] details>summary{background:#1c2028!important;color:#f3f4f6!important}
+      .stButton>button,.stDownloadButton>button{border-radius:10px!important;transition:all .2s ease!important}
+      .stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-2px)!important;border-color:#8b5cf6!important;box-shadow:0 7px 20px rgba(139,92,246,.16)!important}
+      [data-testid="stAlert"]{border-radius:12px!important}
+      @keyframes dt-top-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+      @media(max-width:650px){.dt-topbar{align-items:flex-start;flex-direction:column}.dt-top-status{align-self:flex-start}}
+      @media(prefers-reduced-motion:reduce){.dt-topbar{animation:none!important}}
     </style>
-    <div class="dt-landing-wrap">
-      <section class="dt-landing">
-        <div class="dt-landing-main">
-          <div class="dt-eyebrow">Dreamztree · Marketing Intelligence</div>
-          <h1 class="dt-landing-title">Make every campaign <span>count.</span></h1>
-          <p class="dt-landing-copy">One clear view of Meta Ads leads, advertising spend and branch performance. Turn campaign exports into reports your team can act on.</p>
-          <div class="dt-landing-actions"><a class="primary" href="#report-form">Create a report&nbsp; →</a><a class="secondary" href="#campaign-insights">Configure reporting&nbsp; ↗</a></div>
-        </div>
-        <div class="dt-visual" aria-hidden="true">
-          <div class="dt-visual-panel">
-            <div class="dt-visual-top"><span>Campaign overview</span><span class="dt-live-dot">Reporting workspace</span></div>
-            <div class="dt-bars"><i style="--h:34%"></i><i style="--h:48%"></i><i style="--h:42%"></i><i style="--h:64%"></i><i style="--h:57%"></i><i style="--h:76%"></i><i style="--h:88%"></i><i style="--h:96%"></i></div>
-            <div class="dt-visual-foot"><span>Meta Ads data</span><strong>Leads · Spend · Branches</strong></div>
-          </div>
-        </div>
-      </section>
+    <div class="dt-topbar">
+      <div class="dt-brand"><div class="dt-brand-mark">D</div><div><div class="dt-brand-name">Dreamztree Meta Report</div><div class="dt-brand-sub">Marketing intelligence workspace</div></div></div>
+      <div class="dt-top-status"><span class="dt-status-dot"></span> Reporting workspace <span style="opacity:.45">·</span> Secure session</div>
     </div>
     """, unsafe_allow_html=True)
-    header_left, game_col, chat_col, header_right = st.columns([3, 1.25, 1.1, 1])
+    page_title_col, game_col, chat_col, signout_col = st.columns([4.3, 1.1, 1.1, .9], vertical_alignment="center")
+    with page_title_col:
+        st.markdown('<div style="font-size:1.55rem;font-weight:760;letter-spacing:-.04em;color:#f5f5f7">Marketing Overview</div><div style="color:#9ca3af;font-size:.86rem;margin-top:3px">Upload campaign exports and review leads, spend and branch performance.</div>', unsafe_allow_html=True)
     with game_col:
         if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
             st.query_params["page"] = "game"
@@ -3118,8 +3045,8 @@ def main():
         if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
             st.query_params["page"] = "chat"
             st.rerun()
-    with header_right:
-        if st.button("Sign out", use_container_width=True):
+    with signout_col:
+        if st.button("Sign out", key="sign_out_main", use_container_width=True):
             _delete_auth_cookie()
             if st.session_state.get("auth_method") == "supabase":
                 try:
@@ -3134,6 +3061,8 @@ def main():
             st.session_state.pop("supabase_access_token", None)
             st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
+    st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="dt-section-label">Report workspace</div>', unsafe_allow_html=True)
     st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
 
     st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
