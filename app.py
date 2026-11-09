@@ -687,6 +687,70 @@ def inject_premium_theme():
     </style>
     """, unsafe_allow_html=True)
 
+    # Stronger, clearly visible motion layer. CSS-only so authentication,
+    # calculations, session state and report data remain untouched.
+    st.markdown(r"""
+    <style>
+    @keyframes dt-rise-in {
+      0% { opacity:0; transform:translate3d(0,28px,0) scale(.975); filter:blur(3px); }
+      65% { opacity:1; filter:blur(0); }
+      100% { opacity:1; transform:translate3d(0,0,0) scale(1); filter:blur(0); }
+    }
+    @keyframes dt-chart-in {
+      0% { opacity:0; transform:translateY(24px) scale(.965); }
+      100% { opacity:1; transform:translateY(0) scale(1); }
+    }
+    @keyframes dt-glow-pulse {
+      0%,100% { box-shadow:0 5px 18px rgba(0,0,0,.14),0 0 0 rgba(133,128,232,0); }
+      50% { box-shadow:0 9px 28px rgba(0,0,0,.22),0 0 22px rgba(133,128,232,.13); }
+    }
+    @keyframes dt-accent-sweep {
+      0% { background-position:-220% 0; }
+      100% { background-position:220% 0; }
+    }
+    @keyframes dt-nav-in { from { transform:translateX(-9px); opacity:.45; } to { transform:translateX(0); opacity:1; } }
+
+    /* Main dashboard sections enter with a visible stagger. */
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div {
+      animation:dt-rise-in .78s cubic-bezier(.2,.75,.25,1) both;
+    }
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(1) { animation-delay:.04s; }
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(2) { animation-delay:.12s; }
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(3) { animation-delay:.20s; }
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(4) { animation-delay:.28s; }
+
+    /* KPI cards: stronger entrance, sequential timing, and a restrained idle glow. */
+    [data-testid="stMetric"] {
+      animation:dt-rise-in .82s cubic-bezier(.2,.75,.25,1) both, dt-glow-pulse 4.8s ease-in-out 1.2s 1;
+      will-change:transform,opacity;
+    }
+    [data-testid="stMetric"]:nth-child(1) { animation-delay:.08s,1.1s; }
+    [data-testid="stMetric"]:nth-child(2) { animation-delay:.20s,1.2s; }
+    [data-testid="stMetric"]:nth-child(3) { animation-delay:.32s,1.3s; }
+    [data-testid="stMetric"]:nth-child(4) { animation-delay:.44s,1.4s; }
+    [data-testid="stMetric"]:hover { transform:translateY(-6px) scale(1.015); border-color:rgba(150,145,255,.85)!important; box-shadow:0 16px 34px rgba(0,0,0,.28),0 0 0 1px rgba(133,128,232,.18)!important; }
+
+    /* Charts visibly rise and settle after the KPI row. */
+    [data-testid="stPlotlyChart"] { animation:dt-chart-in 1.05s cubic-bezier(.2,.75,.25,1) .25s both!important; }
+    [data-testid="stPlotlyChart"]:hover { transform:translateY(-3px); border-color:rgba(150,145,255,.7)!important; box-shadow:0 14px 32px rgba(0,0,0,.24)!important; }
+
+    /* Stronger but still polished interaction feedback. */
+    .stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"]>button { position:relative; overflow:hidden; }
+    .stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"]>button:hover { transform:translateY(-3px) scale(1.015)!important; box-shadow:0 8px 24px rgba(133,128,232,.22)!important; }
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a,[data-testid="stSidebar"] button { transition:transform .22s ease,background .22s ease,border-color .22s ease!important; }
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover,[data-testid="stSidebar"] button:hover { transform:translateX(5px); background:rgba(133,128,232,.12)!important; }
+    [data-testid="stProgressBar"]>div>div { background-size:220% 100%!important; animation:dt-accent-sweep 1.15s linear infinite!important; }
+    [data-testid="stExpander"] details[open] [data-testid="stExpanderDetails"] { animation:dt-rise-in .38s ease-out both; }
+    [data-testid="stAlert"] { animation:dt-rise-in .55s ease-out both; }
+
+    @media(prefers-reduced-motion:reduce) {
+      [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div,
+      [data-testid="stMetric"],[data-testid="stPlotlyChart"],[data-testid="stAlert"] { animation:none!important; }
+      [data-testid="stMetric"],[data-testid="stPlotlyChart"],.stButton>button,.stDownloadButton>button { transition:none!important; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 def load_campaign_report(upload, mappings):
     """Load and classify a Meta export using the same rules as the main report."""
     raw = pd.read_excel(upload)
