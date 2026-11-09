@@ -729,15 +729,51 @@ def inject_premium_theme():
       transform: none;
     }
 
+    /* Premium glass controls for expandable section headings */
     [data-testid="stExpander"] {
-      background: var(--dt-panel);
-      border: 1px solid var(--dt-border);
-      border-radius: 10px;
-      box-shadow: none;
+      background: linear-gradient(135deg, rgba(34, 39, 55, .76), rgba(19, 25, 38, .72));
+      border: 1px solid rgba(190, 175, 255, .22);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .20), inset 0 1px 0 rgba(255,255,255,.07);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
     [data-testid="stExpander"]:hover {
-      border-color: #596273;
-      box-shadow: none;
+      border-color: rgba(167, 139, 250, .58);
+      box-shadow: 0 10px 30px rgba(8, 10, 20, .28), 0 0 0 1px rgba(167,139,250,.10), inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    [data-testid="stExpander"] details > summary {
+      min-height: 58px;
+      padding: 15px 19px;
+      background: linear-gradient(105deg, rgba(167,139,250,.13), rgba(94,234,212,.055) 58%, rgba(255,255,255,.025));
+      border: 0;
+      color: #f4f1ff !important;
+      font-weight: 700;
+      letter-spacing: .005em;
+      transition: background .2s ease, color .2s ease;
+    }
+    [data-testid="stExpander"] details > summary:hover {
+      background: linear-gradient(105deg, rgba(167,139,250,.22), rgba(94,234,212,.10) 58%, rgba(255,255,255,.045));
+      color: #ffffff !important;
+    }
+    [data-testid="stExpander"] details > summary p,
+    [data-testid="stExpander"] details > summary span {
+      color: #f4f1ff !important;
+      font-weight: 700 !important;
+    }
+    [data-testid="stExpander"] details > summary svg {
+      color: #c4b5fd !important;
+      fill: none;
+    }
+    [data-testid="stExpander"] details[open] > summary {
+      border-bottom: 1px solid rgba(190,175,255,.18);
+      background: linear-gradient(105deg, rgba(167,139,250,.20), rgba(94,234,212,.09) 58%, rgba(255,255,255,.035));
+    }
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+      background: rgba(12, 16, 25, .34);
+      padding: 18px;
     }
 
     .stButton button,
