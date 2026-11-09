@@ -567,189 +567,53 @@ def infer_campaign(name, mappings):
     return staff, course, branch, "Needs review"
 
 def inject_premium_theme():
-    """Dreamztree charcoal premium theme with restrained, app-wide motion."""
+    """Dreamztree reference-matched charcoal and soft-lavender interface."""
     st.markdown(r"""
     <style>
-    :root {
-      --dt-bg:#17191c; --dt-sidebar:#141619; --dt-panel:#202328;
-      --dt-panel-raised:#272b31; --dt-border:#30353c; --dt-text:#f5f6f7;
-      --dt-muted:#9ba2ac; --dt-accent:#8b5cf6; --dt-accent-soft:rgba(139,92,246,.16);
-      --dt-success:#35b879; --dt-warning:#e6a943; --dt-danger:#e26767;
-      --dt-fast:150ms; --dt-motion:180ms; --dt-slow:250ms;
-      color-scheme:dark;
-    }
-    @keyframes dt-enter { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes dt-ambient {
-      0%,100%{background-position:0% 0%,100% 100%}
-      50%{background-position:5% 4%,95% 96%}
-    }
-    @keyframes dt-shimmer { 0%{background-position:-180% 0} 100%{background-position:180% 0} }
-
-    .stApp {
-      background:
-        radial-gradient(ellipse at 12% 8%,rgba(139,92,246,.055),transparent 35%),
-        radial-gradient(ellipse at 88% 82%,rgba(74,115,151,.045),transparent 38%),
-        var(--dt-bg) !important;
-      background-size:120% 120%,120% 120%,auto;
-      animation:dt-ambient 36s ease-in-out infinite;
-      color:var(--dt-text);
-    }
+    :root{--dt-bg:#17191f;--dt-sidebar:#14161d;--dt-card:#242630;--dt-card2:#20222b;--dt-border:#363846;--dt-text:#f5f3fa;--dt-muted:#a9a6b5;--dt-purple:#bd8df5;--dt-purple2:#9860e8;--dt-pink:#e6a1e8;--dt-green:#2bc58b;--dt-red:#f06479;--dt-amber:#f0b84e;color-scheme:dark}
+    @keyframes dt-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes dt-chart-reveal{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    @keyframes dt-soft-glow{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.15)}50%{box-shadow:0 10px 28px rgba(160,105,232,.12)}}
+    @keyframes dt-shimmer{0%{background-position:-180% 0}100%{background-position:180% 0}}
+    .stApp{background:radial-gradient(ellipse at 92% 2%,rgba(154,96,232,.10),transparent 30%),radial-gradient(ellipse at 0% 100%,rgba(180,123,239,.06),transparent 28%),var(--dt-bg)!important;color:var(--dt-text)}
     [data-testid="stAppViewContainer"],[data-testid="stMainBlockContainer"]{background:transparent}
-    [data-testid="stHeader"]{background:rgba(20,22,25,.9);border-bottom:1px solid var(--dt-border);backdrop-filter:blur(12px)}
-    [data-testid="stSidebar"]{background:var(--dt-sidebar);border-right:1px solid var(--dt-border);transition:width var(--dt-slow) ease}
+    [data-testid="stHeader"]{background:rgba(23,25,31,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.04)}
+    [data-testid="stSidebar"]{background:linear-gradient(180deg,#191b24,#14161d)!important;border-right:1px solid #30323d}
+    [data-testid="stSidebar"]>div:first-child{padding-top:1rem}
     [data-testid="stSidebar"] *{color:var(--dt-text)}
-    .block-container{max-width:1460px;padding-top:1.5rem;padding-bottom:2.5rem}
-    h1,h2,h3,h4{color:var(--dt-text);letter-spacing:-.025em;font-weight:650}
+    .block-container{max-width:1600px;padding-top:1.35rem;padding-bottom:2.6rem}
+    h1,h2,h3,h4{color:var(--dt-text)!important;letter-spacing:-.025em;font-weight:700}
     p,label,[data-testid="stMarkdownContainer"]{color:var(--dt-text)}
-    [data-testid="stCaptionContainer"],.section-note{color:var(--dt-muted)}
-
-    .hero{
-      background:linear-gradient(145deg,#24282e,#1d2025);
-      border:1px solid var(--dt-border);border-left:3px solid var(--dt-accent);
-      border-radius:14px;padding:22px 24px;margin-bottom:20px;
-      box-shadow:0 8px 26px rgba(0,0,0,.12);
-      animation:dt-enter 420ms ease-out both;
-    }
-    .eyebrow{color:#aaa6f4;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
-    .hero-title{color:var(--dt-text);font-size:clamp(1.55rem,2.5vw,2.1rem);line-height:1.2;font-weight:700;margin:.4rem 0 .5rem}
-    .hero-copy{color:var(--dt-muted);font-size:.94rem}
-
-    [data-testid="stMetric"]{
-      background:linear-gradient(145deg,#24282e,#1d2025);
-      border:1px solid var(--dt-border);border-radius:14px;padding:16px 18px;
-      box-shadow:0 5px 18px rgba(0,0,0,.10);
-      animation:dt-enter 420ms ease-out both;
-      transition:transform var(--dt-motion) ease,border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease;
-    }
-    [data-testid="stMetric"]:hover{border-color:rgba(133,128,232,.62);transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.2)}
-    [data-testid="stMetricLabel"]{color:var(--dt-muted)!important;font-size:.82rem}
-    [data-testid="stMetricValue"]{color:var(--dt-text)!important;font-weight:700}
-    [data-testid="stMetricDelta"]{font-weight:600}
-
-    .stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"]>button{
-      border-radius:10px;border:1px solid #3a4049;
-      transition:transform var(--dt-fast) ease,border-color var(--dt-motion) ease,background var(--dt-motion) ease,box-shadow var(--dt-motion) ease;
-    }
-    .stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"]>button:hover{
-      transform:translateY(-1px);border-color:var(--dt-accent);
-      box-shadow:0 5px 16px rgba(133,128,232,.12)
-    }
-    .stButton>button:active,.stDownloadButton>button:active{transform:scale(.985)}
-    input,textarea,[data-baseweb="select"]>div{transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease}
-    input:focus,textarea:focus,[data-baseweb="select"]>div:focus-within{
-      border-color:var(--dt-accent)!important;box-shadow:0 0 0 2px var(--dt-accent-soft)!important
-    }
-
-    div[data-testid="stTabs"]{border-bottom:1px solid var(--dt-border)}
-    div[data-testid="stTabs"] button{color:var(--dt-muted);border-radius:8px 8px 0 0;transition:color var(--dt-motion) ease,background var(--dt-motion) ease}
-    div[data-testid="stTabs"] button:hover{color:var(--dt-text);background:var(--dt-accent-soft)}
-    div[data-testid="stTabs"] button[aria-selected="true"]{color:#d8d4ff;background:var(--dt-accent-soft);border-bottom:2px solid var(--dt-accent)}
-    [data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid var(--dt-border);border-radius:12px;overflow:hidden}
-    [data-testid="stExpander"]{
-      background:rgba(32,35,40,.82);border:1px solid var(--dt-border);border-radius:12px;
-      transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease
-    }
-    [data-testid="stExpander"]:hover{border-color:#505765;box-shadow:0 7px 20px rgba(0,0,0,.12)}
-    [data-testid="stExpander"] details>summary{background:rgba(139,92,246,.055);color:var(--dt-text);transition:background var(--dt-motion) ease}
-    [data-testid="stExpander"] details>summary:hover{background:rgba(133,128,232,.11)}
-    [data-testid="stAlert"]{border-radius:12px;animation:dt-enter 240ms ease-out both}
-    [data-testid="stPlotlyChart"]{
-      border:1px solid rgba(48,53,60,.72);border-radius:14px;overflow:hidden;
-      animation:dt-enter 520ms ease-out both;transition:border-color var(--dt-motion) ease,box-shadow var(--dt-motion) ease
-    }
-    [data-testid="stPlotlyChart"]:hover{border-color:rgba(133,128,232,.45);box-shadow:0 8px 24px rgba(0,0,0,.13)}
-    [data-testid="stFileUploader"] section{
-      border:1px dashed #555d69;border-radius:14px;background:rgba(32,35,40,.62);
-      transition:border-color var(--dt-motion) ease,background var(--dt-motion) ease
-    }
-    [data-testid="stFileUploader"] section:hover{border-color:var(--dt-accent);background:rgba(133,128,232,.07)}
-    [data-testid="stProgressBar"]>div>div{
-      background:linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed);
-      background-size:200% 100%;animation:dt-shimmer 1.5s linear infinite
-    }
-    .dt-landing,.dt-report-intro{
-      background:linear-gradient(135deg,#202329,#1a1d22)!important;
-      border:1px solid var(--dt-border)!important;
-      box-shadow:0 10px 32px rgba(0,0,0,.14)!important;
-      animation:dt-enter 420ms ease-out both
-    }
-    .dt-landing-kicker,.dt-brand-tag{color:#aaa6f4!important}
-    .dt-landing-copy,.dt-report-intro p{color:#b5bdc8!important}
-    .dt-landing-actions a{transition:transform var(--dt-motion) ease,border-color var(--dt-motion) ease,background var(--dt-motion) ease!important}
-    .dt-landing-actions a:hover{transform:translateY(-2px)}
-    @media(max-width:768px){
-      .block-container{padding-top:1rem;padding-left:1rem;padding-right:1rem}
-      [data-testid="stMetric"]{padding:12px}
-    }
-    @media(prefers-reduced-motion:reduce){
-      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
-    }
+    [data-testid="stCaptionContainer"]{color:var(--dt-muted)!important}
+    .dt-sidebar-brand{display:flex;align-items:center;gap:11px;padding:10px 8px 22px;margin-bottom:16px;border-bottom:1px solid #343541}
+    .dt-logo{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(145deg,#d6a4ff,#8f51db);color:#20142d;font-size:24px;font-weight:900;box-shadow:0 5px 18px rgba(177,112,245,.22)}
+    .dt-brand-title{font-size:1rem;font-weight:760;line-height:1.1;color:#f7f3fc}.dt-brand-sub{font-size:.73rem;color:#a9a6b5;margin-top:4px}
+    .dt-nav-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.13em;color:#898697;margin:18px 9px 8px;font-weight:750}
+    .dt-page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 0 18px;margin-bottom:18px;border-bottom:1px solid #343541;animation:dt-rise .55s ease both}
+    .dt-greeting{font-size:1.6rem;font-weight:780;letter-spacing:-.045em;color:#f8f5fc}.dt-greeting span{color:var(--dt-purple)}
+    .dt-subtitle{color:var(--dt-muted);font-size:.88rem;margin-top:4px}
+    .dt-section-title{font-size:1.12rem;font-weight:730;letter-spacing:-.025em;margin:20px 0 12px;color:#f7f3fc}
+    [data-testid="stMetric"]{background:linear-gradient(145deg,#292b37,#22242d)!important;border:1px solid #3a3c4b!important;border-radius:17px!important;padding:16px 18px!important;box-shadow:0 8px 24px rgba(0,0,0,.15)!important;animation:dt-rise .65s cubic-bezier(.2,.75,.25,1) both,dt-soft-glow 4s ease-in-out 1.1s 1;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease!important}
+    [data-testid="stMetric"]:hover{transform:translateY(-5px)!important;border-color:#bd8df5!important;box-shadow:0 14px 30px rgba(0,0,0,.24),0 0 0 1px rgba(189,141,245,.12)!important}
+    [data-testid="stMetricLabel"]{color:#b8b4c4!important;font-size:.82rem}[data-testid="stMetricValue"]{color:#fbf9ff!important;font-weight:760}
+    [data-testid="stPlotlyChart"]{border:1px solid #3a3c4b!important;border-radius:17px!important;overflow:hidden;background:#22242d!important;animation:dt-chart-reveal .85s ease .18s both;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+    [data-testid="stPlotlyChart"]:hover{transform:translateY(-3px);border-color:#a978e9!important;box-shadow:0 12px 28px rgba(0,0,0,.2)}
+    [data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid #3a3c4b!important;border-radius:14px!important;overflow:hidden;background:#22242d!important}
+    [data-testid="stExpander"]{background:#22242d!important;border:1px solid #3a3c4b!important;border-radius:14px!important;overflow:hidden;transition:border-color .2s ease,box-shadow .2s ease}
+    [data-testid="stExpander"]:hover{border-color:#9f70df!important;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+    [data-testid="stExpander"] details>summary{background:#292b36!important;color:#f8f5fc!important;padding:13px 16px!important}
+    .stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"]>button{border-radius:11px!important;border:1px solid #454653!important;background:#292b36!important;color:#f7f3fc!important;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease!important}
+    .stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"]>button:hover{transform:translateY(-2px)!important;border-color:#bd8df5!important;background:#34303f!important;box-shadow:0 7px 20px rgba(164,105,232,.18)!important}
+    .stButton>button:active,.stDownloadButton>button:active{transform:scale(.98)!important}
+    [data-testid="stAlert"]{border-radius:13px!important;animation:dt-rise .45s ease both}
+    [data-testid="stFileUploader"] section{border:1px dashed #77708a!important;border-radius:14px!important;background:#22242d!important;transition:border-color .2s ease,background .2s ease}
+    [data-testid="stFileUploader"] section:hover{border-color:#bd8df5!important;background:#292431!important}
+    [data-testid="stProgressBar"]>div>div{background:linear-gradient(90deg,#9860e8,#d2a0ff,#9860e8)!important;background-size:200% 100%;animation:dt-shimmer 1.4s linear infinite}
+    div[data-testid="stTabs"] button[aria-selected="true"]{color:#e1c4ff!important;border-bottom-color:#bd8df5!important}
+    @media(max-width:760px){.block-container{padding-left:1rem;padding-right:1rem}.dt-page-head{align-items:flex-start;flex-direction:column}.dt-greeting{font-size:1.35rem}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
     </style>
-    """, unsafe_allow_html=True)
-
-    # Stronger, clearly visible motion layer. CSS-only so authentication,
-    # calculations, session state and report data remain untouched.
-    st.markdown(r"""
-    <style>
-    @keyframes dt-rise-in {
-      0% { opacity:0; transform:translate3d(0,28px,0) scale(.975); filter:blur(3px); }
-      65% { opacity:1; filter:blur(0); }
-      100% { opacity:1; transform:translate3d(0,0,0) scale(1); filter:blur(0); }
-    }
-    @keyframes dt-chart-in {
-      0% { opacity:0; transform:translateY(24px) scale(.965); }
-      100% { opacity:1; transform:translateY(0) scale(1); }
-    }
-    @keyframes dt-glow-pulse {
-      0%,100% { box-shadow:0 5px 18px rgba(0,0,0,.14),0 0 0 rgba(133,128,232,0); }
-      50% { box-shadow:0 9px 28px rgba(0,0,0,.22),0 0 22px rgba(133,128,232,.13); }
-    }
-    @keyframes dt-accent-sweep {
-      0% { background-position:-220% 0; }
-      100% { background-position:220% 0; }
-    }
-    @keyframes dt-nav-in { from { transform:translateX(-9px); opacity:.45; } to { transform:translateX(0); opacity:1; } }
-
-    /* Main dashboard sections enter with a visible stagger. */
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div {
-      animation:dt-rise-in .78s cubic-bezier(.2,.75,.25,1) both;
-    }
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(1) { animation-delay:.04s; }
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(2) { animation-delay:.12s; }
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(3) { animation-delay:.20s; }
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div:nth-child(4) { animation-delay:.28s; }
-
-    /* KPI cards: stronger entrance, sequential timing, and a restrained idle glow. */
-    [data-testid="stMetric"] {
-      animation:dt-rise-in .82s cubic-bezier(.2,.75,.25,1) both, dt-glow-pulse 4.8s ease-in-out 1.2s 1;
-      will-change:transform,opacity;
-    }
-    [data-testid="stMetric"]:nth-child(1) { animation-delay:.08s,1.1s; }
-    [data-testid="stMetric"]:nth-child(2) { animation-delay:.20s,1.2s; }
-    [data-testid="stMetric"]:nth-child(3) { animation-delay:.32s,1.3s; }
-    [data-testid="stMetric"]:nth-child(4) { animation-delay:.44s,1.4s; }
-    [data-testid="stMetric"]:hover { transform:translateY(-6px) scale(1.015); border-color:rgba(150,145,255,.85)!important; box-shadow:0 16px 34px rgba(0,0,0,.28),0 0 0 1px rgba(133,128,232,.18)!important; }
-
-    /* Charts visibly rise and settle after the KPI row. */
-    [data-testid="stPlotlyChart"] { animation:dt-chart-in 1.05s cubic-bezier(.2,.75,.25,1) .25s both!important; }
-    [data-testid="stPlotlyChart"]:hover { transform:translateY(-3px); border-color:rgba(150,145,255,.7)!important; box-shadow:0 14px 32px rgba(0,0,0,.24)!important; }
-
-    /* Stronger but still polished interaction feedback. */
-    .stButton>button,.stDownloadButton>button,[data-testid="stFormSubmitButton"]>button { position:relative; overflow:hidden; }
-    .stButton>button:hover,.stDownloadButton>button:hover,[data-testid="stFormSubmitButton"]>button:hover { transform:translateY(-3px) scale(1.015)!important; box-shadow:0 8px 24px rgba(133,128,232,.22)!important; }
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a,[data-testid="stSidebar"] button { transition:transform .22s ease,background .22s ease,border-color .22s ease!important; }
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover,[data-testid="stSidebar"] button:hover { transform:translateX(5px); background:rgba(133,128,232,.12)!important; }
-    [data-testid="stProgressBar"]>div>div { background-size:220% 100%!important; animation:dt-accent-sweep 1.15s linear infinite!important; }
-    [data-testid="stExpander"] details[open] [data-testid="stExpanderDetails"] { animation:dt-rise-in .38s ease-out both; }
-    [data-testid="stAlert"] { animation:dt-rise-in .55s ease-out both; }
-
-    @media(prefers-reduced-motion:reduce) {
-      [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div,
-      [data-testid="stMetric"],[data-testid="stPlotlyChart"],[data-testid="stAlert"] { animation:none!important; }
-      [data-testid="stMetric"],[data-testid="stPlotlyChart"],.stButton>button,.stDownloadButton>button { transition:none!important; }
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    """,unsafe_allow_html=True)
 
 def load_campaign_report(upload, mappings):
     """Load and classify a Meta export using the same rules as the main report."""
@@ -2975,100 +2839,45 @@ def main():
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
-    st.markdown(r"""
-    <style>
-      [data-testid="stExpander"] { border:1px solid rgba(145,164,190,.20)!important; border-radius:12px!important; overflow:hidden; background:rgba(18,24,34,.78)!important; box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035)!important; transition:border-color .18s ease,box-shadow .18s ease!important; }
-      [data-testid="stExpander"]:hover { border-color:rgba(103,216,208,.38)!important; box-shadow:0 10px 28px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.045)!important; }
-      [data-testid="stExpander"] details > summary { min-height:54px!important; padding:13px 17px!important; background:linear-gradient(90deg,rgba(103,216,208,.075),rgba(255,255,255,.018))!important; color:#e8eef7!important; font-weight:680!important; letter-spacing:.015em!important; }
-      [data-testid="stExpander"] details > summary:hover { background:linear-gradient(90deg,rgba(103,216,208,.12),rgba(255,255,255,.035))!important; }
-      [data-testid="stExpander"] details > summary p,[data-testid="stExpander"] details > summary span { color:#e8eef7!important; font-weight:680!important; }
-      [data-testid="stExpander"] details > summary svg { color:#86dcd4!important; }
-      [data-testid="stExpander"] details[open] > summary { border-bottom:1px solid rgba(145,164,190,.16)!important; }
-      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { background:rgba(9,13,20,.30)!important; padding:18px!important; }
-      .stButton button,[data-testid="stDownloadButton"] button { border-radius:9px!important; border:1px solid rgba(145,164,190,.23)!important; background:rgba(255,255,255,.045)!important; color:#e7edf6!important; box-shadow:none!important; transition:transform .16s ease,border-color .16s ease,background .16s ease!important; }
-      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { transform:translateY(-1px)!important; border-color:rgba(103,216,208,.42)!important; background:rgba(103,216,208,.075)!important; }
-      @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],.stButton button,[data-testid="stDownloadButton"] button { transition:none!important; } }
-    </style>
-    """, unsafe_allow_html=True)
-    page = st.query_params.get("page", "dashboard")
-    if page == "game":
-        if st.button("← Back to Meta Leads Dashboard", key="back_to_dashboard"):
-            st.query_params["page"] = "dashboard"
-            st.rerun()
-        render_games_page()
-        return
-    if page == "chat":
-        if st.button("← Back to Meta Leads Dashboard", key="back_from_team_chat"):
-            st.query_params["page"] = "dashboard"
-            st.rerun()
-        render_team_chat()
-        return
-    # Compact analytics-workspace header (replaces the oversized welcome banner).
-    st.markdown(r"""
-    <style>
-      :root{--dt-purple:#8b5cf6;--dt-purple-soft:rgba(139,92,246,.16);--dt-panel:#171a21;--dt-border:#2b303a;--dt-muted:#9ca3af}
-      .stApp [data-testid="stMainBlockContainer"]{max-width:1600px!important;padding-top:1.1rem!important;padding-left:clamp(16px,2.2vw,34px)!important;padding-right:clamp(16px,2.2vw,34px)!important}
-      .dt-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:5px 0 20px;margin-bottom:18px;border-bottom:1px solid var(--dt-border);animation:dt-enter .55s cubic-bezier(.2,.8,.2,1) both}
-      .dt-brand{display:flex;align-items:center;gap:12px;min-width:0}
-      .dt-brand-mark{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#a78bfa,#6d28d9);color:white;font-size:23px;font-weight:850;box-shadow:0 7px 24px rgba(139,92,246,.28)}
-      .dt-brand-name{color:#f5f5f7;font-weight:760;font-size:1.03rem;line-height:1.1;letter-spacing:-.025em}
-      .dt-brand-sub{color:#9ca3af;font-size:.74rem;margin-top:4px}
-      .dt-top-status{display:flex;align-items:center;gap:8px;color:#aeb5c2;font-size:.78rem;padding:9px 12px;border:1px solid var(--dt-border);border-radius:10px;background:#171a20}
-      .dt-status-dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 12px rgba(52,211,153,.7)}
-      .dt-section-label{display:flex;align-items:center;gap:9px;color:#f3f4f6;font-size:1.12rem;font-weight:720;letter-spacing:-.025em;margin:8px 0 14px}
-      .dt-section-label:before{content:"";width:4px;height:19px;border-radius:9px;background:linear-gradient(#a78bfa,#6d28d9)}
-      [data-testid="stMetric"]{background:linear-gradient(145deg,#1c2028,#171a21)!important;border:1px solid #2d3340!important;border-radius:15px!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important}
-      [data-testid="stMetric"]:hover{border-color:rgba(167,139,250,.65)!important;box-shadow:0 12px 28px rgba(0,0,0,.24),0 0 0 1px rgba(139,92,246,.10)!important;transform:translateY(-3px)!important}
-      [data-testid="stPlotlyChart"],[data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid #2b303a!important;border-radius:14px!important;background:#171a21!important;overflow:hidden}
-      [data-testid="stExpander"] details{border:1px solid #2b303a!important;border-radius:13px!important;background:#171a21!important;overflow:hidden}
-      [data-testid="stExpander"] details>summary{background:#1c2028!important;color:#f3f4f6!important}
-      .stButton>button,.stDownloadButton>button{border-radius:10px!important;transition:all .2s ease!important}
-      .stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-2px)!important;border-color:#8b5cf6!important;box-shadow:0 7px 20px rgba(139,92,246,.16)!important}
-      [data-testid="stAlert"]{border-radius:12px!important}
-      @keyframes dt-top-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-      @media(max-width:650px){.dt-topbar{align-items:flex-start;flex-direction:column}.dt-top-status{align-self:flex-start}}
-      @media(prefers-reduced-motion:reduce){.dt-topbar{animation:none!important}}
-    </style>
-    <div class="dt-topbar">
-      <div class="dt-brand"><div class="dt-brand-mark">D</div><div><div class="dt-brand-name">Dreamztree Meta Report</div><div class="dt-brand-sub">Marketing intelligence workspace</div></div></div>
-      <div class="dt-top-status"><span class="dt-status-dot"></span> Reporting workspace <span style="opacity:.45">·</span> Secure session</div>
-    </div>
-    """, unsafe_allow_html=True)
-    page_title_col, game_col, chat_col, signout_col = st.columns([4.3, 1.1, 1.1, .9], vertical_alignment="center")
-    with page_title_col:
-        st.markdown('<div style="font-size:1.55rem;font-weight:760;letter-spacing:-.04em;color:#f5f5f7">Marketing Overview</div><div style="color:#9ca3af;font-size:.86rem;margin-top:3px">Upload campaign exports and review leads, spend and branch performance.</div>', unsafe_allow_html=True)
-    with game_col:
-        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
-            st.query_params["page"] = "game"
-            st.rerun()
-    with chat_col:
-        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
-            st.query_params["page"] = "chat"
-            st.rerun()
-    with signout_col:
-        if st.button("Sign out", key="sign_out_main", use_container_width=True):
-            _delete_auth_cookie()
-            if st.session_state.get("auth_method") == "supabase":
-                try:
-                    client = get_supabase_client()
-                    if client is not None:
-                        client.auth.sign_out()
-                except Exception:
-                    pass
-            st.session_state["authenticated"] = False
-            st.session_state.pop("authenticated_user", None)
-            st.session_state.pop("auth_method", None)
-            st.session_state.pop("supabase_access_token", None)
-            st.session_state.pop("supabase_refresh_token", None)
-            st.rerun()
-    st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="dt-section-label">Report workspace</div>', unsafe_allow_html=True)
-    st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
+    # Reference-matched desktop shell: compact navigation rail + clean analytics workspace.
+    st.sidebar.markdown(r"""
+      <div class="dt-sidebar-brand"><div class="dt-logo">D</div><div><div class="dt-brand-title">Dreamztree</div><div class="dt-brand-sub">Meta Report</div></div></div>
+      <div class="dt-nav-label">Workspace</div>
+    """,unsafe_allow_html=True)
+    st.sidebar.markdown('<a href="#overview" style="display:block;padding:11px 13px;margin:4px 0;border-radius:11px;background:linear-gradient(90deg,rgba(189,141,245,.25),rgba(189,141,245,.08));border:1px solid rgba(189,141,245,.45);color:#ead7ff;text-decoration:none;font-weight:700">⌂　Overview</a>',unsafe_allow_html=True)
+    st.sidebar.markdown('<a href="#upload-section" style="display:block;padding:11px 13px;margin:4px 0;border-radius:10px;color:#e9e5ef;text-decoration:none">⇧　Create Report</a><a href="#campaign-review" style="display:block;padding:11px 13px;margin:4px 0;border-radius:10px;color:#e9e5ef;text-decoration:none">▱　Campaign Assignments</a><a href="#branch-analytics" style="display:block;padding:11px 13px;margin:4px 0;border-radius:10px;color:#e9e5ef;text-decoration:none">⌖　Branch Performance</a><a href="#course-analytics" style="display:block;padding:11px 13px;margin:4px 0;border-radius:10px;color:#e9e5ef;text-decoration:none">▥　Course Performance</a><a href="#campaign-insights" style="display:block;padding:11px 13px;margin:4px 0;border-radius:10px;color:#e9e5ef;text-decoration:none">◷　Campaign Analytics</a>',unsafe_allow_html=True)
+    st.sidebar.markdown('<div class="dt-nav-label">Team</div>',unsafe_allow_html=True)
+    if st.sidebar.button("▢  Team Chat",use_container_width=True,key="sidebar_team_chat"):
+        st.query_params["page"]="chat";st.rerun()
+    if st.sidebar.button("♧  Game Zone",use_container_width=True,key="sidebar_game_zone"):
+        st.query_params["page"]="game";st.rerun()
+    st.sidebar.markdown('<div class="dt-nav-label">Account</div>',unsafe_allow_html=True)
+    with st.sidebar.expander("⚙  Settings",expanded=False):
+        st.caption("Report date, currency conversion and campaign mapping are available in Report settings.")
+    if st.sidebar.button("↪  Sign out",use_container_width=True,key="sidebar_signout"):
+        _delete_auth_cookie()
+        if st.session_state.get("auth_method")=="supabase":
+            try:
+                client=get_supabase_client()
+                if client is not None: client.auth.sign_out()
+            except Exception: pass
+        st.session_state["authenticated"]=False
+        st.session_state.pop("authenticated_user",None)
+        st.session_state.pop("auth_method",None)
+        st.session_state.pop("supabase_access_token",None)
+        st.session_state.pop("supabase_refresh_token",None)
+        st.rerun()
 
-    st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
+    date_value=st.date_input("Report date",value=datetime.today().date(),label_visibility="collapsed")
+    head_left,head_right=st.columns([4.5,1.5],vertical_alignment="center")
+    with head_left:
+        st.markdown('<div id="overview" class="dt-greeting">Good day, <span>Dreamztree</span> ✨</div><div class="dt-subtitle">Here is your Meta Ads performance overview.</div>',unsafe_allow_html=True)
+    with head_right:
+        st.markdown(f'<div style="text-align:right;color:#bdb7ca;font-size:.82rem;border:1px solid #3a3c4b;background:#242630;padding:10px 13px;border-radius:12px">▣　{date_value.strftime("%d %b %Y")}<br><span style="color:#8f8b9c;font-size:.7rem">Reporting date</span></div>',unsafe_allow_html=True)
+    st.markdown('<div class="dt-section-title">Performance overview</div>',unsafe_allow_html=True)
+    st.markdown('<div id="upload-section"></div>',unsafe_allow_html=True)
+    st.caption("Upload your Meta Ads Excel export to populate the live performance cards and analytics below.")
     with st.expander("Report settings     ·     Date, currency and campaign mapping", expanded=False):
-        date_value = st.date_input("Report date", value=datetime.today().date())
-
         settings_left, settings_right = st.columns(2, gap="large")
         with settings_left:
             st.subheader("Currency conversion · USD to KWD")
@@ -3152,6 +2961,18 @@ def main():
         no_result_spend_usd = float(no_result_df["Spent"].sum())
         df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
 
+        # Live summary cards use the uploaded export; spend includes zero-result campaigns.
+        total_leads_live = int(df["Results"].sum())
+        total_spend_live = float(raw[spent_col].pipe(pd.to_numeric, errors="coerce").fillna(0).sum())
+        campaign_count_live = int(len(raw))
+        cpl_live = (total_spend_live * factor / total_leads_live) if total_leads_live else 0.0
+        st.markdown('<div class="dt-section-title">Today at a glance</div>',unsafe_allow_html=True)
+        k1,k2,k3,k4=st.columns(4,gap="medium")
+        k1.metric("Total Leads",f"{total_leads_live:,}")
+        k2.metric("Ad Spend",f"KD {total_spend_live*factor:,.3f}")
+        k3.metric("Cost per Lead",f"KD {cpl_live:,.3f}")
+        k4.metric("Campaigns",f"{campaign_count_live:,}")
+
         st.success(f"Loaded {len(df)} campaigns with {int(df['Results'].sum())} total results.")
         with st.container(border=True):
             st.markdown("### ⚠️ Campaigns with no results")
@@ -3185,7 +3006,7 @@ def main():
                 )
             else:
                 st.success("No campaigns with zero results were found in this export.")
-        st.subheader("2. Review campaign assignments")
+        st.markdown('<div id="campaign-review" class="dt-section-title">Campaign assignments</div>',unsafe_allow_html=True)
         assignments = []
         for _, r in df.iterrows():
             staff, course, branch, status = infer_campaign(r["Campaign"], mappings)
@@ -3249,7 +3070,7 @@ def main():
             m1.metric("Total leads included", f"{grand_leads:,}")
             m2.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
             m3.metric("Campaigns included", f"{len(valid):,}")
-            st.subheader("Performance analytics")
+            st.markdown('<div id="branch-analytics" class="dt-section-title">Performance analytics</div>',unsafe_allow_html=True)
             branch_chart = valid.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
             branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
             course_chart = valid.assign(Course=valid["Course"].astype(str).str.strip().replace("", "Unclassified course")).groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
@@ -3259,14 +3080,14 @@ def main():
                 branch_leads_plot = branch_chart.sort_values("Leads", ascending=True)
                 fig_leads = px.bar(
                     branch_leads_plot, x="Leads", y="Branch", orientation="h",
-                    text="Leads", color_discrete_sequence=["#3dd6b3"],
+                    text="Leads", color_discrete_sequence=["#bd8df5"],
                     template="plotly_dark",
                 )
                 fig_leads.update_layout(
                     height=300, margin=dict(l=12, r=20, t=12, b=12),
                     showlegend=False, xaxis_title="Leads", yaxis_title="",
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#E8EEF7", size=12),
+                    font=dict(color="#E9E3F1", size=12),
                 )
                 fig_leads.update_traces(textposition="outside", cliponaxis=False)
                 st.plotly_chart(fig_leads, use_container_width=True, config={"displayModeBar": False, "responsive": True})
@@ -3276,21 +3097,21 @@ def main():
                 fig_cost = px.bar(
                     branch_cost_plot, x="Spend_KWD", y="Branch", orientation="h",
                     text=branch_cost_plot["Spend_KWD"].map(lambda x: f"{x:.3f}"),
-                    color_discrete_sequence=["#6ea8fe"], template="plotly_dark",
+                    color_discrete_sequence=["#d99ce8"], template="plotly_dark",
                 )
                 fig_cost.update_layout(
                     height=300, margin=dict(l=12, r=28, t=12, b=12),
                     showlegend=False, xaxis_title="Cost (KWD)", yaxis_title="",
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#E8EEF7", size=12),
+                    font=dict(color="#E9E3F1", size=12),
                 )
                 fig_cost.update_traces(textposition="outside", cliponaxis=False)
                 st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False, "responsive": True})
-            st.markdown("#### Top courses by leads")
+            st.markdown('<div id="course-analytics" class="dt-section-title">Leads by course</div>',unsafe_allow_html=True)
             course_plot = course_chart.sort_values("Results", ascending=True)
             fig_courses = px.bar(
                 course_plot, x="Results", y="Course", orientation="h",
-                text="Results", color_discrete_sequence=["#f7bd60"],
+                text="Results", color_discrete_sequence=["#a978ed"],
                 template="plotly_dark",
             )
             fig_courses.update_layout(
@@ -3298,7 +3119,7 @@ def main():
                 margin=dict(l=18, r=28, t=12, b=24),
                 showlegend=False, xaxis_title="Leads", yaxis_title="",
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#E8EEF7", size=12),
+                font=dict(color="#E9E3F1", size=12),
                 yaxis=dict(automargin=True, tickfont=dict(size=12)),
             )
             fig_courses.update_traces(textposition="outside", cliponaxis=False)
@@ -3308,8 +3129,7 @@ def main():
 
             # Optional day-over-day comparison. Yesterday is processed with the same campaign
             # filters and mapping rules; today's figures use the reviewed assignments above.
-            st.divider()
-            st.subheader("Yesterday vs today")
+            st.markdown('<div id="campaign-insights" class="dt-section-title">Yesterday vs today</div>',unsafe_allow_html=True)
             if yesterday_uploaded is None:
                 st.info("Upload yesterday's Meta Ads Excel report above to compare lead volume, cost, and the highest-lead campaign.")
             else:
