@@ -187,6 +187,8 @@ def _restore_auth_cookie(client):
     st.session_state["_dt_auth_restore_error"] = "The session cookie contains an unknown authentication method."
     return False
 
+MANUAL_FALLBACK_KWD_FACTOR = 0.308  # Previous organization setting; used only if API fails or manual mode is selected.
+
 def fetch_usd_kwd_rate():
     """Fetch the latest published USD->KWD reference rate; cache for 24 hours.
 
