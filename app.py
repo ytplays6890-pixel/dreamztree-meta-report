@@ -32,7 +32,7 @@ RemoveEmptyElementContainer()
 
 
 def _auth_cipher():
-    """Load the server-side Fernet key from Streamlit Secrets or environment."""
+    """Load the server-side Fernet key without exposing technical errors to users."""
     key = str(os.environ.get("AUTH_COOKIE_KEY", "")).strip()
     if not key:
         try:
@@ -40,31 +40,31 @@ def _auth_cipher():
         except Exception:
             key = ""
     if not key:
+        st.session_state["_dt_auth_setup_error"] = "AUTH_COOKIE_KEY is not configured."
         return None
     try:
+        st.session_state.pop("_dt_auth_setup_error", None)
         return Fernet(key.encode("utf-8"))
     except Exception:
-        st.error("AUTH_COOKIE_KEY is invalid. Add a valid Fernet key in Streamlit Secrets.")
+        st.session_state["_dt_auth_setup_error"] = "AUTH_COOKIE_KEY is not a valid Fernet key."
         return None
 
 
 def _save_auth_cookie(payload):
-    """Persist an encrypted, short-lived auth payload in the user's browser."""
+    """Persist an encrypted auth payload in the browser; keep failures out of the UI."""
     cipher = _auth_cipher()
     if cipher is None:
-        st.error("Persistent login is not configured. Add AUTH_COOKIE_KEY to Streamlit Secrets.")
         return False
     try:
         token = cipher.encrypt(json.dumps(payload).encode("utf-8")).decode("ascii")
-        # The installed streamlit-cookies-controller 0.0.4 API documents
-        # set(name, value). Avoid unsupported keyword arguments.
         _auth_cookie_controller.set(_AUTH_COOKIE_NAME, token)
-        # The component writes in the browser asynchronously. Give it time to
-        # commit the cookie before the login flow triggers a Streamlit rerun.
-        time.sleep(1.0)
+        # The component writes in the browser asynchronously. A short pause gives
+        # the browser time to commit the cookie before the login flow reruns.
+        time.sleep(0.35)
+        st.session_state.pop("_dt_auth_cookie_write_error", None)
         return True
     except Exception as exc:
-        st.warning(f"Could not save the persistent login cookie: {exc}")
+        st.session_state["_dt_auth_cookie_write_error"] = type(exc).__name__
         return False
 
 
@@ -76,60 +76,58 @@ def _delete_auth_cookie():
 
 
 def _restore_auth_cookie(client):
-    """Restore a signed-in user and retain a safe diagnostic if restoration fails."""
+    """Restore a saved login when a valid browser cookie is available.
+
+    An absent cookie is normal on a first visit or after sign-out; it is not an
+    application warning. The cookie component will trigger a rerun when its
+    browser-side value becomes available.
+    """
     if st.session_state.get("authenticated"):
         return True
-    st.session_state.pop("_dt_auth_restore_error", None)
 
     try:
         cookies = _auth_cookie_controller.getAll()
-        if not isinstance(cookies, dict) or _AUTH_COOKIE_NAME not in cookies:
-            time.sleep(1.0)
-            cookies = _auth_cookie_controller.getAll()
     except Exception as exc:
-        st.session_state["_dt_auth_restore_error"] = (
-            "The browser cookie component could not be read (" + type(exc).__name__ + ")."
-        )
+        st.session_state["_dt_auth_restore_error"] = "Cookie read failed (" + type(exc).__name__ + ")."
         return False
 
+    # None means the browser component has not returned its initial value yet.
+    # Empty dict means the browser has no saved auth cookie; both are normal.
     if not isinstance(cookies, dict):
-        st.session_state["_dt_auth_restore_error"] = "The browser cookie component has not finished loading."
         return False
-
     encrypted = cookies.get(_AUTH_COOKIE_NAME)
     if not encrypted:
-        st.session_state["_dt_auth_restore_error"] = "The session cookie was not returned to the app after refresh."
+        st.session_state.pop("_dt_auth_restore_error", None)
         return False
 
     cipher = _auth_cipher()
     if cipher is None:
-        st.session_state["_dt_auth_restore_error"] = "AUTH_COOKIE_KEY is missing or is not a valid Fernet key."
+        st.session_state["_dt_auth_restore_error"] = "Persistent-login encryption is not configured."
         return False
     try:
-        payload = json.loads(cipher.decrypt(str(encrypted).encode("ascii"), ttl=_AUTH_COOKIE_TTL_SECONDS))
-    except InvalidToken:
-        # Do not delete the cookie yet: preserve evidence while diagnosing.
-        st.session_state["_dt_auth_restore_error"] = (
-            "The cookie could not be decrypted or has expired. Check that AUTH_COOKIE_KEY "
-            "has not changed since the cookie was created."
+        payload = json.loads(
+            cipher.decrypt(str(encrypted).encode("ascii"), ttl=_AUTH_COOKIE_TTL_SECONDS)
         )
-        return False
-    except (ValueError, TypeError, json.JSONDecodeError):
-        st.session_state["_dt_auth_restore_error"] = "The decrypted session data is not valid JSON."
+    except (InvalidToken, ValueError, TypeError, json.JSONDecodeError):
+        # An expired or unreadable cookie should not trap the user in a loop.
+        st.session_state["_dt_auth_restore_error"] = "Saved login expired or could not be verified."
+        _delete_auth_cookie()
         return False
     except Exception as exc:
         st.session_state["_dt_auth_restore_error"] = "Cookie decoding failed (" + type(exc).__name__ + ")."
         return False
 
     if not isinstance(payload, dict):
-        st.session_state["_dt_auth_restore_error"] = "The session cookie does not contain a valid session record."
+        st.session_state["_dt_auth_restore_error"] = "Saved login data is invalid."
+        _delete_auth_cookie()
         return False
 
     method = payload.get("method")
     if method == "legacy":
         username = str(payload.get("username", "")).strip()
         if not username:
-            st.session_state["_dt_auth_restore_error"] = "The legacy session cookie has no username."
+            st.session_state["_dt_auth_restore_error"] = "Saved administrator login is invalid."
+            _delete_auth_cookie()
             return False
         try:
             legacy_users = dict(st.secrets["auth"]["users"])
@@ -140,26 +138,28 @@ def _restore_auth_cookie(client):
         if env_admin_user and env_admin_password:
             legacy_users.setdefault(env_admin_user, env_admin_password)
         if username not in legacy_users:
-            st.session_state["_dt_auth_restore_error"] = (
-                "The cookie belongs to a legacy username that is not present in the current admin configuration."
-            )
+            st.session_state["_dt_auth_restore_error"] = "Saved administrator account is no longer configured."
+            _delete_auth_cookie()
             return False
         st.session_state["authenticated"] = True
         st.session_state["authenticated_user"] = username
         st.session_state["auth_method"] = "legacy"
+        st.session_state.pop("_dt_auth_restore_error", None)
         return True
 
     if method == "supabase":
         refresh_token = str(payload.get("refresh_token", "")).strip()
         if not refresh_token or client is None:
-            st.session_state["_dt_auth_restore_error"] = "The Supabase refresh token is missing or Supabase is not configured."
+            st.session_state["_dt_auth_restore_error"] = "Saved Supabase session is unavailable."
+            _delete_auth_cookie()
             return False
         try:
             refreshed = client.auth.refresh_session(refresh_token)
             session = getattr(refreshed, "session", None)
             user = getattr(refreshed, "user", None)
             if not session or not user:
-                st.session_state["_dt_auth_restore_error"] = "Supabase did not return a valid refreshed session and user."
+                st.session_state["_dt_auth_restore_error"] = "Supabase did not return a valid session."
+                _delete_auth_cookie()
                 return False
             st.session_state["supabase_access_token"] = session.access_token
             st.session_state["supabase_refresh_token"] = session.refresh_token
@@ -175,15 +175,15 @@ def _restore_auth_cookie(client):
                 "refresh_token": session.refresh_token,
                 "email": user.email or payload.get("email", ""),
             })
+            st.session_state.pop("_dt_auth_restore_error", None)
             return True
         except Exception as exc:
-            # Preserve the cookie during diagnosis; the next login can overwrite it.
-            st.session_state["_dt_auth_restore_error"] = (
-                "Supabase rejected or could not refresh the saved session (" + type(exc).__name__ + ")."
-            )
+            st.session_state["_dt_auth_restore_error"] = "Supabase session refresh failed (" + type(exc).__name__ + ")."
+            _delete_auth_cookie()
             return False
 
-    st.session_state["_dt_auth_restore_error"] = "The session cookie contains an unknown authentication method."
+    st.session_state["_dt_auth_restore_error"] = "Saved login method is not recognized."
+    _delete_auth_cookie()
     return False
 
 # The lamp pull is a small Streamlit custom component so pointer dragging can
@@ -2131,6 +2131,36 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
  .block-container:has([data-testid="stTabs"]) { width:auto !important; max-width:620px !important; margin:34vh 14px 0 !important; padding-top:0 !important; }
  .st-key-dt_lamp_drag_component { left:calc(50vw - 36px) !important; top:calc(18vh - 23px) !important; }
 }
+/* Accessibility and contrast pass: keep the lamp visual, but make the login UI clear. */
+[data-testid="stAppViewContainer"]::before {
+  background:
+    radial-gradient(ellipse at 24% 44%, rgba(45,150,164,.22) 0%, transparent 42%),
+    linear-gradient(115deg, rgba(8,18,25,.22), rgba(5,8,14,.78)) !important;
+  opacity: .78 !important;
+}
+.room::after { background:radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.18) 100%) !important; }
+.night-sky { filter:brightness(.82) saturate(.88) !important; }
+.light-beam { opacity:.48 !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] {
+  background:rgba(15,23,42,.96) !important;
+  border:1px solid rgba(148,163,184,.34) !important;
+  box-shadow:0 18px 55px rgba(0,0,0,.34) !important;
+}
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#e5e7eb !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:#67e8f9 !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] label,
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] [data-testid="stWidgetLabel"] p { color:#e5e7eb !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] input {
+  background:#111827 !important; color:#f8fafc !important;
+  border:1px solid #475569 !important; border-radius:10px !important;
+}
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] input:focus {
+  border-color:#67e8f9 !important; box-shadow:0 0 0 2px rgba(103,232,249,.18) !important;
+}
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] button[kind="primary"],
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] button[data-testid="stFormSubmitButton"] {
+  color:#07131a !important; font-weight:700 !important;
+}
 """
     markup = '<main class="room {room_class}" id="room">\n  <div class="night-sky"><div class="stars-cluster"></div><div class="ambient-window"><div class="window-frame"></div><div class="window-pane"><div class="window-glow"></div></div></div></div>\n  <div class="room-light" id="roomLight"></div><div class="fireflies" id="fireflies"></div>\n  <section class="lamp-side"><div class="lamp-container" id="lampContainer">\n    <div class="lamp-glow"></div><div class="lamp-top-finial"></div>\n    <div class="lamp-head" id="lampHead"><div class="lamp-inner-bulb"></div></div>\n    <div class="light-beam" id="lightBeam"><div class="dust-motes"></div></div>\n    <div class="lamp-neck-joint"></div><div class="lamp-stem"></div><div class="lamp-joint"></div>\n    <div class="lamp-base"><div class="base-ridge"></div></div><div class="desk-surface" id="deskSurface"></div>\n    <svg class="string-svg" aria-hidden="true"><path id="stringPath" d="M 0 0 L 0 95"></path></svg>\n    <div class="string-handle" id="stringHandle" aria-label="Pull lamp switch string"><div class="handle-bead"></div></div>\n  </div></section>\n</main>'.format(room_class=room_class)
     st.markdown("<style>" + css + "</style>" + markup, unsafe_allow_html=True)
@@ -2148,9 +2178,6 @@ def require_login():
     client = get_supabase_client()
     if _restore_auth_cookie(client):
         return
-    restore_error = st.session_state.get("_dt_auth_restore_error")
-    if restore_error:
-        st.warning("Persistent login diagnostic: " + str(restore_error))
     if client is None:
         st.title("Dreamztree Meta Report")
         st.error("Supabase authentication is not configured yet.")
