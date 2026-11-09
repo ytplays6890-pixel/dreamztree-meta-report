@@ -2062,7 +2062,7 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
 
 
 def inject_christmas_snow():
-    """Lightweight falling-snow overlay for the login screen and dashboard."""
+    # Falling snow with a compact Christmas music player.
     import random
     random.seed(24)
     flakes = []
@@ -2078,86 +2078,98 @@ def inject_christmas_snow():
             f'--fall-duration:{duration}s;--fall-delay:{delay}s;--snow-drift:{drift}px;'
             f'--snow-opacity:{opacity:.2f};"></span>'
         )
-    # Browser audio requires a user gesture. Play the public-domain Jingle Bells melody
-    # with Web Audio; keep the sound control in a fixed, separate top-right position.
+    # All tunes below are public-domain Christmas carols. Audio starts only after a click.
     components.html(r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
-#soundToggle{position:fixed;right:0;top:0;z-index:999999;border:1px solid rgba(205,220,245,.28);
- border-radius:999px;padding:9px 14px;background:rgba(28,35,48,.94);color:#edf4ff;
- font-size:12px;font-weight:650;letter-spacing:.02em;cursor:pointer;white-space:nowrap;
- box-shadow:0 5px 20px rgba(0,0,0,.24)}
-#soundToggle:hover{background:rgba(48,59,78,.98)}
+.player{position:fixed;top:0;right:0;display:flex;gap:6px;align-items:center;justify-content:flex-end;width:100%;}
+select,button{height:36px;border:1px solid rgba(205,220,245,.30);border-radius:999px;
+ background:rgba(28,35,48,.97);color:#edf4ff;font-size:11px;font-weight:650;padding:0 11px;
+ box-shadow:0 5px 20px rgba(0,0,0,.24);outline:none}
+select{width:145px;cursor:pointer}button{cursor:pointer;white-space:nowrap}
+button:hover,select:hover{background:rgba(48,59,78,.99)}
 </style></head><body>
-<button id="soundToggle" type="button" aria-label="Play Jingle Bells">🔔 Play Jingle Bells</button>
+<div class="player"><select id="song" aria-label="Choose Christmas song">
+<option value="jingle">Jingle Bells</option><option value="wewish">We Wish You a Merry Christmas</option>
+<option value="deck">Deck the Halls</option><option value="silent">Silent Night</option>
+</select><button id="soundToggle" type="button">▶ Play</button></div>
 <script>
 (()=>{
  const frame=window.frameElement;
- if(frame){frame.style.position='fixed';frame.style.top='16px';frame.style.right='22px';frame.style.width='190px';frame.style.height='48px';frame.style.zIndex='1000000';frame.style.border='0';frame.style.background='transparent';frame.style.overflow='hidden';}
- const btn=document.getElementById('soundToggle');let ctx=null,master=null,on=false,runId=0;
- // Public-domain Jingle Bells opening melody, in C major.
- const E=659.25,F=698.46,G=783.99,C=523.25,D=587.33;
- const beat=.29;
- const melody=[
-  [E,1],[E,1],[E,2],[E,1],[E,1],[E,2],[E,1],[G,1],[C,1.5],[D,.5],[E,3],
-  [F,1],[F,1],[F,1],[F,1],[F,1],[E,1],[E,1],[E,.5],[E,.5],[D,1],[D,1],[E,1],[D,2],[G,2]
- ];
+ if(frame){frame.style.position='fixed';frame.style.top='18px';frame.style.right='22px';frame.style.width='310px';frame.style.height='44px';frame.style.zIndex='1000000';frame.style.border='0';frame.style.background='transparent';frame.style.overflow='hidden';}
+ const btn=document.getElementById('soundToggle'),picker=document.getElementById('song');
+ let ctx=null,master=null,on=false,runId=0;
+ const N={C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880};
+ const tunes={
+  jingle:[[N.E5,1],[N.E5,1],[N.E5,2],[N.E5,1],[N.E5,1],[N.E5,2],[N.E5,1],[N.G5,1],[N.C5,1.5],[N.D5,.5],[N.E5,3],[N.F5,1],[N.F5,1],[N.F5,1],[N.F5,1],[N.F5,1],[N.E5,1],[N.E5,1],[N.E5,.5],[N.E5,.5],[N.D5,1],[N.D5,1],[N.E5,1],[N.D5,2],[N.G5,2]],
+  wewish:[[N.C4,1],[N.F4,1],[N.F4,1],[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,2],[N.D4,1],[N.G4,1],[N.G4,1],[N.A4,1],[N.G4,1],[N.F4,1],[N.E4,2],[N.E4,1],[N.A4,1],[N.A4,1],[N.B4,1],[N.A4,1],[N.G4,1],[N.F4,2]],
+  deck:[[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,1],[N.C4,1],[N.D4,1],[N.E4,1],[N.C4,1],[N.D4,1],[N.E4,1],[N.F4,1],[N.D4,1],[N.E4,1],[N.F4,1],[N.G4,1],[N.A4,1],[N.G4,1],[N.F4,1],[N.E4,1],[N.D4,1],[N.C4,2]],
+  silent:[[N.G4,2],[N.A4,2],[N.G4,1],[N.E4,2],[N.G4,2],[N.A4,2],[N.G4,1],[N.E4,2],[N.D5,2],[N.D5,1],[N.B4,2],[N.C5,2],[N.C5,1],[N.G4,2]]
+ };
  function note(freq,when,duration){
-  const osc=ctx.createOscillator(),gain=ctx.createGain(),bell=ctx.createOscillator(),bellGain=ctx.createGain();
-  osc.type='sine';osc.frequency.setValueAtTime(freq,when);
-  bell.type='sine';bell.frequency.setValueAtTime(freq*2.01,when);
-  gain.gain.setValueAtTime(.0001,when);gain.gain.exponentialRampToValueAtTime(.12,when+.018);
-  gain.gain.exponentialRampToValueAtTime(.0001,when+duration*.88);
-  bellGain.gain.setValueAtTime(.0001,when);bellGain.gain.exponentialRampToValueAtTime(.035,when+.012);
-  bellGain.gain.exponentialRampToValueAtTime(.0001,when+Math.min(duration*.65,.42));
-  osc.connect(gain);gain.connect(master);bell.connect(bellGain);bellGain.connect(master);
-  osc.start(when);bell.start(when);osc.stop(when+duration);bell.stop(when+Math.min(duration,.45));
+  const osc=ctx.createOscillator(),gain=ctx.createGain(),harm=ctx.createOscillator(),hg=ctx.createGain();
+  osc.type='sine';osc.frequency.setValueAtTime(freq,when);harm.type='sine';harm.frequency.setValueAtTime(freq*2.01,when);
+  gain.gain.setValueAtTime(.0001,when);gain.gain.exponentialRampToValueAtTime(.105,when+.02);gain.gain.exponentialRampToValueAtTime(.0001,when+duration*.88);
+  hg.gain.setValueAtTime(.0001,when);hg.gain.exponentialRampToValueAtTime(.027,when+.015);hg.gain.exponentialRampToValueAtTime(.0001,when+Math.min(duration*.65,.4));
+  osc.connect(gain);gain.connect(master);harm.connect(hg);hg.connect(master);osc.start(when);harm.start(when);osc.stop(when+duration);harm.stop(when+Math.min(duration,.45));
  }
- function phrase(){let t=ctx.currentTime+.08;for(const [freq,beats] of melody){const dur=beats*beat;note(freq,t,dur);t+=dur+.025;}return t-(ctx.currentTime);}
- async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();
-  master=ctx.createGain();master.gain.value=.52;master.connect(ctx.destination);on=true;const id=++runId;
-  const play=()=>{if(!on||id!==runId)return;const duration=phrase();setTimeout(play,(duration+.65)*1000);};play();
-  btn.textContent='⏸ Stop Jingle Bells';btn.setAttribute('aria-label','Stop Jingle Bells');}
- function stop(){on=false;runId++;if(master&&ctx){master.gain.setTargetAtTime(0,ctx.currentTime,.035);}btn.textContent='🔔 Play Jingle Bells';btn.setAttribute('aria-label','Play Jingle Bells');}
- btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='🔔 Audio unavailable';}}});
+ function phrase(){let t=ctx.currentTime+.06;const beat=.31;for(const [freq,b] of tunes[picker.value]){const d=b*beat;note(freq,t,d);t+=d+.025;}return t-ctx.currentTime;}
+ async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();master=ctx.createGain();master.gain.value=.48;master.connect(ctx.destination);on=true;const id=++runId;
+  const play=()=>{if(!on||id!==runId)return;const duration=phrase();setTimeout(play,(duration+.55)*1000);};play();btn.textContent='Ⅱ Stop';}
+ function stop(){on=false;runId++;if(master&&ctx)master.gain.setTargetAtTime(0,ctx.currentTime,.035);btn.textContent='▶ Play';}
+ btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='Audio unavailable';}}});
+ picker.addEventListener('change',()=>{if(on){stop();start();}});
 })();
 </script></body></html>''', height=1, scrolling=False)
 
-    st.markdown(r'''    <style>
-      .dt-christmas-snow {
-        position:fixed; inset:0; width:100vw; height:100vh; z-index:9999;
-        pointer-events:none; overflow:hidden;
-      }
-      .dt-snowflake {
-        position:absolute; top:-14px; display:block; border-radius:50%;
-        background:rgba(255,255,255,.92); opacity:var(--snow-opacity);
-        box-shadow:0 0 7px rgba(220,238,255,.35);
-        animation:dt-snow-fall var(--fall-duration) linear var(--fall-delay) infinite;
-        will-change:transform;
-      }
-      .dt-christmas-greeting {
-        position:fixed; top:76px; right:22px; z-index:9998; pointer-events:none;
-        padding:8px 13px; border:1px solid rgba(190,215,245,.22);
-        border-radius:999px; color:#e7efff; background:rgba(28,35,48,.72);
-        backdrop-filter:blur(10px); font:600 12px/1.2 sans-serif;
-        letter-spacing:.035em; box-shadow:0 5px 24px rgba(0,0,0,.16);
-      }
-      .stButton>button:hover,.stDownloadButton>button:hover {
-        border-color:rgba(190,215,245,.38) !important;
-        box-shadow:0 5px 18px rgba(190,215,245,.07) !important;
-      }
-      @keyframes dt-snow-fall {
-        0% { transform:translate3d(0,-5vh,0); }
-        50% { transform:translate3d(var(--snow-drift),52vh,0); }
-        100% { transform:translate3d(calc(var(--snow-drift) * -0.45),110vh,0); }
-      }
-      @media(max-width:700px) {
-        .dt-christmas-greeting { top:72px; right:12px; font-size:10px; padding:7px 9px; }
-        .dt-snowflake { box-shadow:none; }
-      }
-      @media(prefers-reduced-motion:reduce) {
-        .dt-snowflake { animation:none!important; display:none!important; }
-      }
+    # Santa independently peeks from a random screen edge/location every 30 seconds.
+    components.html(r'''<!doctype html><html><head><style>
+      html,body{margin:0;background:transparent;overflow:hidden}
+      #santa{position:fixed;left:0;top:0;font:72px/1 Arial,sans-serif;
+        filter:drop-shadow(0 5px 7px rgba(0,0,0,.3));pointer-events:none;
+        white-space:nowrap;z-index:2147483647;opacity:0;will-change:transform,opacity}
+      #santa.show{opacity:1;animation:peekIn 4.4s ease-in-out both}
+      @keyframes peekIn{0%{transform:translate(var(--from-x),var(--from-y)) scale(.88);opacity:0}
+        18%,72%{transform:translate(var(--to-x),var(--to-y)) scale(1);opacity:1}
+        100%{transform:translate(var(--from-x),var(--from-y)) scale(.88);opacity:0}}
+      @media(prefers-reduced-motion:reduce){#santa.show{animation:none;opacity:0}}
+    </style></head><body><div id="santa" aria-hidden="true">🎅</div>
+    <script>
+      (()=>{
+        const frame=window.frameElement;
+        if(frame){frame.style.position='fixed';frame.style.inset='0';frame.style.width='100vw';frame.style.height='100vh';
+          frame.style.zIndex='2147483647';frame.style.border='0';frame.style.background='transparent';frame.style.pointerEvents='none';}
+        const santa=document.getElementById('santa');
+        function peek(){
+          const w=window.innerWidth,h=window.innerHeight,sw=78,sh=78;
+          const side=Math.floor(Math.random()*4),pad=10;
+          let x,y,tx,ty,rot=0;
+          if(side===0){x=-sw+18;y=pad+Math.random()*Math.max(1,h-sh-2*pad);tx=18;ty=y;}
+          else if(side===1){x=w-18;y=pad+Math.random()*Math.max(1,h-sh-2*pad);tx=w-sw-18;ty=y;}
+          else if(side===2){x=pad+Math.random()*Math.max(1,w-sw-2*pad);y=-sh+18;tx=x;ty=18;}
+          else{x=pad+Math.random()*Math.max(1,w-sw-2*pad);y=h-18;tx=x;ty=h-sh-18;}
+          santa.style.setProperty('--from-x',x+'px');santa.style.setProperty('--from-y',y+'px');
+          santa.style.setProperty('--to-x',tx+'px');santa.style.setProperty('--to-y',ty+'px');
+          santa.classList.remove('show');void santa.offsetWidth;santa.classList.add('show');
+        }
+        setTimeout(peek,2500);setInterval(peek,30000);
+        window.addEventListener('resize',()=>santa.classList.remove('show'));
+      })();
+    </script></body></html>''', height=1, scrolling=False)
+
+    st.markdown(r'''<style>
+      .dt-christmas-snow{position:fixed;inset:0;width:100vw;height:100vh;z-index:9999;pointer-events:none;overflow:hidden}
+      .dt-snowflake{position:absolute;top:-14px;display:block;border-radius:50%;background:rgba(255,255,255,.92);
+        opacity:var(--snow-opacity);box-shadow:0 0 7px rgba(220,238,255,.35);
+        animation:dt-snow-fall var(--fall-duration) linear var(--fall-delay) infinite;will-change:transform}
+      .dt-christmas-greeting{position:fixed;top:66px;right:22px;z-index:9998;pointer-events:none;
+        padding:8px 13px;border:1px solid rgba(190,215,245,.22);border-radius:999px;color:#e7efff;
+        background:rgba(28,35,48,.78);backdrop-filter:blur(10px);font:600 12px/1.2 sans-serif;
+        letter-spacing:.035em;box-shadow:0 5px 24px rgba(0,0,0,.16)}
+      .stButton>button:hover,.stDownloadButton>button:hover{border-color:rgba(190,215,245,.38)!important;box-shadow:0 5px 18px rgba(190,215,245,.07)!important}
+      @keyframes dt-snow-fall{0%{transform:translate3d(0,-5vh,0)}50%{transform:translate3d(var(--snow-drift),52vh,0)}100%{transform:translate3d(calc(var(--snow-drift)*-.45),110vh,0)}}
+      @media(max-width:700px){.dt-christmas-greeting{top:70px;right:12px;font-size:10px;padding:7px 9px}.dt-snowflake{box-shadow:none}}
+      @media(prefers-reduced-motion:reduce){.dt-snowflake{animation:none!important;display:none!important}}
     </style>
     <div class="dt-christmas-greeting">❄ &nbsp; Merry Christmas</div>
     <div class="dt-christmas-snow" aria-hidden="true">''' + ''.join(flakes) + r'''</div>
