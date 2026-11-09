@@ -3003,82 +3003,107 @@ def main():
             st.rerun()
         render_team_chat()
         return
-    # Compact analytics-workspace header (replaces the oversized welcome banner).
+    # Premium sidebar navigation — visual layer only; existing page routes remain intact.
     st.markdown(r"""
     <style>
-      :root{--dt-purple:#8b5cf6;--dt-purple-soft:rgba(139,92,246,.16);--dt-panel:#171a21;--dt-border:#2b303a;--dt-muted:#9ca3af}
-      .stApp [data-testid="stMainBlockContainer"]{max-width:1600px!important;padding-top:1.1rem!important;padding-left:clamp(16px,2.2vw,34px)!important;padding-right:clamp(16px,2.2vw,34px)!important}
-      .dt-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:5px 0 20px;margin-bottom:18px;border-bottom:1px solid var(--dt-border);animation:dt-enter .55s cubic-bezier(.2,.8,.2,1) both}
-      .dt-brand{display:flex;align-items:center;gap:12px;min-width:0}
-      .dt-brand-mark{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#a78bfa,#6d28d9);color:white;font-size:23px;font-weight:850;box-shadow:0 7px 24px rgba(139,92,246,.28)}
-      .dt-brand-name{color:#f5f5f7;font-weight:760;font-size:1.03rem;line-height:1.1;letter-spacing:-.025em}
-      .dt-brand-sub{color:#9ca3af;font-size:.74rem;margin-top:4px}
-      .dt-top-status{display:flex;align-items:center;gap:8px;color:#aeb5c2;font-size:.78rem;padding:9px 12px;border:1px solid var(--dt-border);border-radius:10px;background:#171a20}
-      .dt-status-dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 12px rgba(52,211,153,.7)}
-      .dt-section-label{display:flex;align-items:center;gap:9px;color:#f3f4f6;font-size:1.12rem;font-weight:720;letter-spacing:-.025em;margin:8px 0 14px}
-      .dt-section-label:before{content:"";width:4px;height:19px;border-radius:9px;background:linear-gradient(#a78bfa,#6d28d9)}
-      [data-testid="stMetric"]{background:linear-gradient(145deg,#1c2028,#171a21)!important;border:1px solid #2d3340!important;border-radius:15px!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important}
-      [data-testid="stMetric"]:hover{border-color:rgba(167,139,250,.65)!important;box-shadow:0 12px 28px rgba(0,0,0,.24),0 0 0 1px rgba(139,92,246,.10)!important;transform:translateY(-3px)!important}
-      [data-testid="stPlotlyChart"],[data-testid="stDataFrame"],[data-testid="stTable"]{border:1px solid #2b303a!important;border-radius:14px!important;background:#171a21!important;overflow:hidden}
-      [data-testid="stExpander"] details{border:1px solid #2b303a!important;border-radius:13px!important;background:#171a21!important;overflow:hidden}
-      [data-testid="stExpander"] details>summary{background:#1c2028!important;color:#f3f4f6!important}
+      [data-testid="stSidebar"]{background:linear-gradient(180deg,#11111b 0%,#171522 55%,#11121a 100%)!important;border-right:1px solid #30283e!important}
+      [data-testid="stSidebar"] > div:first-child{padding-top:1.1rem}
+      [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p{color:#e9e4f2}
+      .dt-side-brand{display:flex;align-items:center;gap:11px;padding:8px 4px 20px;border-bottom:1px solid #30283e;margin-bottom:18px}
+      .dt-side-logo{width:43px;height:43px;border-radius:14px;background:linear-gradient(140deg,#d0a8ff,#7739c6);display:grid;place-items:center;color:#fff;font-size:23px;font-weight:850;box-shadow:0 7px 25px #9c58ee44}
+      .dt-side-name{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.4px}.dt-side-sub{font-size:10px;color:#aaa2b8;margin-top:3px}
+      .dt-side-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#897b9d;font-weight:800;margin:18px 0 7px}
+      [data-testid="stSidebar"] .stButton>button{width:100%;text-align:left;justify-content:flex-start;border:1px solid transparent!important;background:transparent!important;color:#d8d2e2!important;border-radius:11px!important;padding:10px 12px!important;min-height:42px!important;transition:all .2s ease!important}
+      [data-testid="stSidebar"] .stButton>button:hover{background:#30243f!important;border-color:#624586!important;color:#fff!important;transform:translateX(3px)!important;box-shadow:0 5px 18px #9b5de522!important}
+      [data-testid="stSidebar"] .dt-side-foot{margin-top:28px;padding:12px;border:1px solid #3b3348;border-radius:13px;background:#211d2b;color:#e9e3f2;font-size:12px}
+      .dt-topbar{border-bottom-color:#332943!important}
+      .dt-brand-mark{background:linear-gradient(145deg,#d0a8ff,#793bc9)!important;box-shadow:0 8px 28px #986de055!important}
+      .dt-top-status{border-color:#3b3348!important;background:#201d29!important}
+      .dt-step-num{background:#3a2a4c!important;color:#dfc5ff!important}
+      .dt-date-shell{border-color:#59416f!important;background:linear-gradient(145deg,#292333,#1d1b26)!important}
+      [data-testid="stFileUploader"]{background:linear-gradient(145deg,#24202e,#1d1d27)!important;border-color:#66517e!important}
+      [data-testid="stFileUploader"]:hover{border-color:#c49aff!important;box-shadow:0 0 0 1px #b995f533,0 12px 30px #0004!important}
+      .dt-upload-note{background:linear-gradient(100deg,#292238,#201e2a)!important;border-color:#49375e!important}
+      @media(max-width:800px){[data-testid="stSidebar"]{min-width:0}}
+    </style>
+    """, unsafe_allow_html=True)
+    with st.sidebar:
+        st.markdown('<div class="dt-side-brand"><div class="dt-side-logo">D</div><div><div class="dt-side-name">Dreamztree</div><div class="dt-side-sub">Marketing Intelligence</div></div></div><div class="dt-side-label">Workspace</div>', unsafe_allow_html=True)
+        if st.button("⌂  Dashboard", key="side_dashboard", use_container_width=True):
+            st.query_params["page"] = "dashboard"; st.rerun()
+        st.markdown('<a href="#report-form" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">▤ &nbsp; Reports</a><a href="#campaign-insights" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">◇ &nbsp; Campaign Mapping</a>', unsafe_allow_html=True)
+        if st.button("♧  Team Chat", key="side_chat", use_container_width=True):
+            st.query_params["page"] = "chat"; st.rerun()
+        if st.button("♧  Game Zone", key="side_game", use_container_width=True):
+            st.query_params["page"] = "game"; st.rerun()
+        st.markdown('<div class="dt-side-label">Account</div><div class="dt-side-foot">● &nbsp; Secure session<br><span style="color:#a69bb6">Dreamztree reporting workspace</span></div>', unsafe_allow_html=True)
+
+    # Premium Data Studio workspace — UI-only redesign; report logic remains below.
+    st.markdown(r"""
+    <style>
+      :root{--dt-violet:#c18bff;--dt-violet-2:#8e43d0;--dt-bg:#12121b;--dt-card:#211d2d;--dt-card-2:#292337;--dt-line:#3b304d;--dt-muted:#aaa3b7}
+      .stApp [data-testid="stMainBlockContainer"]{max-width:1540px!important;padding-top:1.15rem!important;padding-left:clamp(18px,2.5vw,40px)!important;padding-right:clamp(18px,2.5vw,40px)!important}
+      .dt-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:4px 0 18px;margin-bottom:24px;border-bottom:1px solid var(--dt-line);animation:dt-rise .65s cubic-bezier(.2,.8,.2,1) both}
+      .dt-brand{display:flex;align-items:center;gap:12px}.dt-brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#c5a4ff,#7546c7);color:#fff;font-size:22px;font-weight:850;box-shadow:0 8px 28px #986de044}
+      .dt-brand-name{color:#f7f5fb;font-size:1rem;font-weight:760;letter-spacing:-.03em}.dt-brand-sub{color:#a3a1ae;font-size:.75rem;margin-top:4px}
+      .dt-top-status{display:flex;align-items:center;gap:8px;color:#b6b2c1;font-size:.76rem;padding:9px 13px;border:1px solid var(--dt-line);border-radius:999px;background:#1d1e25}.dt-status-dot{width:7px;height:7px;border-radius:50%;background:#56d6a2;box-shadow:0 0 12px #56d6a277}
+      .dt-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:8px 0 22px}.dt-eyebrow{font-size:.68rem;letter-spacing:.16em;font-weight:800;color:#b995f5;text-transform:uppercase;margin-bottom:8px}.dt-hero-title{font-size:clamp(1.65rem,2.7vw,2.25rem);font-weight:780;letter-spacing:-.055em;color:#f8f7fb;line-height:1.05}.dt-hero-copy{font-size:.88rem;color:#a5a3b0;margin-top:9px}
+      .dt-date-shell{min-width:245px;padding:12px 14px 8px;border:1px solid #55456e;border-radius:15px;background:linear-gradient(145deg,#282431,#202129);box-shadow:0 10px 30px #0002}.dt-date-caption{font-size:.64rem;letter-spacing:.14em;color:#c6a8f5;font-weight:800;text-transform:uppercase;margin-bottom:5px}
+      .dt-step{display:flex;align-items:center;gap:10px;margin:23px 0 12px;color:#f1eef7;font-size:1rem;font-weight:720;letter-spacing:-.02em}.dt-step-num{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:#342943;color:#d7baff;font-size:.75rem;font-weight:800}
+      .dt-upload-note{padding:12px 15px;border-radius:12px;border:1px solid #40364f;background:linear-gradient(100deg,#282331,#202129);color:#bdb7c9;font-size:.82rem;margin:12px 0 14px}
+      [data-testid="stDateInput"] input{background:#1a1b22!important;color:#f7f4fb!important;border:1px solid #5a4a70!important;border-radius:10px!important;min-height:39px!important;font-weight:650!important}
+      [data-testid="stDateInput"] input:focus{border-color:#c09cf7!important;box-shadow:0 0 0 3px #b995f522!important}
+      [data-testid="stDateInput"] label{display:none!important}
+      [data-testid="stFileUploader"]{background:#22232c!important;border:1px dashed #65547c!important;border-radius:15px!important;padding:10px 12px!important;transition:border-color .22s ease,background .22s ease,transform .22s ease!important}
+      [data-testid="stFileUploader"]:hover{border-color:#c09cf7!important;background:#292532!important;transform:translateY(-2px)!important}
+      [data-testid="stFileUploaderDropzone"]{background:transparent!important;border:0!important}
+      [data-testid="stFileUploaderDropzone"] button{border:1px solid #68547f!important;background:#342b40!important;color:#e4d4fb!important;border-radius:9px!important}
+      [data-testid="stExpander"] details{border:1px solid #373541!important;border-radius:14px!important;background:#1d1e26!important;overflow:hidden}
+      [data-testid="stExpander"] details>summary{background:#22232c!important;color:#f1eef7!important;padding:13px 16px!important;font-weight:680!important}
+      [data-testid="stExpander"] details>summary:hover{background:#292632!important}
       .stButton>button,.stDownloadButton>button{border-radius:10px!important;transition:all .2s ease!important}
-      .stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-2px)!important;border-color:#8b5cf6!important;box-shadow:0 7px 20px rgba(139,92,246,.16)!important}
+      .stButton>button:hover,.stDownloadButton>button:hover{transform:translateY(-2px)!important;border-color:#b995f5!important;box-shadow:0 8px 22px #9b75d522!important}
       [data-testid="stAlert"]{border-radius:12px!important}
-      [data-testid="stDateInput"] input{background:#22252d!important;color:#f5f5f7!important;border:1px solid #514463!important;border-radius:11px!important;min-height:43px!important}
-      [data-testid="stDateInput"] input:focus{border-color:#b995f5!important;box-shadow:0 0 0 2px rgba(185,149,245,.16)!important}
-      [data-testid="stDateInput"] label{color:#b995f5!important}
-      @keyframes dt-top-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-      @media(max-width:650px){.dt-topbar{align-items:flex-start;flex-direction:column}.dt-top-status{align-self:flex-start}}
-      @media(prefers-reduced-motion:reduce){.dt-topbar{animation:none!important}}
+      @keyframes dt-rise{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes dt-card-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+      [data-testid="stFileUploader"], [data-testid="stExpander"]{animation:dt-card-in .55s cubic-bezier(.2,.8,.2,1) both}
+      @media(max-width:760px){.dt-topbar,.dt-hero{align-items:flex-start;flex-direction:column}.dt-top-status{align-self:flex-start}.dt-date-shell{width:100%;min-width:0}}
+      @media(prefers-reduced-motion:reduce){.dt-topbar,[data-testid="stFileUploader"],[data-testid="stExpander"]{animation:none!important;transition:none!important}}
     </style>
     <div class="dt-topbar">
-      <div class="dt-brand"><div class="dt-brand-mark">D</div><div><div class="dt-brand-name">Dreamztree Meta Report</div><div class="dt-brand-sub">Marketing intelligence workspace</div></div></div>
-      <div class="dt-top-status"><span class="dt-status-dot"></span> Reporting workspace <span style="opacity:.45">·</span> Secure session</div>
+      <div class="dt-brand"><div class="dt-brand-mark">D</div><div><div class="dt-brand-name">Dreamztree Meta Report</div><div class="dt-brand-sub">Marketing intelligence · Data Studio</div></div></div>
+      <div class="dt-top-status"><span class="dt-status-dot"></span> Secure reporting workspace</div>
     </div>
     """, unsafe_allow_html=True)
-    page_title_col, game_col, chat_col, signout_col = st.columns([4.3, 1.1, 1.1, .9], vertical_alignment="center")
+    page_title_col, game_col, chat_col, signout_col = st.columns([4.2, 1.1, 1.1, .9], vertical_alignment="center")
     with page_title_col:
-        st.markdown('<div style="font-size:1.55rem;font-weight:760;letter-spacing:-.04em;color:#f5f5f7">Marketing Overview</div><div style="color:#9ca3af;font-size:.86rem;margin-top:3px">Upload campaign exports and review leads, spend and branch performance.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dt-eyebrow">DREAMZTREE / MARKETING INTELLIGENCE</div><div class="dt-hero-title">Marketing Overview</div><div class="dt-hero-copy">A clearer view of leads, spend and campaign performance.</div>', unsafe_allow_html=True)
     with game_col:
         if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
-            st.query_params["page"] = "game"
-            st.rerun()
+            st.query_params["page"] = "game"; st.rerun()
     with chat_col:
         if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
-            st.query_params["page"] = "chat"
-            st.rerun()
+            st.query_params["page"] = "chat"; st.rerun()
     with signout_col:
         if st.button("Sign out", key="sign_out_main", use_container_width=True):
             _delete_auth_cookie()
             if st.session_state.get("auth_method") == "supabase":
                 try:
                     client = get_supabase_client()
-                    if client is not None:
-                        client.auth.sign_out()
-                except Exception:
-                    pass
+                    if client is not None: client.auth.sign_out()
+                except Exception: pass
             st.session_state["authenticated"] = False
-            st.session_state.pop("authenticated_user", None)
-            st.session_state.pop("auth_method", None)
-            st.session_state.pop("supabase_access_token", None)
-            st.session_state.pop("supabase_refresh_token", None)
+            st.session_state.pop("authenticated_user", None); st.session_state.pop("auth_method", None)
+            st.session_state.pop("supabase_access_token", None); st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
-    st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
-    # Editable reporting date: this value is also used by report headings and exports.
-    date_title_col, date_picker_col = st.columns([3.6, 1.4], vertical_alignment="center")
-    with date_title_col:
-        st.markdown('<div class="dt-section-label" style="margin-bottom:4px">Report workspace</div>', unsafe_allow_html=True)
-        st.caption("Upload a Meta Ads Excel export to generate a branch-wise, staff-wise leads report.")
-    with date_picker_col:
-        st.markdown('<div style="font-size:.70rem;font-weight:700;letter-spacing:.09em;color:#b995f5;margin:0 0 5px 2px">REPORTING DATE</div>', unsafe_allow_html=True)
-        date_value = st.date_input(
-            "Reporting date",
-            value=datetime.today().date(),
-            key="reporting_date_selector",
-            label_visibility="collapsed",
-            help="Choose the date to display on this report and its downloaded files.",
-        )
+    st.markdown('<div class="dt-step"><span class="dt-step-num">01</span> Reporting workspace</div>', unsafe_allow_html=True)
+    date_left, date_right = st.columns([3.6, 1.25], vertical_alignment="center")
+    with date_left:
+        st.markdown('<div style="color:#a5a3b0;font-size:.84rem;padding:7px 0">Import your Meta Ads exports, then review campaign assignments and performance.</div>', unsafe_allow_html=True)
+    with date_right:
+        st.markdown('<div class="dt-date-shell"><div class="dt-date-caption">Reporting date · Editable</div>', unsafe_allow_html=True)
+        date_value = st.date_input("Reporting date", value=datetime.today().date(), key="reporting_date_selector", label_visibility="collapsed", help="Choose the date used in report headings and downloaded files.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
     with st.expander("Report settings     ·     Currency and campaign mapping", expanded=False):
@@ -3124,22 +3149,22 @@ def main():
             )
             st.caption("Mapping columns: Campaign, Staff, Course, Branch.")
     mappings = read_mapping_file(mapping_upload)
-    st.subheader("1. Upload Meta Ads reports")
-    upload_today_col, upload_yesterday_col = st.columns(2)
+    st.markdown('<div class="dt-step"><span class="dt-step-num">02</span> Import campaign exports</div>', unsafe_allow_html=True)
+    st.markdown("<div style='color:#a5a3b0;font-size:.82rem;margin:-3px 0 13px 35px'>Add today's file to build the report. Yesterday's file is optional for comparison.</div>", unsafe_allow_html=True)
+    upload_today_col, upload_yesterday_col = st.columns(2, gap="large")
     with upload_today_col:
-        uploaded = st.file_uploader("Today's Meta Ads Excel report", type=["xlsx", "xls"], key="meta_excel")
+        with st.container(border=True):
+            st.markdown('<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="color:#c6a4fa;font-size:1.2rem">▤</span><span style="font-weight:720;color:#f4effb">Today’s export</span><span style="font-size:.65rem;color:#d7baff;background:#382d47;padding:3px 7px;border-radius:20px">REQUIRED</span></div><div style="font-size:.75rem;color:#a6a1b1;margin-bottom:8px">Meta Ads · Excel workbook</div>', unsafe_allow_html=True)
+            uploaded = st.file_uploader("Today's Meta Ads Excel report", type=["xlsx", "xls"], key="meta_excel", label_visibility="collapsed")
     with upload_yesterday_col:
-        yesterday_uploaded = st.file_uploader(
-            "Yesterday's Meta Ads Excel report (optional)",
-            type=["xlsx", "xls"],
-            key="yesterday_meta_excel",
-            help="Upload yesterday's export to compare leads, spend, and top-performing campaigns.",
-        )
+        with st.container(border=True):
+            st.markdown('<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="color:#a99abf;font-size:1.2rem">◷</span><span style="font-weight:720;color:#f4effb">Previous day</span><span style="font-size:.65rem;color:#b8b1c3;background:#34313b;padding:3px 7px;border-radius:20px">OPTIONAL</span></div><div style="font-size:.75rem;color:#a6a1b1;margin-bottom:8px">Compare leads, spend and campaign changes</div>', unsafe_allow_html=True)
+            yesterday_uploaded = st.file_uploader("Yesterday's Meta Ads Excel report (optional)", type=["xlsx", "xls"], key="yesterday_meta_excel", help="Upload yesterday's export to compare leads, spend, and top-performing campaigns.", label_visibility="collapsed")
     if uploaded is None:
-        st.info("Upload today's Meta Ads Excel export to begin. Add yesterday's report for a day-over-day comparison.")
-        with st.expander("Campaign mapping preview · Review assigned teams and courses", expanded=False):
+        st.markdown('<div class="dt-upload-note">✦ &nbsp; Your workspace is ready. Add today’s Excel export to generate the report; include the previous day for a performance comparison.</div>', unsafe_allow_html=True)
+        with st.expander("Campaign intelligence     ·     Review assigned teams and courses", expanded=False):
             st.dataframe(mappings, use_container_width=True, hide_index=True)
-        st.download_button("Download campaign mapping template (CSV)", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
+        st.download_button("↓  Download mapping template", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
     try:
         raw = pd.read_excel(uploaded)
