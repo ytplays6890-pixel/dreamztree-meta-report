@@ -2061,53 +2061,87 @@ html, body, .stApp, [data-testid="stAppViewContainer"] { background:#07090d !imp
 
 
 
-def inject_diwali_theme():
-    """Elegant, temporary Diwali accents for the login screen and dashboard."""
-    st.markdown(r'''
-    <style>
-      :root { --dt-diwali-gold:#e5b65b; --dt-diwali-glow:rgba(229,182,91,.16); }
-      .stApp {
-        background-image:
-          radial-gradient(ellipse at 92% 7%, rgba(229,182,91,.075), transparent 26%),
-          radial-gradient(ellipse at 5% 92%, rgba(192,126,53,.055), transparent 30%),
-          radial-gradient(ellipse at 12% 8%,rgba(139,92,246,.045),transparent 35%),
-          linear-gradient(145deg,#17191d,#171820 62%,#1b191b) !important;
+def inject_christmas_snow():
+    """Lightweight falling-snow overlay for the login screen and dashboard."""
+    import random
+    random.seed(24)
+    flakes = []
+    for i in range(42):
+        left = random.randint(0, 100)
+        size = random.randint(3, 8)
+        duration = random.randint(11, 23)
+        delay = random.randint(-22, 0)
+        drift = random.randint(-65, 65)
+        opacity = random.uniform(0.35, 0.85)
+        flakes.append(
+            f'<span class="dt-snowflake" style="left:{left}%;width:{size}px;height:{size}px;'
+            f'--fall-duration:{duration}s;--fall-delay:{delay}s;--snow-drift:{drift}px;'
+            f'--snow-opacity:{opacity:.2f};"></span>'
+        )
+    # Browser audio requires a user gesture. Generate an original, gentle bell pattern
+    # locally with Web Audio so no external audio file or copyrighted song is needed.
+    components.html(r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
+#soundToggle{position:fixed;right:22px;top:8px;z-index:999999;border:1px solid rgba(205,220,245,.25);
+ border-radius:999px;padding:8px 12px;background:rgba(28,35,48,.88);color:#edf4ff;
+ font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;backdrop-filter:blur(10px);
+ box-shadow:0 5px 20px rgba(0,0,0,.18)}
+#soundToggle:hover{background:rgba(48,59,78,.96)}
+@media(max-width:700px){#soundToggle{right:10px;top:5px;padding:7px 10px;font-size:11px}}
+</style></head><body>
+<button id="soundToggle" type="button" aria-label="Turn Christmas sound on">🔔 Christmas sound: Off</button>
+<script>
+(()=>{const btn=document.getElementById('soundToggle');let ctx=null,master=null,timer=null,on=false,step=0;
+ const notes=[ [659,0],[784,0.22],[988,0.44],[784,0.68],[880,1.05],[1047,1.28],[880,1.52],[784,1.82], [659,2.35],[784,2.58],[880,2.82],[784,3.08] ];
+ function chime(freq,when){const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(freq,when);
+ gain.gain.setValueAtTime(0.0001,when);gain.gain.exponentialRampToValueAtTime(.10,when+.025);
+ gain.gain.exponentialRampToValueAtTime(.0001,when+1.05);osc.connect(gain);gain.connect(master);osc.start(when);osc.stop(when+1.08);}
+ function playPhrase(){if(!on||!ctx)return;const start=ctx.currentTime+.05;notes.forEach(([f,t])=>chime(f,start+t));}
+ async function start(){ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();await ctx.resume();master=ctx.createGain();master.gain.value=.22;master.connect(ctx.destination);on=true;playPhrase();timer=setInterval(playPhrase,4800);btn.textContent='🔔 Christmas sound: On';btn.setAttribute('aria-label','Turn Christmas sound off');}
+ function stop(){on=false;if(timer)clearInterval(timer);timer=null;if(master){master.gain.setTargetAtTime(0,ctx.currentTime,.04);}btn.textContent='🔔 Christmas sound: Off';btn.setAttribute('aria-label','Turn Christmas sound on');}
+ btn.addEventListener('click',async()=>{if(on){stop();}else{try{await start();}catch(e){btn.textContent='🔔 Sound unavailable';}}});
+})();
+</script></body></html>''', height=48, scrolling=False)
+
+    st.markdown(r'''    <style>
+      .dt-christmas-snow {
+        position:fixed; inset:0; width:100vw; height:100vh; z-index:9999;
+        pointer-events:none; overflow:hidden;
       }
-      .dt-diwali-greeting {
-        position:fixed; top:84px; right:24px; z-index:999; pointer-events:none;
-        padding:8px 13px; border:1px solid rgba(229,182,91,.32);
-        border-radius:999px; color:#f1d69d;
-        background:rgba(37,31,25,.82); backdrop-filter:blur(12px);
-        box-shadow:0 5px 24px rgba(0,0,0,.18),0 0 22px var(--dt-diwali-glow);
-        font:600 12px/1.2 sans-serif; letter-spacing:.035em;
-        animation:dt-diwali-enter .8s ease-out both;
+      .dt-snowflake {
+        position:absolute; top:-14px; display:block; border-radius:50%;
+        background:rgba(255,255,255,.92); opacity:var(--snow-opacity);
+        box-shadow:0 0 7px rgba(220,238,255,.35);
+        animation:dt-snow-fall var(--fall-duration) linear var(--fall-delay) infinite;
+        will-change:transform;
       }
-      .dt-diwali-diya {
-        position:fixed; right:25px; bottom:24px; z-index:998; pointer-events:none;
-        font-size:30px; line-height:1; filter:drop-shadow(0 0 10px rgba(244,177,75,.48));
-        animation:dt-diya-float 3.8s ease-in-out infinite;
-      }
-      .dt-diwali-spark {
-        position:fixed; right:67px; bottom:52px; z-index:998; pointer-events:none;
-        color:#e9c276; font-size:13px; text-shadow:0 0 12px rgba(240,190,100,.8);
-        animation:dt-sparkle 2.4s ease-in-out infinite;
-      }
-      [data-testid="stMetric"] {
-        border-color:rgba(229,182,91,.13);
+      .dt-christmas-greeting {
+        position:fixed; top:84px; right:24px; z-index:9998; pointer-events:none;
+        padding:8px 13px; border:1px solid rgba(190,215,245,.22);
+        border-radius:999px; color:#e7efff; background:rgba(28,35,48,.72);
+        backdrop-filter:blur(10px); font:600 12px/1.2 sans-serif;
+        letter-spacing:.035em; box-shadow:0 5px 24px rgba(0,0,0,.16);
       }
       .stButton>button:hover,.stDownloadButton>button:hover {
-        border-color:rgba(229,182,91,.48) !important;
-        box-shadow:0 5px 18px rgba(229,182,91,.09) !important;
+        border-color:rgba(190,215,245,.38) !important;
+        box-shadow:0 5px 18px rgba(190,215,245,.07) !important;
       }
-      @keyframes dt-diwali-enter { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-      @keyframes dt-diya-float { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-6px) rotate(2deg)} }
-      @keyframes dt-sparkle { 0%,100%{opacity:.25;transform:scale(.8)} 50%{opacity:1;transform:scale(1.25)} }
-      @media(max-width:700px) { .dt-diwali-greeting{top:70px;right:12px;font-size:10px;padding:7px 9px}.dt-diwali-diya{right:14px;bottom:14px;font-size:25px} }
-      @media(prefers-reduced-motion:reduce) { .dt-diwali-greeting,.dt-diwali-diya,.dt-diwali-spark{animation:none!important} }
+      @keyframes dt-snow-fall {
+        0% { transform:translate3d(0,-5vh,0); }
+        50% { transform:translate3d(var(--snow-drift),52vh,0); }
+        100% { transform:translate3d(calc(var(--snow-drift) * -0.45),110vh,0); }
+      }
+      @media(max-width:700px) {
+        .dt-christmas-greeting { top:70px; right:12px; font-size:10px; padding:7px 9px; }
+        .dt-snowflake { box-shadow:none; }
+      }
+      @media(prefers-reduced-motion:reduce) {
+        .dt-snowflake { animation:none!important; display:none!important; }
+      }
     </style>
-    <div class="dt-diwali-greeting">🪔 &nbsp; Happy Diwali</div>
-    <div class="dt-diwali-diya" aria-hidden="true">🪔</div>
-    <div class="dt-diwali-spark" aria-hidden="true">✦</div>
+    <div class="dt-christmas-greeting">❄ &nbsp; Merry Christmas</div>
+    <div class="dt-christmas-snow" aria-hidden="true">''' + ''.join(flakes) + r'''</div>
     ''', unsafe_allow_html=True)
 
 
@@ -2120,7 +2154,7 @@ def require_login():
     if st.session_state.get("authenticated"):
         return
 
-    inject_diwali_theme()
+    inject_christmas_snow()
     client = get_supabase_client()
     if _restore_auth_cookie(client):
         return
@@ -3025,7 +3059,7 @@ def inject_performance_patch():
 
 def main():
     require_login()
-    inject_diwali_theme()
+    inject_christmas_snow()
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
