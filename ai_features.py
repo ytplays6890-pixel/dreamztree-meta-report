@@ -1,5 +1,5 @@
 """AI and decision-support helpers for Dreamztree Meta Report."""
-import os, statistics, requests
+import os, statistics, requests, time
 import pandas as pd
 import streamlit as st
 
@@ -42,28 +42,43 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
         return response.json()["choices"][0]["message"]["content"].strip()
 
     model = model or _secret_value("GEMINI_MODEL", "gemini-3.8-flash")
-    response = requests.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
-        json={"systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
-              "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-              "generationConfig": {"temperature": 0.2}},
-        timeout=60)
-    if response.status_code == 404 and model != "gemini-3.8-flash":
-        # Automatically recover when a previously configured Gemini model is retired.
-        model = "gemini-3.8-flash"
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-            headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
-            json={"systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
-                  "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                  "generationConfig": {"temperature": 0.2}},
-            timeout=60)
-    if response.status_code >= 400:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
+    payload = {
+        "systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.2}
+    }
+
+    # Gemini can return transient 429/5xx errors during traffic spikes.
+    # Retry with short exponential backoff rather than immediately failing.
+    retryable_statuses = {429, 500, 502, 503, 504}
+    response = None
+    for attempt in range(4):
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
+        except requests.RequestException:
+            if attempt == 3:
+                raise RuntimeError("Could not reach Gemini after 4 attempts. Check the connection and try again.")
+            time.sleep(2 ** attempt)
+            continue
+        if response.status_code not in retryable_statuses or attempt == 3:
+            break
+        retry_after = response.headers.get("Retry-After")
+        try:
+            delay = min(15, max(1, int(float(retry_after)))) if retry_after else 2 ** attempt
+        except (TypeError, ValueError):
+            delay = 2 ** attempt
+        time.sleep(delay)
+
+    if response is not None and response.status_code >= 400:
         try:
             err = response.json().get("error", {})
             detail = err.get("message", response.text)
-        except Exception: detail = response.text
+        except Exception:
+            detail = response.text
+        if response.status_code in retryable_statuses:
+            raise RuntimeError(f"Gemini is temporarily busy (HTTP {response.status_code}) after 4 attempts. Please wait a minute and try again. Details: {detail}")
         raise RuntimeError(f"Gemini API error ({response.status_code}): {detail}")
     try:
         parts = response.json()["candidates"][0]["content"]["parts"]
