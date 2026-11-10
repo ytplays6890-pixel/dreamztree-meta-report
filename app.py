@@ -3758,6 +3758,7 @@ def main():
             # Persist this upload in session state so AI tools remain available after reruns.
             st.session_state["_dt_ai_report_context"] = {
                 "date": date_value.strftime("%d/%m/%Y"),
+                "upload_fingerprint": hashlib.sha256(uploaded.getvalue()).hexdigest(),
                 "campaigns": all_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
                 "factor": float(factor),
                 "yesterday": None,
@@ -3971,7 +3972,7 @@ def main():
                     st.caption("Check that both files use the same Meta Ads export format and that the mapping is reviewed.")
         # Persistent AI workspace: rendered outside the Generate report button branch.
         ai_context = st.session_state.get("_dt_ai_report_context")
-        if ai_context:
+        if ai_context and ai_context.get("upload_fingerprint") == hashlib.sha256(uploaded.getvalue()).hexdigest():
             st.divider()
             st.subheader("✦ AI Marketing Intelligence")
             st.caption("Python calculates all figures. AI interprets the verified report data; no budgets are changed automatically.")
