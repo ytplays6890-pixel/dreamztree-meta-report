@@ -2083,14 +2083,18 @@ button:hover,select:hover{background:rgba(48,59,78,.99)}
 <style>
 html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
 .snow{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;overflow:hidden}
-.flake{position:absolute;top:-14px;display:block;border-radius:50%;background:rgba(255,255,255,.78);
- box-shadow:0 0 7px rgba(220,238,255,.35);opacity:var(--o);
- animation:fall var(--d) linear var(--delay) infinite;will-change:transform}
-@keyframes fall{0%{transform:translate3d(0,-5vh,0)}50%{transform:translate3d(var(--drift),52vh,0)}100%{transform:translate3d(calc(var(--drift)*-.45),110vh,0)}}
-@media(prefers-reduced-motion:reduce){.flake{animation:none!important;display:none!important}}
+.flake{position:absolute;top:-48px;display:block;width:var(--size);height:var(--size);
+ opacity:var(--o);animation:fall var(--d) linear var(--delay) infinite;will-change:transform}
+.flake svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 3px rgba(220,238,255,.38));animation:crystal-spin var(--spin) linear infinite}
+.flake path{fill:none;stroke:rgba(244,249,255,.88);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+@keyframes fall{0%{transform:translate3d(0,-6vh,0) rotate(0deg)}50%{transform:translate3d(var(--drift),52vh,0) rotate(180deg)}100%{transform:translate3d(calc(var(--drift)*-.45),110vh,0) rotate(360deg)}}
+@keyframes crystal-spin{to{transform:rotate(60deg)}}
+@media(prefers-reduced-motion:reduce){.flake,.flake svg{animation:none!important;display:none!important}}
 </style></head><body><div class="snow" aria-hidden="true">''' + ''.join(
-        f'<i class="flake" style="left:{random.randint(0,100)}%;width:{random.randint(3,8)}px;height:{random.randint(3,8)}px;--d:{random.randint(11,23)}s;--delay:{random.randint(-22,0)}s;--drift:{random.randint(-65,65)}px;--o:{random.uniform(.22,.55):.2f}"></i>'
-        for _ in range(34)
+        f'<i class="flake" style="left:{random.randint(0,100)}%;--size:{random.randint(15,30)}px;--d:{random.randint(14,26)}s;--spin:{random.randint(7,15)}s;--delay:{random.randint(-26,0)}s;--drift:{random.randint(-55,55)}px;--o:{random.uniform(.30,.62):.2f}"><svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50)">' + ''.join(
+            f'<path d="M0 0 V-43 M0 -34 L-10 -24 M0 -34 L10 -24 M0 -22 L-9 -13 M0 -22 L9 -13 M0 -43 L-7 -34 M0 -43 L7 -34" transform="rotate({angle})"/>' for angle in range(0, 360, 60)
+        ) + '</g></svg></i>'
+        for _ in range(24)
     ) + r'''</div></body></html>'''
     snow_html = snow_html.replace('</body>', "<script>const f=window.frameElement;if(f){f.style.position='fixed';f.style.inset='0';f.style.width='100vw';f.style.height='100vh';f.style.zIndex='2';f.style.border='0';f.style.background='transparent';f.style.pointerEvents='none';}</script></body>")
     components.html(snow_html, height=1, scrolling=False)
