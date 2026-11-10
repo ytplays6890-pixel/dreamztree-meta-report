@@ -2537,21 +2537,25 @@ def require_login():
         62.05% { opacity: .72; }
         62.45% { opacity: 0; }
       }
+      /* Background-only storm layer: behind the login card and village artwork. */
       .dt-storm-lightning {
         position: fixed !important; inset: 0 !important;
         width: 100vw !important; height: 100vh !important;
-        z-index: 3 !important; pointer-events: none !important;
+        z-index: 1 !important; pointer-events: none !important;
         overflow: hidden !important; mix-blend-mode: screen;
+        isolation: isolate;
       }
+      .main .block-container { position: relative !important; z-index: 10 !important; }
+      .dt-winter-village { z-index: 20 !important; }
       .dt-storm-lightning svg {
         position: absolute; inset: 0; width: 100%; height: 100%;
         overflow: visible;
       }
       .dt-storm-bolt-left {
-        opacity: .08; animation: dtRealStrikeOne 9s steps(1,end) infinite;
+        opacity: 0; animation: dtRealStrikeOne 7s steps(1,end) infinite;
       }
       .dt-storm-bolt-right {
-        opacity: .08; animation: dtRealStrikeTwo 11s steps(1,end) infinite;
+        opacity: 0; animation: dtRealStrikeTwo 8.5s steps(1,end) infinite;
       }
       .dt-storm-lightning .bolt-glow {
         fill: none; stroke: #65cfff; stroke-width: 22;
