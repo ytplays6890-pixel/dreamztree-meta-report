@@ -1975,7 +1975,62 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
   -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
   backdrop-filter: blur(24px) saturate(150%) !important;
 }
-/* Subtle animated lightning around the login-card edges; all effects are click-through. */
+/* Realistic storm lightning strikes on the login screen. Decorative layers never intercept clicks. */
+@keyframes dtStormStrikeA {
+  0%, 64%, 67%, 100% { opacity:0; }
+  65% { opacity:.95; }
+  65.7% { opacity:.12; }
+  66.2% { opacity:.82; }
+  66.8% { opacity:0; }
+}
+@keyframes dtStormStrikeB {
+  0%, 31%, 34%, 100% { opacity:0; }
+  32% { opacity:.9; }
+  32.6% { opacity:.08; }
+  33.1% { opacity:.72; }
+  33.7% { opacity:0; }
+}
+@keyframes dtStormSkyFlash {
+  0%, 64%, 67%, 100% { background-color:rgba(125,205,255,0); }
+  65% { background-color:rgba(165,220,255,.13); }
+  65.7% { background-color:rgba(125,190,255,.015); }
+  66.2% { background-color:rgba(165,220,255,.09); }
+  66.8% { background-color:rgba(125,205,255,0); }
+}
+.block-container:has([data-testid="stTabs"]) {
+  position:relative !important;
+  isolation:isolate !important;
+  animation:dtLightningGlow 8s linear infinite;
+}
+.stApp:has(.block-container [data-testid="stTabs"])::before,
+.stApp:has(.block-container [data-testid="stTabs"])::after {
+  content:"";
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100vh !important;
+  z-index:99999 !important;
+  pointer-events:none !important;
+  background-repeat:no-repeat !important;
+  background-size:min(31vw,390px) 94vh !important;
+  mix-blend-mode:screen;
+  will-change:opacity,filter;
+}
+.stApp:has(.block-container [data-testid="stTabs"])::before {
+  background-position:82% 0 !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 900'%3E%3Cdefs%3E%3Cfilter id='g' x='-150%25' y='-50%25' width='400%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='9'/%3E%3C/filter%3E%3C/defs%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M178 -20 L145 95 L174 116 L112 236 L146 249 L75 390 L105 403 L24 590 L54 600 L-8 760' stroke='%2358bfff' stroke-width='30' opacity='.62' filter='url(%23g)'/%3E%3Cpath d='M178 -20 L145 95 L174 116 L112 236 L146 249 L75 390 L105 403 L24 590 L54 600 L-8 760' stroke='%239beaff' stroke-width='10' opacity='.95'/%3E%3Cpath d='M145 95 L75 150 L28 248 M112 236 L190 300 L216 390 M75 390 L20 440 L-8 520 M24 590 L105 650 L132 730' stroke='%23b9f2ff' stroke-width='5' opacity='.92'/%3E%3Cpath d='M145 95 L75 150 L28 248 M112 236 L190 300 L216 390 M75 390 L20 440 L-8 520 M24 590 L105 650 L132 730' stroke='%2358bfff' stroke-width='17' opacity='.42' filter='url(%23g)'/%3E%3C/g%3E%3C/svg%3E") !important;
+  animation:dtStormStrikeA 8.4s steps(1,end) infinite, dtStormSkyFlash 8.4s steps(1,end) infinite;
+}
+.stApp:has(.block-container [data-testid="stTabs"])::after {
+  background-position:8% 8% !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 900'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M92 -30 L126 90 L96 120 L164 250 L128 265 L204 410 L172 424 L242 590' stroke='%2358bfff' stroke-width='27' opacity='.58'/%3E%3Cpath d='M92 -30 L126 90 L96 120 L164 250 L128 265 L204 410 L172 424 L242 590' stroke='%23ffffff' stroke-width='8' opacity='.96'/%3E%3Cpath d='M126 90 L195 150 L238 238 M164 250 L78 320 L48 402 M204 410 L252 468 M172 424 L102 505 L76 585' stroke='%23c5f4ff' stroke-width='5' opacity='.9'/%3E%3C/g%3E%3C/svg%3E") !important;
+  animation:dtStormStrikeB 8.4s steps(1,end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stApp:has(.block-container [data-testid="stTabs"])::before,
+  .stApp:has(.block-container [data-testid="stTabs"])::after { animation:none !important; opacity:0 !important; }
+}
+
 @keyframes dtLightningFlash {
   0%, 30%, 72%, 100% { opacity:.24; filter:brightness(1.15); }
   8%, 12%, 48%, 53% { opacity:1; filter:brightness(2.4); }
