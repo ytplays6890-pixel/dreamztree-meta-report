@@ -2396,8 +2396,8 @@ def require_login():
       .dt-winter-village {
         position: fixed; left: 0; right: 0; bottom: 0;
         height: clamp(72px, 11vh, 118px);
-        z-index: 1; pointer-events: none; overflow: hidden;
-        opacity: .48; line-height: 0;
+        z-index: 20; pointer-events: none; overflow: hidden;
+        opacity: .62; line-height: 0;
         /* Feather the upper skyline and both horizontal ends into the page background. */
         -webkit-mask-image:
           linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.10) 28%, #000 68%),
@@ -2408,7 +2408,7 @@ def require_login():
           linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%);
         mask-composite: intersect;
       }
-      /* Keep the entire login card and its controls above the village artwork. */
+      /* Keep village artwork in front of the login card; pointer-events remain disabled so controls still work. */
       .main .block-container {
         position: relative !important;
         z-index: 10 !important;
