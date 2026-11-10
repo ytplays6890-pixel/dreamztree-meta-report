@@ -1962,7 +1962,23 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"],
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { max-width:100% !important; width:100% !important; }
-.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { background:rgba(15,20,34,.76) !important; border:1px solid rgba(255,255,255,.15) !important; border-radius:22px !important; padding:22px !important; backdrop-filter:blur(18px) !important; }
+.block-container:has([data-testid="stTabs"]) [data-testid="stForm"] {
+  background:
+    linear-gradient(135deg, rgba(218,238,255,.13) 0%, rgba(116,159,204,.075) 42%, rgba(24,31,55,.34) 100%),
+    rgba(13,22,39,.72) !important;
+  border:1px solid rgba(190,222,255,.27) !important;
+  border-radius:26px !important;
+  padding:22px !important;
+  -webkit-backdrop-filter:blur(26px) saturate(145%) !important;
+  backdrop-filter:blur(26px) saturate(145%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.19),
+    inset 0 -1px 0 rgba(132,179,224,.09),
+    0 22px 60px rgba(0,0,0,.24),
+    0 0 34px rgba(106,165,218,.075) !important;
+  position:relative !important;
+  overflow:visible !important;
+}
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button { color:#f0f6fc !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"] button[aria-selected="true"] { color:var(--lamp-clr) !important; }
 /* Position the transparent custom component over the physical cord location. */
