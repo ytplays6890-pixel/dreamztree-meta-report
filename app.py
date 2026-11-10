@@ -3855,15 +3855,54 @@ def main():
                 _market_data[_m]["spend"] += float(_rpt_row.get("Spent",0) or 0)*float(factor)
             _market_names=["Kuwait","Bahrain","Kerala"]+(["Unassigned"] if "Unassigned" in _market_data else [])
             _market_rows=[(n,_market_data[n]["leads"],_market_data[n]["spend"]) for n in _market_names]
+
+            # Hiring is a separate operational metric entered by market. It is
+            # deliberately never added to Meta Ads lead results or ad spend.
+            st.markdown("#### Enter hiring figures (separate from leads)")
             _hc=st.columns(3); _hiring={}
             for _i,_name in enumerate(["Kuwait","Bahrain","Kerala"]):
                 with _hc[_i]:
-                    _hiring[_name]=st.number_input(f"{_name} hiring",min_value=0,step=1,value=0,key=f"dt_daily_hiring_{_name.lower()}")
+                    _hiring[_name]=st.number_input(
+                        f"{_name} hiring count", min_value=0, step=1, value=0,
+                        key=f"dt_daily_hiring_{_name.lower()}",
+                        help="Enter the hiring figure from your hiring report. This is not added to Meta Ads leads."
+                    )
+
             _branch_rows=[]
             for _name in ["Mangaf","Salmiya"]:
-                _num=int(all_campaigns.loc[all_campaigns["Branch"].astype(str).str.strip().str.lower()==_name.lower(),"Results"].sum())
+                _num=int(pd.to_numeric(
+                    all_campaigns.loc[
+                        all_campaigns["Branch"].astype(str).str.strip().str.lower()==_name.lower(),
+                        "Results"
+                    ], errors="coerce"
+                ).fillna(0).sum())
                 _branch_rows.append((_name,_num))
-            _word_bytes,_pdf_bytes=build_daily_report_files(date_value,grand_leads,grand_spent*factor,_market_rows,_hiring,_branch_rows)
+
+            # Reconcile the report's market rows against the all-campaign grand
+            # totals before creating downloadable files. Unassigned campaigns
+            # remain visible as their own row instead of disappearing.
+            _market_leads_total=sum(int(row[1]) for row in _market_rows)
+            _market_spend_total=sum(float(row[2]) for row in _market_rows)
+            if _market_leads_total != grand_leads or abs(_market_spend_total-grand_spent*factor) > 0.01:
+                st.error("The market breakdown does not reconcile with the overall totals. Check campaign branch assignments before downloading.")
+                st.stop()
+
+            _report_preview_rows=[
+                {"Market":name,"Leads":int(leads),"Hiring":int(_hiring.get(name,0)),"Ad Spend":f"{float(spend):.3f} KD"}
+                for name,leads,spend in _market_rows
+            ]
+            _report_preview_rows.append({
+                "Market":"Total",
+                "Leads":grand_leads,
+                "Hiring":sum(int(v) for v in _hiring.values()),
+                "Ad Spend":f"{grand_spent*factor:.3f} KD"
+            })
+            st.markdown("#### Report preview")
+            st.dataframe(pd.DataFrame(_report_preview_rows), use_container_width=True, hide_index=True)
+            st.caption("Total Leads and Hiring are separate totals. Hiring is not included in the lead count.")
+            _word_bytes,_pdf_bytes=build_daily_report_files(
+                date_value, grand_leads, grand_spent*factor, _market_rows, _hiring, _branch_rows
+            )
             _dl1,_dl2=st.columns(2)
             with _dl1:
                 st.download_button("Download Daily Report (.docx)",_word_bytes,f"dreamztree_daily_leads_{date_value.strftime('%Y%m%d')}.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True)
