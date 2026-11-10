@@ -2231,20 +2231,28 @@ def require_login():
       }
 
       /* Subtle CSS-only aurora ribbons behind the login card. */
+      /* Keep the app surface transparent so the aurora layer is visible. */
+      [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
+        background: transparent !important;
+      }
       [data-testid="stAppViewContainer"]::after {
         content: ""; position: fixed; inset: -24% -18%;
-        z-index: 0; pointer-events: none; opacity: .58;
+        z-index: 1; pointer-events: none; opacity: .92;
         background:
-          radial-gradient(ellipse 48% 20% at 18% 42%, rgba(36,205,177,.19), transparent 72%),
-          radial-gradient(ellipse 42% 18% at 52% 36%, rgba(74,132,255,.20), transparent 74%),
-          radial-gradient(ellipse 46% 22% at 82% 48%, rgba(151,91,238,.17), transparent 72%),
-          linear-gradient(112deg, transparent 22%, rgba(51,198,181,.055) 39%, rgba(103,126,255,.09) 52%, rgba(161,105,232,.055) 65%, transparent 80%);
+          radial-gradient(ellipse 58% 28% at 16% 42%, rgba(35,220,190,.30), transparent 72%),
+          radial-gradient(ellipse 54% 26% at 52% 34%, rgba(65,135,255,.30), transparent 74%),
+          radial-gradient(ellipse 58% 30% at 84% 48%, rgba(166,91,255,.27), transparent 72%),
+          linear-gradient(112deg, transparent 16%, rgba(51,218,194,.12) 36%, rgba(103,126,255,.16) 52%, rgba(181,105,250,.12) 68%, transparent 86%);
         background-size: 145% 145%, 150% 150%, 140% 140%, 180% 180%;
         background-position: 0% 50%, 100% 40%, 40% 60%, 50% 50%;
         transform: translate3d(0,0,0) rotate(-7deg) scale(1.08);
         transform-origin: center;
         animation: dtAuroraDrift 26s ease-in-out infinite alternate;
         will-change: transform, background-position, opacity;
+      }
+      /* Place login content above the aurora without blocking its visibility. */
+      .main .block-container, .main .block-container > div {
+        position: relative; z-index: 2;
       }
       @keyframes dtAuroraDrift {
         0% {
