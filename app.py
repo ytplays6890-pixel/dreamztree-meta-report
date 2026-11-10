@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
-from ai_features import get_ai_config, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals
+from ai_features import get_ai_config, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals, answer_report_question, build_local_management_summary
 import streamlit.components.v1 as components
 from supabase import create_client
 from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
@@ -4059,48 +4059,78 @@ def main():
                 ai_config = get_ai_config()
                 with st.container(border=True):
                     st.markdown("#### AI analyst & management summary")
-                    if not ai_config:
-                        st.warning("Connect a Gemini API key by adding GEMINI_API_KEY to Streamlit Secrets. AI analysis and report chat will then be available; rule-based alerts, branch analysis and estimates already work without an API key.")
-                    else:
+                    if ai_config:
                         st.caption(f"AI provider connected: {ai_config['provider']} · Model: {ai_config['model']}")
-                        api_key = ai_config['api_key']
-                        if st.button("Generate AI analysis", key="dt_ai_analyse"):
+                    else:
+                        st.caption("Local analytics active · Connect Gemini only for advanced narrative analysis")
+                    if st.button("Generate AI analysis", key="dt_ai_analyse"):
+                        if ai_config:
                             prompt = (
                                 "You are a careful performance marketing analyst for a multi-branch training academy. "
                                 "Analyse only these verified figures. Provide an executive summary, strongest and weakest signals, "
                                 "branch observations, campaign risks, practical budget recommendations, and a concise management summary "
                                 "for the uploaded reporting period. If historical daily averages are supplied, include a weekly management summary; otherwise label it as a single-period summary. Do not invent causes, audiences, conversions, or missing data. "
-                                "Label hypotheses clearly and do not call a single-day report a weekly report.\n\n"
+                                "Label hypotheses clearly and do not call a single-day report a weekly report.\\n\\n"
                                 + json.dumps(ai_metrics, ensure_ascii=False, default=str)
                             )
                             with st.spinner("Analysing campaign performance…"):
                                 try:
                                     st.session_state["_dt_ai_analysis_result"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                    st.session_state["_dt_ai_analysis_is_local"] = False
                                 except Exception as exc:
-                                    st.error(f"AI analysis failed: {exc}")
-                        if st.session_state.get("_dt_ai_analysis_result"):
-                            st.markdown(st.session_state["_dt_ai_analysis_result"])
-                        st.markdown("#### Chat with your reports")
-                        question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
-                        if st.button("Ask AI", key="dt_ai_ask") and question.strip():
+                                    st.session_state["_dt_ai_analysis_result"] = build_local_management_summary(ai_metrics)
+                                    st.session_state["_dt_ai_analysis_is_local"] = True
+                                    st.session_state["_dt_ai_analysis_error"] = str(exc)
+                        else:
+                            st.session_state["_dt_ai_analysis_result"] = build_local_management_summary(ai_metrics)
+                            st.session_state["_dt_ai_analysis_is_local"] = True
+                    if st.session_state.get("_dt_ai_analysis_error") and st.session_state.get("_dt_ai_analysis_is_local"):
+                        st.warning("Gemini was unavailable, so this summary was generated locally from verified report figures.")
+                        st.caption(st.session_state.pop("_dt_ai_analysis_error"))
+                    if st.session_state.get("_dt_ai_analysis_result"):
+                        st.markdown(st.session_state["_dt_ai_analysis_result"])
+                    st.markdown("#### Chat with your reports")
+                    question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
+                    if st.button("Ask AI", key="dt_ai_ask") and question.strip():
+                        local_answer = answer_report_question(ai_metrics, question)
+                        if local_answer:
+                            st.session_state["_dt_ai_chat_answer"] = local_answer
+                            st.session_state["_dt_ai_chat_is_local"] = True
+                            st.session_state.pop("_dt_ai_chat_error", None)
+                        elif ai_config:
                             prompt = (
                                 "Answer using only the supplied report data. Show calculations when useful. "
                                 "If the data cannot answer the question, say so. Do not invent metrics. "
-                                "Separate attributed figures from unassigned campaign totals.\n\nDATA:\n"
+                                "Separate attributed figures from unassigned campaign totals.\\n\\nDATA:\\n"
                                 + json.dumps(ai_metrics, ensure_ascii=False, default=str)
-                                + "\n\nQUESTION:\n" + question.strip()
+                                + "\\n\\nQUESTION:\\n" + question.strip()
                             )
                             with st.spinner("Checking report data…"):
                                 try:
                                     st.session_state["_dt_ai_chat_answer"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                    st.session_state["_dt_ai_chat_is_local"] = False
+                                    st.session_state.pop("_dt_ai_chat_error", None)
                                 except Exception as exc:
-                                    st.error(f"AI response failed: {exc}")
-                        if st.session_state.get("_dt_ai_chat_answer"):
-                            st.markdown(st.session_state["_dt_ai_chat_answer"])
-                        if st.button("Clear AI answers", key="dt_ai_clear"):
-                            st.session_state.pop("_dt_ai_analysis_result", None)
-                            st.session_state.pop("_dt_ai_chat_answer", None)
-                            st.rerun()
+                                    st.session_state["_dt_ai_chat_answer"] = build_local_management_summary(ai_metrics)
+                                    st.session_state["_dt_ai_chat_is_local"] = True
+                                    st.session_state["_dt_ai_chat_error"] = str(exc)
+                        else:
+                            st.session_state["_dt_ai_chat_answer"] = (
+                                "I can answer common metric questions locally. Try asking about lowest cost per lead, "
+                                "most leads, total spend, total leads, campaign count, or unassigned campaigns."
+                            )
+                            st.session_state["_dt_ai_chat_is_local"] = True
+                    if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
+                        st.warning("Gemini was unavailable. Showing a local report summary instead.")
+                        st.caption(st.session_state.pop("_dt_ai_chat_error"))
+                    if st.session_state.get("_dt_ai_chat_answer"):
+                        st.markdown(st.session_state["_dt_ai_chat_answer"])
+                        st.caption("Local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "Gemini-generated answer")
+                    if st.button("Clear AI answers", key="dt_ai_clear"):
+                        for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
+                            st.session_state.pop(key, None)
+                        st.rerun()
+
 
     except Exception as e:
         st.error(f"Could not process this Excel file: {e}")
