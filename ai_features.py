@@ -4,30 +4,62 @@ import pandas as pd
 import streamlit as st
 
 
-def get_openai_api_key():
-    key = str(os.environ.get("OPENAI_API_KEY", "")).strip()
-    if not key:
-        try: key = str(st.secrets.get("OPENAI_API_KEY", "")).strip()
-        except Exception: key = ""
-    return key
+def _secret_value(name, default=""):
+    value = str(os.environ.get(name, "")).strip()
+    if not value:
+        try: value = str(st.secrets.get(name, default)).strip()
+        except Exception: value = str(default).strip()
+    return value
 
 
-def generate_ai_response(api_key, prompt, model=None):
-    model = model or str(os.environ.get("OPENAI_MODEL", "gpt-4o-mini")).strip()
-    try: model = str(st.secrets.get("OPENAI_MODEL", model)).strip()
-    except Exception: pass
+def get_ai_config():
+    """Prefer Gemini when configured; retain OpenAI as a backward-compatible fallback."""
+    gemini_key = _secret_value("GEMINI_API_KEY")
+    if gemini_key:
+        return {"provider": "Gemini", "api_key": gemini_key,
+                "model": _secret_value("GEMINI_MODEL", "gemini-2.5-flash")}
+    openai_key = _secret_value("OPENAI_API_KEY")
+    if openai_key:
+        return {"provider": "OpenAI", "api_key": openai_key,
+                "model": _secret_value("OPENAI_MODEL", "gpt-4o-mini")}
+    return None
+
+
+def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
+    if provider.lower() == "openai":
+        model = model or _secret_value("OPENAI_MODEL", "gpt-4o-mini")
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": model, "messages": [
+                {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
+                {"role": "user", "content": prompt}], "temperature": 0.2},
+            timeout=60)
+        if response.status_code >= 400:
+            try: detail = response.json().get("error", {}).get("message", response.text)
+            except Exception: detail = response.text
+            raise RuntimeError(f"OpenAI API error ({response.status_code}): {detail}")
+        return response.json()["choices"][0]["message"]["content"].strip()
+
+    model = model or _secret_value("GEMINI_MODEL", "gemini-2.5-flash")
     response = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={"model": model, "messages": [
-            {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
-            {"role": "user", "content": prompt}], "temperature": 0.2},
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+        json={"systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
+              "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+              "generationConfig": {"temperature": 0.2}},
         timeout=60)
     if response.status_code >= 400:
-        try: detail = response.json().get("error", {}).get("message", response.text)
+        try:
+            err = response.json().get("error", {})
+            detail = err.get("message", response.text)
         except Exception: detail = response.text
-        raise RuntimeError(f"OpenAI API error ({response.status_code}): {detail}")
-    return response.json()["choices"][0]["message"]["content"].strip()
+        raise RuntimeError(f"Gemini API error ({response.status_code}): {detail}")
+    try:
+        parts = response.json()["candidates"][0]["content"]["parts"]
+        return "\\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+    except (KeyError, IndexError, TypeError):
+        raise RuntimeError("Gemini returned no text. The response may have been blocked by safety filters.")
 
 
 def build_ai_metrics(campaigns, usd_to_kwd):
