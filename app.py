@@ -4064,7 +4064,6 @@ def main():
                     else:
                         st.caption(f"AI provider connected: {ai_config['provider']} · Model: {ai_config['model']}")
                         api_key = ai_config['api_key']
-                    else:
                         if st.button("Generate AI analysis", key="dt_ai_analyse"):
                             prompt = (
                                 "You are a careful performance marketing analyst for a multi-branch training academy. "
@@ -4093,7 +4092,7 @@ def main():
                             )
                             with st.spinner("Checking report data…"):
                                 try:
-                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(api_key, prompt)
+                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
                                 except Exception as exc:
                                     st.error(f"AI response failed: {exc}")
                         if st.session_state.get("_dt_ai_chat_answer"):
