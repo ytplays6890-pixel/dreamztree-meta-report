@@ -2522,6 +2522,55 @@ def require_login():
         [data-testid="stForm"] [data-testid="stFormSubmitButton"] button { min-height: 58px !important; }
       }
 
+      /* Real storm lightning for the active require_login screen. */
+      @keyframes dtRealStrikeOne {
+        0%, 18%, 21%, 100% { opacity: 0; }
+        18.25% { opacity: .98; }
+        18.8% { opacity: .08; }
+        19.15% { opacity: .82; }
+        19.55% { opacity: 0; }
+      }
+      @keyframes dtRealStrikeTwo {
+        0%, 61%, 64%, 100% { opacity: 0; }
+        61.2% { opacity: .95; }
+        61.65% { opacity: .05; }
+        62.05% { opacity: .72; }
+        62.45% { opacity: 0; }
+      }
+      .dt-storm-lightning {
+        position: fixed !important; inset: 0 !important;
+        width: 100vw !important; height: 100vh !important;
+        z-index: 3 !important; pointer-events: none !important;
+        overflow: hidden !important; mix-blend-mode: screen;
+      }
+      .dt-storm-lightning svg {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        overflow: visible;
+      }
+      .dt-storm-bolt-left {
+        opacity: .08; animation: dtRealStrikeOne 9s steps(1,end) infinite;
+      }
+      .dt-storm-bolt-right {
+        opacity: .08; animation: dtRealStrikeTwo 11s steps(1,end) infinite;
+      }
+      .dt-storm-lightning .bolt-glow {
+        fill: none; stroke: #65cfff; stroke-width: 22;
+        stroke-linecap: round; stroke-linejoin: round; opacity: .65;
+        filter: blur(12px);
+      }
+      .dt-storm-lightning .bolt-core {
+        fill: none; stroke: #f4fcff; stroke-width: 4.2;
+        stroke-linecap: round; stroke-linejoin: round;
+        filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 14px #75d8ff);
+      }
+      .dt-storm-lightning .bolt-branch {
+        fill: none; stroke: #d9f6ff; stroke-width: 2.1;
+        stroke-linecap: round; opacity: .95;
+        filter: drop-shadow(0 0 7px #79dfff);
+      }
+      @media (max-width: 640px) {
+        .dt-storm-lightning { opacity: .72; }
+      }
       /* Lightweight winter village foreground: static SVG with tiny window glow only. */
       .dt-winter-village {
         position: fixed; left: 0; right: 0; bottom: 40px;
@@ -2585,6 +2634,20 @@ def require_login():
         .dt-auth-subtitle { font-size: 15px !important; }
       }
     </style>
+    <div class="dt-storm-lightning" aria-hidden="true">
+      <svg viewBox="0 0 1600 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <g class="dt-storm-bolt-right">
+          <path class="bolt-glow" d="M1320 -30 L1278 96 L1310 119 L1238 236 L1271 253 L1188 391 L1220 407 L1137 560 L1172 574 L1088 760"/>
+          <path class="bolt-core" d="M1320 -30 L1278 96 L1310 119 L1238 236 L1271 253 L1188 391 L1220 407 L1137 560 L1172 574 L1088 760"/>
+          <path class="bolt-branch" d="M1278 96 L1194 154 L1152 249 M1238 236 L1338 292 L1374 384 M1188 391 L1107 451 L1072 536 M1137 560 L1230 626 L1260 720"/>
+        </g>
+        <g class="dt-storm-bolt-left">
+          <path class="bolt-glow" d="M238 -20 L280 91 L250 118 L322 245 L287 261 L368 397 L336 416 L420 575 L383 590 L464 748"/>
+          <path class="bolt-core" d="M238 -20 L280 91 L250 118 L322 245 L287 261 L368 397 L336 416 L420 575 L383 590 L464 748"/>
+          <path class="bolt-branch" d="M280 91 L190 151 L151 242 M322 245 L414 308 L452 400 M368 397 L286 458 L249 541 M420 575 L326 641 L292 728"/>
+        </g>
+      </svg>
+    </div>
     <div class="dt-winter-village" aria-hidden="true">
       <svg viewBox="0 0 1600 240" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
