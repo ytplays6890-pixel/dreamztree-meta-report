@@ -13,15 +13,15 @@ def _secret_value(name, default=""):
 
 
 def get_ai_config():
-    """Prefer Gemini, then Groq, then OpenAI when credentials are configured."""
-    gemini_key = _secret_value("GEMINI_API_KEY")
-    if gemini_key:
-        return {"provider": "Gemini", "api_key": gemini_key,
-                "model": _secret_value("GEMINI_MODEL", "gemini-3.8-flash")}
+    """Prefer configured Groq free tier, then Gemini, then OpenAI."""
     groq_key = _secret_value("GROQ_API_KEY")
     if groq_key:
         return {"provider": "Groq (Free tier)", "api_key": groq_key,
                 "model": _secret_value("GROQ_MODEL", "openai/gpt-oss-20b")}
+    gemini_key = _secret_value("GEMINI_API_KEY")
+    if gemini_key:
+        return {"provider": "Gemini", "api_key": gemini_key,
+                "model": _secret_value("GEMINI_MODEL", "gemini-3.8-flash")}
     openai_key = _secret_value("OPENAI_API_KEY")
     if openai_key:
         return {"provider": "OpenAI", "api_key": openai_key,
