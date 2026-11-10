@@ -3830,17 +3830,26 @@ def main():
             # Grand totals cover all campaigns, not just those with inferred assignments.
             grand_leads = int(pd.to_numeric(lead_campaigns["Results"], errors="coerce").fillna(0).sum())
             grand_spent = float(pd.to_numeric(all_campaigns["Spent"], errors="coerce").fillna(0).sum())
-            _hiring_campaign_totals = (
-                hiring_campaigns.assign(
-                    _market=hiring_campaigns["Branch"].astype(str).str.strip().str.lower()
-                ).groupby("_market")["Results"].sum().to_dict()
-                if not hiring_campaigns.empty else {}
-            )
-            _hiring_market_defaults = {
-                "Kuwait": int(_hiring_campaign_totals.get("mangaf", 0) + _hiring_campaign_totals.get("salmiya", 0) + _hiring_campaign_totals.get("kuwait", 0)),
-                "Bahrain": int(_hiring_campaign_totals.get("bahrain", 0)),
-                "Kerala": int(_hiring_campaign_totals.get("kerala", 0)),
+            # Use the same branch-to-market mapping for hiring as for leads.
+            # This supports multiple Kuwait branches (including Abu Halifa) and
+            # avoids assuming that every branch name is itself a market name.
+            _branch_market_alias = {
+                "mangaf": "Kuwait", "salmiya": "Kuwait", "abu halifa": "Kuwait",
+                "abu khalifa": "Kuwait", "kuwait": "Kuwait",
+                "bahrain": "Bahrain", "gufool": "Bahrain", "manama": "Bahrain",
+                "al gufool": "Bahrain",
+                "kerala": "Kerala", "konni": "Kerala", "kochi": "Kerala",
+                "malappuram": "Kerala", "trivandrum": "Kerala",
             }
+            _hiring_market_defaults = {"Kuwait": 0, "Bahrain": 0, "Kerala": 0}
+            for _, _hire_row in hiring_campaigns.iterrows():
+                _hire_branch = str(_hire_row.get("Branch", "")).strip().lower()
+                _hire_market = _branch_market_alias.get(_hire_branch)
+                if _hire_market is None:
+                    continue
+                _hiring_market_defaults[_hire_market] += int(
+                    pd.to_numeric(pd.Series([_hire_row.get("Results", 0)]), errors="coerce").fillna(0).iloc[0]
+                )
             lines.extend(["——————————", f"*🏆 Grand Total  —  {grand_leads} Leads  |  Total Cost: {round(grand_spent * factor, 2)} KD*"])
             report = "\n".join(lines)
             # Persist this upload in session state so AI tools remain available after reruns.
@@ -3864,7 +3873,11 @@ def main():
             st.code(report, language=None)
             st.markdown("### Daily Lead Generation Report")
             st.caption("Lead and spend figures are calculated from the Meta export. Enter hiring outcomes separately because they are not supplied by Meta Ads.")
-            _market_alias = {"mangaf":"Kuwait","salmiya":"Kuwait","kuwait":"Kuwait","bahrain":"Bahrain","kerala":"Kerala"}
+            _market_alias = {
+                "mangaf":"Kuwait","salmiya":"Kuwait","abu halifa":"Kuwait","abu khalifa":"Kuwait","kuwait":"Kuwait",
+                "bahrain":"Bahrain","gufool":"Bahrain","manama":"Bahrain","al gufool":"Bahrain",
+                "kerala":"Kerala","konni":"Kerala","kochi":"Kerala","malappuram":"Kerala","trivandrum":"Kerala"
+            }
             _market_data = {"Kuwait":{"leads":0,"spend":0.0},"Bahrain":{"leads":0,"spend":0.0},"Kerala":{"leads":0,"spend":0.0}}
             for _,_rpt_row in all_campaigns.iterrows():
                 _m = _market_alias.get(str(_rpt_row.get("Branch","")).strip().lower(),"Unassigned")
