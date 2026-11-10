@@ -6,3 +6,6 @@ supabase
 streamlit-cookies-controller
 cryptography
 openpyxl
+
+python-docx
+reportlab
