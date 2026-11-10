@@ -3760,7 +3760,17 @@ def main():
                 "date": date_value.strftime("%d/%m/%Y"),
                 "campaigns": all_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
                 "factor": float(factor),
+                "yesterday": None,
             }
+            if yesterday_uploaded is not None:
+                try:
+                    _hist_frame = load_campaign_report(yesterday_uploaded, mappings)
+                    st.session_state["_dt_ai_report_context"]["yesterday"] = {
+                        "leads": int(_hist_frame["Results"].sum()) if not _hist_frame.empty else 0,
+                        "spend_kwd": float(_hist_frame["Spent"].sum()) * float(factor) if not _hist_frame.empty else 0.0,
+                    }
+                except Exception:
+                    pass
             st.subheader("3. Generated report")
             st.code(report, language=None)
             st.download_button("Download report (.txt)", report.encode("utf-8"), f"dreamztree_leads_{date_value.strftime('%Y%m%d')}.txt", "text/plain")
@@ -3988,13 +3998,55 @@ def main():
                         st.info("No clear budget recommendation from this upload. More campaign history and lead-quality data would improve decisions.")
                     st.caption("Suggestions use relative cost-per-lead comparisons. Validate lead quality before changing budgets.")
                 with st.container(border=True):
-                    st.markdown("#### Lead forecasting")
-                    forecast = forecast_from_daily_totals(None, None, ai_metrics["totals"]["leads"], ai_metrics["totals"]["spend_kwd"])
+                    st.markdown("#### Lead forecasting & historical trend")
+                    historical_files = st.file_uploader(
+                        "Optional: upload previous daily Meta exports for trend analysis",
+                        type=["xlsx", "xls"], accept_multiple_files=True, key="dt_ai_historical_exports",
+                        help="Upload one Excel export per day. These files are used only for this session's trend calculations."
+                    )
+                    historical_daily = []
+                    for hist_file in historical_files or []:
+                        try:
+                            hist_raw = pd.read_excel(hist_file)
+                            hist_cols = list(hist_raw.columns)
+                            hist_norm = [normalize(x) for x in hist_cols]
+                            def _hist_col(pred, fallback):
+                                return next((hist_cols[i] for i, value in enumerate(hist_norm) if pred(value)), hist_cols[min(fallback, len(hist_cols)-1)])
+                            hc = _hist_col(lambda x: "campaign" in x, 0)
+                            hr = _hist_col(lambda x: "result" in x and "initial" not in x, 1)
+                            hs = _hist_col(lambda x: "spent" in x or "amount" in x, 2)
+                            historical_daily.append({
+                                "file": hist_file.name,
+                                "leads": int(pd.to_numeric(hist_raw[hr], errors="coerce").fillna(0).sum()),
+                                "spend_kwd": float(pd.to_numeric(hist_raw[hs], errors="coerce").fillna(0).sum()) * float(ai_context.get("factor", 1.0)),
+                            })
+                        except Exception as hist_exc:
+                            st.warning(f"Could not read historical file {hist_file.name}: {hist_exc}")
+                    yesterday_data = ai_context.get("yesterday")
+                    daily_series = list(historical_daily)
+                    if yesterday_data:
+                        daily_series.append({"file": "Yesterday's upload", **yesterday_data})
+                    daily_series.append({"file": "Today's upload", "leads": ai_metrics["totals"]["leads"], "spend_kwd": ai_metrics["totals"]["spend_kwd"]})
+                    average_leads = round(sum(x["leads"] for x in daily_series) / len(daily_series))
+                    average_spend = sum(x["spend_kwd"] for x in daily_series) / len(daily_series)
+                    forecast = {
+                        "next_day_leads": int(average_leads),
+                        "next_7_day_leads": int(average_leads * 7),
+                        "basis": f"{len(daily_series)} uploaded day(s)",
+                    }
                     fc1, fc2, fc3 = st.columns(3)
                     fc1.metric("Indicative next-day leads", f"{forecast['next_day_leads']:,}")
                     fc2.metric("Indicative 7-day leads", f"{forecast['next_7_day_leads']:,}")
                     fc3.metric("Forecast basis", forecast["basis"])
-                    st.caption("This is a simple one-day run-rate projection, not a trained predictive model. Multi-day historical data is needed for reliable forecasting.")
+                    st.caption("This is a simple average run-rate projection, not a trained predictive model. Upload at least 7 daily exports to support a more representative weekly review.")
+                    if len(daily_series) >= 7:
+                        st.dataframe(pd.DataFrame(daily_series), use_container_width=True, hide_index=True)
+                    ai_metrics["historical_daily_average"] = {
+                        "days_uploaded": len(daily_series),
+                        "average_daily_leads": average_leads,
+                        "average_daily_spend_kwd": round(average_spend, 3),
+                        "indicative_next_7_day_leads": forecast["next_7_day_leads"],
+                    }
                 api_key = get_openai_api_key()
                 with st.container(border=True):
                     st.markdown("#### AI analyst & management summary")
@@ -4006,7 +4058,7 @@ def main():
                                 "You are a careful performance marketing analyst for a multi-branch training academy. "
                                 "Analyse only these verified figures. Provide an executive summary, strongest and weakest signals, "
                                 "branch observations, campaign risks, practical budget recommendations, and a concise management summary "
-                                "for the uploaded reporting period. Do not invent causes, audiences, conversions, or missing data. "
+                                "for the uploaded reporting period. If historical daily averages are supplied, include a weekly management summary; otherwise label it as a single-period summary. Do not invent causes, audiences, conversions, or missing data. "
                                 "Label hypotheses clearly and do not call a single-day report a weekly report.\n\n"
                                 + json.dumps(ai_metrics, ensure_ascii=False, default=str)
                             )
