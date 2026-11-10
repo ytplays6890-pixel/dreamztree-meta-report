@@ -1996,18 +1996,18 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .block-container:has([data-testid="stTabs"])::after {
   content:"";
   position:absolute;
-  z-index:0;
-  width:24px;
-  height:118px;
+  z-index:30;
+  width:30px;
+  height:138px;
   pointer-events:none;
   opacity:0;
   background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(110,218,255,.92) 38%, rgba(154,132,255,.75) 72%, transparent);
   filter:drop-shadow(0 0 5px rgba(95,205,255,.95)) drop-shadow(0 0 13px rgba(125,145,255,.7));
   clip-path:polygon(54% 0,100% 0,63% 36%,88% 36%,15% 100%,39% 53%,8% 53%);
-  animation:dtLightningFlash 7.5s linear infinite;
+  animation:dtLightningFlash 4.8s linear infinite;
 }
-.block-container:has([data-testid="stTabs"])::before { left:-13px; top:12%; }
-.block-container:has([data-testid="stTabs"])::after { right:-13px; bottom:8%; animation-delay:-3.75s; transform:scaleX(-1) rotate(8deg); }
+ .block-container:has([data-testid="stTabs"])::before { left:-15px; top:12%; }
+ .block-container:has([data-testid="stTabs"])::after { right:-15px; bottom:8%; animation-delay:-2.4s; transform:scaleX(-1) rotate(8deg); }
 .block-container:has([data-testid="stTabs"]) > div {
   position:relative;
   z-index:1;
