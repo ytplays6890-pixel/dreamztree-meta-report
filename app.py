@@ -377,12 +377,15 @@ DEFAULT_MAPPINGS = [
     ("aswathy cg kerala 16/10/2026", "Aswathy", "CG", "Kerala"),
     ("hishana cg call 17/10/2026", "Hishana", "CG", "Bahrain"),
     ("jincy cg 21/10/2026", "Jincy", "CG", "Mangaf"),
+    ("Arun | Healthcare | 6/11/26", "Arun", "Healthcare", "Salmiya"),
+    ("Arun | Digital Marketing | 6/11/26", "Arun", "Digital Marketing", "Salmiya"),
+    ("Arun | SPA | 6/11/26", "Arun", "SPA", "Salmiya"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
 STAFF_ORDER = {
     "Mangaf": ["Jincy", "Sethu", "Nissi", "Sushma", "Aswathy"],
-    "Salmiya": ["Arya", "Ligin", "Aswathy"],
+    "Salmiya": ["Arun", "Arya", "Ligin", "Aswathy"],
     "Bahrain": ["Hishana", "Anakha", "Seetha", "Shabna"],
     "Kerala": ["Anupama", "Vedhika", "Vipin", "Aswathy", "Roshni", "Shelbin", "Ajay", "Dani", "Renjith", "Anju", "Biju"],
 }
@@ -434,7 +437,7 @@ def infer_campaign(name, mappings):
     # Canonical staff-to-branch rules. Aswathy's branch depends on the course.
     staff_branch_rules = {
         "Jincy": "Mangaf", "Sethu": "Mangaf", "Nissi": "Mangaf", "Sushma": "Mangaf",
-        "Arya": "Salmiya", "Ligin": "Salmiya",
+        "Arun": "Salmiya", "Arya": "Salmiya", "Ligin": "Salmiya",
         "Hishana": "Bahrain", "Anakha": "Bahrain", "Seetha": "Bahrain", "Shabna": "Bahrain",
         "Anupama": "Kerala", "Vedhika": "Kerala", "Vipin": "Kerala", "Roshni": "Kerala",
         "Shelbin": "Kerala", "Ajay": "Kerala", "Dani": "Kerala", "Renjith": "Kerala",
