@@ -2392,6 +2392,26 @@ def require_login():
         [data-testid="stForm"] [data-testid="stFormSubmitButton"] button { min-height: 58px !important; }
       }
 
+      /* Lightweight winter village foreground: static SVG with tiny window glow only. */
+      .dt-winter-village {
+        position: fixed; left: 0; right: 0; bottom: 0;
+        height: clamp(105px, 19vh, 205px);
+        z-index: 2; pointer-events: none; overflow: hidden;
+        opacity: .82; line-height: 0;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 25%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%);
+      }
+      .dt-winter-village svg { width: 100%; height: 100%; display: block; }
+      .dt-village-window { fill: #ffd58a; opacity: .62; animation: dtWindowGlow 5s ease-in-out infinite alternate; }
+      .dt-village-window:nth-of-type(2n) { animation-delay: 1.8s; }
+      @keyframes dtWindowGlow { from { opacity:.28; } to { opacity:.82; } }
+      @media (max-width: 640px) {
+        .dt-winter-village { height: 112px; opacity: .62; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dt-village-window { animation: none !important; }
+      }
+
       /* Login-only layout safeguards: prevent viewport overflow without changing app behavior. */
       html, body, .stApp, [data-testid="stAppViewContainer"],
       [data-testid="stMain"], [data-testid="stMainBlockContainer"], .main {
@@ -2423,6 +2443,49 @@ def require_login():
         .dt-auth-subtitle { font-size: 15px !important; }
       }
     </style>
+    <div class="dt-winter-village" aria-hidden="true">
+      <svg viewBox="0 0 1600 240" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="dtVillageSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#14263a" stop-opacity="0"/>
+            <stop offset="1" stop-color="#07101c" stop-opacity=".96"/>
+          </linearGradient>
+          <linearGradient id="dtVillageSnow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#b9d5ec" stop-opacity=".30"/>
+            <stop offset="1" stop-color="#172b40" stop-opacity=".92"/>
+          </linearGradient>
+        </defs>
+        <path d="M0 155 Q170 95 340 150 T680 145 T1020 135 T1360 145 T1600 125 V240 H0Z" fill="#102338" opacity=".48"/>
+        <path d="M0 190 Q180 140 360 184 T720 176 T1080 180 T1440 165 T1600 180 V240 H0Z" fill="url(#dtVillageSky)"/>
+        <g fill="#091522" opacity=".96">
+          <path d="M70 205V128L112 91L154 128V205Z"/><path d="M95 130V108H130V130Z"/>
+          <path d="M225 213V150L270 112L315 150V213Z"/>
+          <path d="M1280 212V145L1332 99L1384 145V212Z"/><path d="M1430 210V130L1472 94L1514 130V210Z"/>
+        </g>
+        <g fill="#0b1c2c">
+          <path d="M0 225L48 115L96 225Z"/><path d="M34 225L84 91L134 225Z"/>
+          <path d="M154 232L205 112L256 232Z"/><path d="M1190 230L1245 100L1300 230Z"/>
+          <path d="M1360 232L1415 105L1470 232Z"/><path d="M1490 232L1545 88L1600 232Z"/>
+        </g>
+        <g fill="#d8e9f7" opacity=".44">
+          <path d="M48 115L36 143L48 136L60 143Z"/><path d="M84 91L71 124L84 116L97 124Z"/>
+          <path d="M205 112L192 143L205 135L218 143Z"/><path d="M1245 100L1231 133L1245 125L1259 133Z"/>
+          <path d="M1415 105L1401 138L1415 130L1429 138Z"/><path d="M1545 88L1530 123L1545 114L1560 123Z"/>
+        </g>
+        <g fill="#101d2b">
+          <path d="M390 215V155L430 121L470 155V215Z"/><path d="M475 220V165L515 132L555 165V220Z"/>
+          <path d="M1010 218V153L1055 115L1100 153V218Z"/>
+        </g>
+        <g class="dt-village-window">
+          <rect x="405" y="169" width="13" height="20" rx="2"/><rect x="442" y="169" width="13" height="20" rx="2"/>
+          <rect x="490" y="179" width="13" height="19" rx="2"/><rect x="527" y="179" width="13" height="19" rx="2"/>
+          <rect x="1028" y="166" width="14" height="20" rx="2"/><rect x="1068" y="166" width="14" height="20" rx="2"/>
+          <rect x="91" y="151" width="13" height="19" rx="2"/><rect x="1270" y="165" width="13" height="19" rx="2"/>
+          <rect x="1450" y="148" width="13" height="19" rx="2"/>
+        </g>
+        <path d="M0 226 Q200 206 400 228 T800 221 T1200 228 T1600 215 V240 H0Z" fill="url(#dtVillageSnow)"/>
+      </svg>
+    </div>
     <div class="dt-auth-shell">
       <div class="dt-auth-title">Welcome back.</div>
       <div class="dt-auth-subtitle">Sign in to access your campaign reports.</div>
