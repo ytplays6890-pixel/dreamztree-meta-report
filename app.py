@@ -2229,6 +2229,43 @@ def require_login():
         background: radial-gradient(ellipse at 50% 48%, rgba(116,132,164,.10), transparent 48%);
         animation: dtAmbient 12s ease-in-out infinite;
       }
+
+      /* Subtle CSS-only aurora ribbons behind the login card. */
+      [data-testid="stAppViewContainer"]::after {
+        content: ""; position: fixed; inset: -24% -18%;
+        z-index: 0; pointer-events: none; opacity: .58;
+        background:
+          radial-gradient(ellipse 48% 20% at 18% 42%, rgba(36,205,177,.19), transparent 72%),
+          radial-gradient(ellipse 42% 18% at 52% 36%, rgba(74,132,255,.20), transparent 74%),
+          radial-gradient(ellipse 46% 22% at 82% 48%, rgba(151,91,238,.17), transparent 72%),
+          linear-gradient(112deg, transparent 22%, rgba(51,198,181,.055) 39%, rgba(103,126,255,.09) 52%, rgba(161,105,232,.055) 65%, transparent 80%);
+        background-size: 145% 145%, 150% 150%, 140% 140%, 180% 180%;
+        background-position: 0% 50%, 100% 40%, 40% 60%, 50% 50%;
+        transform: translate3d(0,0,0) rotate(-7deg) scale(1.08);
+        transform-origin: center;
+        animation: dtAuroraDrift 26s ease-in-out infinite alternate;
+        will-change: transform, background-position, opacity;
+      }
+      @keyframes dtAuroraDrift {
+        0% {
+          transform: translate3d(-1.2%,1%,0) rotate(-8deg) scale(1.08);
+          background-position: 0% 48%, 100% 42%, 35% 58%, 45% 50%;
+          opacity: .38;
+        }
+        50% {
+          transform: translate3d(1%, -1.2%,0) rotate(-5deg) scale(1.12);
+          background-position: 55% 52%, 38% 48%, 80% 44%, 65% 48%;
+          opacity: .62;
+        }
+        100% {
+          transform: translate3d(-.6%,.8%,0) rotate(-9deg) scale(1.10);
+          background-position: 100% 46%, 0% 54%, 20% 52%, 35% 52%;
+          opacity: .46;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        [data-testid="stAppViewContainer"]::after { animation: none !important; }
+      }
       .main .block-container > div { position: relative; z-index: 10; }
       /* Keep native login controls interactive above decorative overlays. */
       [data-testid="stForm"], [data-testid="stTextInput"],
