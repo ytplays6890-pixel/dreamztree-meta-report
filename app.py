@@ -3709,16 +3709,24 @@ def main():
             needs_staff_branch = len(unresolved) - len(can_include)
             st.warning(f"{len(can_include)} campaign(s) with Staff and Branch identified can be included despite a missing course. {needs_staff_branch} campaign(s) still need Staff or Branch review.")
         if st.button("Generate report", type="primary"):
-            # Only Staff and Branch are required for inclusion. Missing courses are not allowed
-            # to remove otherwise valid leads from the branch/staff report.
-            valid = edited[(edited["Staff"].astype(str).str.strip() != "") & (edited["Branch"].astype(str).str.strip() != "")].copy()
-            if valid.empty:
-                st.error("No campaigns have both Staff and Branch identified. Review the assignment table first.")
-                return
-            valid["Course"] = valid["Course"].astype(str).str.strip().replace("", "Unclassified course")
-            grouped = valid.groupby(["Branch", "Staff", "Course"], sort=False).agg(Results=("Results", "sum"), Spent=("Spent", "sum")).reset_index()
+            # Include every positive-result campaign, including brand-new campaigns
+            # whose staff/branch cannot yet be inferred. Unknown campaigns are listed
+            # separately instead of being silently dropped from the report totals.
+            all_campaigns = edited.copy()
+            all_campaigns["Staff"] = all_campaigns["Staff"].fillna("").astype(str).str.strip()
+            all_campaigns["Branch"] = all_campaigns["Branch"].fillna("").astype(str).str.strip()
+            all_campaigns["Course"] = all_campaigns["Course"].fillna("").astype(str).str.strip()
+            all_campaigns["Course"] = all_campaigns["Course"].replace("", "Unclassified course")
+            assigned = all_campaigns[
+                (all_campaigns["Staff"] != "") & (all_campaigns["Branch"] != "")
+            ].copy()
+            unassigned = all_campaigns[
+                (all_campaigns["Staff"] == "") | (all_campaigns["Branch"] == "")
+            ].copy()
+            grouped = assigned.groupby(["Branch", "Staff", "Course"], sort=False).agg(
+                Results=("Results", "sum"), Spent=("Spent", "sum")
+            ).reset_index()
             lines = [f"*📋 Leads Count  ·  {date_value.strftime('%d/%m/%Y')}*", ""]
-            grand_leads, grand_spent = 0, 0.0
             for branch in BRANCH_ORDER + [b for b in grouped["Branch"].unique() if b not in BRANCH_ORDER]:
                 bd = grouped[grouped["Branch"] == branch]
                 if bd.empty:
@@ -3731,8 +3739,19 @@ def main():
                     for _, rr in bd[bd["Staff"] == staff].sort_values("Results", ascending=False).iterrows():
                         lines.append(f"{rr['Staff']}  -  {rr['Course']}  -  {int(rr['Results'])}")
                 lines.append("")
-                grand_leads += int(bd["Results"].sum())
-                grand_spent += float(branch_spent)
+            if not unassigned.empty:
+                unassigned_spend = float(unassigned["Spent"].sum())
+                lines.extend(["*New / Unassigned Campaigns*  —  Cost: "
+                              f"{round(unassigned_spend * factor, 2)} KD", "——————————"])
+                for _, rr in unassigned.sort_values("Results", ascending=False).iterrows():
+                    lines.append(
+                        f"{rr['Campaign']}  -  {int(rr['Results'])} Leads  -  "
+                        f"{round(float(rr['Spent']) * factor, 3)} KD"
+                    )
+                lines.append("")
+            # Grand totals cover all campaigns, not just those with inferred assignments.
+            grand_leads = int(pd.to_numeric(all_campaigns["Results"], errors="coerce").fillna(0).sum())
+            grand_spent = float(pd.to_numeric(all_campaigns["Spent"], errors="coerce").fillna(0).sum())
             lines.extend(["——————————", f"*🏆 Grand Total  —  {grand_leads} Leads  |  Total Cost: {round(grand_spent * factor, 2)} KD*"])
             report = "\n".join(lines)
             st.subheader("3. Generated report")
@@ -3742,7 +3761,7 @@ def main():
             m1, m2, m3 = st.columns(3)
             m1.metric("Total leads included", f"{grand_leads:,}")
             m2.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
-            m3.metric("Campaigns included", f"{len(valid):,}")
+            m3.metric("Campaigns included", f"{len(all_campaigns):,}")
             st.subheader("Performance analytics")
             branch_chart = valid.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
             branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
