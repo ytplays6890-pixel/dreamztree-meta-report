@@ -2394,8 +2394,8 @@ def require_login():
 
       /* Lightweight winter village foreground: static SVG with tiny window glow only. */
       .dt-winter-village {
-        position: fixed; left: 0; right: 0; bottom: 0;
-        height: clamp(72px, 11vh, 118px);
+        position: fixed; left: 0; right: 0; bottom: 58px;
+        height: clamp(112px, 15vh, 158px);
         z-index: 20; pointer-events: none; overflow: hidden;
         opacity: .62; line-height: 0;
         /* Feather the upper skyline and both horizontal ends into the page background. */
@@ -2418,7 +2418,7 @@ def require_login():
       .dt-village-window:nth-of-type(2n) { animation-delay: 1.8s; }
       @keyframes dtWindowGlow { from { opacity:.28; } to { opacity:.82; } }
       @media (max-width: 640px) {
-        .dt-winter-village { height: 78px; opacity: .52; }
+        .dt-winter-village { bottom: 42px; height: 104px; opacity: .56; }
       }
       @media (prefers-reduced-motion: reduce) {
         .dt-village-window { animation: none !important; }
