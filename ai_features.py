@@ -13,11 +13,15 @@ def _secret_value(name, default=""):
 
 
 def get_ai_config():
-    """Prefer Gemini when configured; retain OpenAI as a backward-compatible fallback."""
+    """Prefer Gemini, then Groq, then OpenAI when credentials are configured."""
     gemini_key = _secret_value("GEMINI_API_KEY")
     if gemini_key:
         return {"provider": "Gemini", "api_key": gemini_key,
                 "model": _secret_value("GEMINI_MODEL", "gemini-3.8-flash")}
+    groq_key = _secret_value("GROQ_API_KEY")
+    if groq_key:
+        return {"provider": "Groq (Free tier)", "api_key": groq_key,
+                "model": _secret_value("GROQ_MODEL", "openai/gpt-oss-20b")}
     openai_key = _secret_value("OPENAI_API_KEY")
     if openai_key:
         return {"provider": "OpenAI", "api_key": openai_key,
@@ -25,68 +29,91 @@ def get_ai_config():
     return None
 
 
-def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
-    """Call the configured AI provider with bounded latency and one transient retry."""
-    if provider.lower() == "openai":
-        model = model or _secret_value("OPENAI_MODEL", "gpt-4o-mini")
+def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label):
+    try:
+        response = requests.post(
+            base_url.rstrip("/") + "/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": model, "messages": [
+                {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
+                {"role": "user", "content": prompt}], "temperature": 0.2, "max_tokens": 900},
+            timeout=(5, 30))
+    except requests.RequestException as exc:
+        raise RuntimeError(f"{provider_label} request timed out or could not connect.") from exc
+    if response.status_code >= 400:
         try:
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model, "messages": [
-                    {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
-                    {"role": "user", "content": prompt}], "temperature": 0.2},
-                timeout=(5, 25))
-        except requests.RequestException as exc:
-            raise RuntimeError("The AI request timed out or could not connect. Please try again.") from exc
-        if response.status_code >= 400:
-            try: detail = response.json().get("error", {}).get("message", response.text)
-            except Exception: detail = response.text
-            raise RuntimeError(f"OpenAI API error ({response.status_code}): {detail}")
-        return response.json()["choices"][0]["message"]["content"].strip()
+            detail = response.json().get("error", {}).get("message", response.text)
+        except Exception:
+            detail = response.text
+        raise RuntimeError(f"{provider_label} API error ({response.status_code}): {detail}")
+    try:
+        answer = response.json()["choices"][0]["message"]["content"].strip()
+    except (KeyError, IndexError, TypeError, AttributeError):
+        raise RuntimeError(f"{provider_label} returned no readable text.")
+    if not answer:
+        raise RuntimeError(f"{provider_label} returned an empty answer.")
+    return answer
 
+
+def _generate_gemini(api_key, prompt, model):
     model = model or _secret_value("GEMINI_MODEL", "gemini-3.8-flash")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
     payload = {
         "systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 700}
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 900}
     }
-
-    # Keep the UI responsive: one short retry only for temporary capacity/rate errors.
-    retryable_statuses = {429, 500, 502, 503, 504}
-    response = None
-    for attempt in range(2):
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=(5, 25))
+    except requests.RequestException as exc:
+        raise RuntimeError("Gemini request timed out or could not connect.") from exc
+    if response.status_code >= 400:
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=(5, 20))
-        except requests.RequestException as exc:
-            if attempt == 0:
-                time.sleep(1)
-                continue
-            raise RuntimeError("Gemini did not respond within the time limit. Please try again.") from exc
-        if response.status_code not in retryable_statuses or attempt == 1:
-            break
-        time.sleep(1)
-
-    if response is not None and response.status_code >= 400:
-        try:
-            err = response.json().get("error", {})
-            detail = err.get("message", response.text)
+            detail = response.json().get("error", {}).get("message", response.text)
         except Exception:
             detail = response.text
-        if response.status_code in retryable_statuses:
-            raise RuntimeError(f"Gemini is temporarily busy (HTTP {response.status_code}). Please wait briefly and try again. Details: {detail}")
         raise RuntimeError(f"Gemini API error ({response.status_code}): {detail}")
     try:
         parts = response.json()["candidates"][0]["content"]["parts"]
-        answer = "\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
-        if not answer:
-            raise RuntimeError("Gemini returned an empty answer. Please try a shorter question.")
-        return answer
+        answer = "\\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
     except (KeyError, IndexError, TypeError):
-        raise RuntimeError("Gemini returned no text. The response may have been blocked by safety filters.")
+        raise RuntimeError("Gemini returned no readable text.")
+    if not answer:
+        raise RuntimeError("Gemini returned an empty answer.")
+    return answer
 
+
+def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
+    """Use the selected provider and automatically fall back to Groq when configured."""
+    provider_key = str(provider or "Gemini").lower()
+    groq_key = _secret_value("GROQ_API_KEY")
+    primary_error = None
+
+    try:
+        if "groq" in provider_key:
+            return _generate_openai_compatible(
+                api_key, prompt, model or _secret_value("GROQ_MODEL", "openai/gpt-oss-20b"),
+                "https://api.groq.com/openai/v1", "Groq")
+        if "openai" in provider_key:
+            return _generate_openai_compatible(
+                api_key, prompt, model or _secret_value("OPENAI_MODEL", "gpt-4o-mini"),
+                "https://api.openai.com/v1", "OpenAI")
+        return _generate_gemini(api_key, prompt, model)
+    except Exception as exc:
+        primary_error = exc
+
+    # Groq is a separate free-tier provider; it is only used if the user adds its key.
+    if groq_key and "groq" not in provider_key:
+        try:
+            return _generate_openai_compatible(
+                groq_key, prompt, _secret_value("GROQ_MODEL", "openai/gpt-oss-20b"),
+                "https://api.groq.com/openai/v1", "Groq fallback")
+        except Exception as fallback_exc:
+            raise RuntimeError(
+                f"{primary_error} | Groq fallback also failed: {fallback_exc}"
+            ) from fallback_exc
+    raise primary_error
 
 def build_ai_metrics(campaigns, usd_to_kwd):
     rows = campaigns.copy()
