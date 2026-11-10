@@ -2395,18 +2395,23 @@ def require_login():
       /* Lightweight winter village foreground: static SVG with tiny window glow only. */
       .dt-winter-village {
         position: fixed; left: 0; right: 0; bottom: 0;
-        height: clamp(105px, 19vh, 205px);
-        z-index: 2; pointer-events: none; overflow: hidden;
-        opacity: .82; line-height: 0;
-        mask-image: linear-gradient(to bottom, transparent 0%, #000 25%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%);
+        height: clamp(72px, 11vh, 118px);
+        z-index: 1; pointer-events: none; overflow: hidden;
+        opacity: .62; line-height: 0;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
+      }
+      /* Keep the entire login card and its controls above the village artwork. */
+      .main .block-container {
+        position: relative !important;
+        z-index: 10 !important;
       }
       .dt-winter-village svg { width: 100%; height: 100%; display: block; }
       .dt-village-window { fill: #ffd58a; opacity: .62; animation: dtWindowGlow 5s ease-in-out infinite alternate; }
       .dt-village-window:nth-of-type(2n) { animation-delay: 1.8s; }
       @keyframes dtWindowGlow { from { opacity:.28; } to { opacity:.82; } }
       @media (max-width: 640px) {
-        .dt-winter-village { height: 112px; opacity: .62; }
+        .dt-winter-village { height: 78px; opacity: .52; }
       }
       @media (prefers-reduced-motion: reduce) {
         .dt-village-window { animation: none !important; }
