@@ -3892,8 +3892,8 @@ def main():
             _branch_rows=[]
             for _name in ["Mangaf","Salmiya"]:
                 _num=int(pd.to_numeric(
-                    all_campaigns.loc[
-                        all_campaigns["Branch"].astype(str).str.strip().str.lower()==_name.lower(),
+                    lead_campaigns.loc[
+                        lead_campaigns["Branch"].astype(str).str.strip().str.lower()==_name.lower(),
                         "Results"
                     ], errors="coerce"
                 ).fillna(0).sum())
