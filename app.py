@@ -3788,11 +3788,18 @@ def main():
             all_campaigns["Branch"] = all_campaigns["Branch"].fillna("").astype(str).str.strip()
             all_campaigns["Course"] = all_campaigns["Course"].fillna("").astype(str).str.strip()
             all_campaigns["Course"] = all_campaigns["Course"].replace("", "Unclassified course")
-            assigned = all_campaigns[
-                (all_campaigns["Staff"] != "") & (all_campaigns["Branch"] != "")
+            # Campaigns explicitly mapped to the course "Hiring" are hiring
+            # outcomes, not Meta lead results. Keep their spend in ad-spend totals,
+            # but separate their Results from lead counts throughout the report.
+            _is_hiring_campaign = all_campaigns["Course"].str.strip().str.casefold().eq("hiring")
+            hiring_campaigns = all_campaigns[_is_hiring_campaign].copy()
+            lead_campaigns = all_campaigns[~_is_hiring_campaign].copy()
+
+            assigned = lead_campaigns[
+                (lead_campaigns["Staff"] != "") & (lead_campaigns["Branch"] != "")
             ].copy()
-            unassigned = all_campaigns[
-                (all_campaigns["Staff"] == "") | (all_campaigns["Branch"] == "")
+            unassigned = lead_campaigns[
+                (lead_campaigns["Staff"] == "") | (lead_campaigns["Branch"] == "")
             ].copy()
             grouped = assigned.groupby(["Branch", "Staff", "Course"], sort=False).agg(
                 Results=("Results", "sum"), Spent=("Spent", "sum")
@@ -3821,15 +3828,26 @@ def main():
                     )
                 lines.append("")
             # Grand totals cover all campaigns, not just those with inferred assignments.
-            grand_leads = int(pd.to_numeric(all_campaigns["Results"], errors="coerce").fillna(0).sum())
+            grand_leads = int(pd.to_numeric(lead_campaigns["Results"], errors="coerce").fillna(0).sum())
             grand_spent = float(pd.to_numeric(all_campaigns["Spent"], errors="coerce").fillna(0).sum())
+            _hiring_campaign_totals = (
+                hiring_campaigns.assign(
+                    _market=hiring_campaigns["Branch"].astype(str).str.strip().str.lower()
+                ).groupby("_market")["Results"].sum().to_dict()
+                if not hiring_campaigns.empty else {}
+            )
+            _hiring_market_defaults = {
+                "Kuwait": int(_hiring_campaign_totals.get("mangaf", 0) + _hiring_campaign_totals.get("salmiya", 0) + _hiring_campaign_totals.get("kuwait", 0)),
+                "Bahrain": int(_hiring_campaign_totals.get("bahrain", 0)),
+                "Kerala": int(_hiring_campaign_totals.get("kerala", 0)),
+            }
             lines.extend(["——————————", f"*🏆 Grand Total  —  {grand_leads} Leads  |  Total Cost: {round(grand_spent * factor, 2)} KD*"])
             report = "\n".join(lines)
             # Persist this upload in session state so AI tools remain available after reruns.
             st.session_state["_dt_ai_report_context"] = {
                 "date": date_value.strftime("%d/%m/%Y"),
                 "upload_fingerprint": hashlib.sha256(uploaded.getvalue()).hexdigest(),
-                "campaigns": all_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
+                "campaigns": lead_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
                 "factor": float(factor),
                 "yesterday": None,
             }
@@ -3851,7 +3869,9 @@ def main():
             for _,_rpt_row in all_campaigns.iterrows():
                 _m = _market_alias.get(str(_rpt_row.get("Branch","")).strip().lower(),"Unassigned")
                 if _m not in _market_data: _market_data[_m]={"leads":0,"spend":0.0}
-                _market_data[_m]["leads"] += int(float(_rpt_row.get("Results",0) or 0))
+                if str(_rpt_row.get("Course","")).strip().casefold() != "hiring":
+                    _market_data[_m]["leads"] += int(float(_rpt_row.get("Results",0) or 0))
+                # Hiring campaign spend remains part of the market's ad spend.
                 _market_data[_m]["spend"] += float(_rpt_row.get("Spent",0) or 0)*float(factor)
             _market_names=["Kuwait","Bahrain","Kerala"]+(["Unassigned"] if "Unassigned" in _market_data else [])
             _market_rows=[(n,_market_data[n]["leads"],_market_data[n]["spend"]) for n in _market_names]
@@ -3862,10 +3882,11 @@ def main():
             _hc=st.columns(3); _hiring={}
             for _i,_name in enumerate(["Kuwait","Bahrain","Kerala"]):
                 with _hc[_i]:
+                    _default_hiring = int(_hiring_market_defaults.get(_name, 0))
                     _hiring[_name]=st.number_input(
-                        f"{_name} hiring count", min_value=0, step=1, value=0,
-                        key=f"dt_daily_hiring_{_name.lower()}",
-                        help="Enter the hiring figure from your hiring report. This is not added to Meta Ads leads."
+                        f"{_name} hiring count", min_value=0, step=1, value=_default_hiring,
+                        key=f"dt_daily_hiring_v2_{_name.lower()}",
+                        help="Pre-filled from campaigns mapped to the course 'Hiring'. Adjust this value if your verified hiring report differs. Hiring is never added to Meta Ads leads."
                     )
 
             _branch_rows=[]
