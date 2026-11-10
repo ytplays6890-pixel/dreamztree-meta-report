@@ -3506,7 +3506,7 @@ def main():
             st.session_state.pop("supabase_access_token", None); st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
     with date_col:
-        st.markdown('<div class="dt-date-shell"><div class="dt-date-caption">Reporting date · Editable</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dt-date-shell"><div class="dt-date-caption">Report Date</div>', unsafe_allow_html=True)
         date_value = st.date_input("Reporting date", value=datetime.today().date(), key="reporting_date_selector", label_visibility="collapsed", help="Choose the date used in report headings and downloaded files.")
         st.markdown('</div>', unsafe_allow_html=True)
 
