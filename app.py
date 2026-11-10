@@ -2112,14 +2112,26 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
     <script>
       (()=>{
         const frame=window.frameElement;
-        if(frame){frame.style.position='fixed';frame.style.left='0';frame.style.top='0';frame.style.right='0';frame.style.bottom='0';frame.style.width='100vw';frame.style.height='100vh';
-          frame.style.zIndex='2147483647';frame.style.border='0';frame.style.background='transparent';frame.style.pointerEvents='none';}
+        function alignSantaLayer(){
+          if(!frame)return;
+          frame.style.position='fixed';
+          frame.style.right='auto';frame.style.bottom='auto';
+          frame.style.width='100vw';frame.style.height='100vh';
+          frame.style.zIndex='2147483647';frame.style.border='0';
+          frame.style.background='transparent';frame.style.pointerEvents='none';
+          /* Streamlit's animated login container can become the fixed-position
+             containing block. Offset the iframe back to the actual viewport origin. */
+          const rect=frame.getBoundingClientRect();
+          frame.style.left=(-rect.left)+'px';
+          frame.style.top=(-rect.top)+'px';
+        }
+        alignSantaLayer();
         const santa=document.getElementById('santa');
         function peek(){
-          const w=window.innerWidth,h=window.innerHeight,sw=Math.min(76,w*.05),sh=sw*1.76,pad=24;
-          /* Keep the small Santa in the bottom-left corner on every page,
-             away from the dashboard's right-side assistant and controls. */
-          const y=Math.max(pad,h-sh-pad);
+          alignSantaLayer();
+          const w=window.innerWidth,h=window.innerHeight,sw=Math.min(76,w*.05),sh=sw*1.76,pad=18;
+          /* Anchor Santa to the real browser bottom-left, clear of the login card. */
+          const y=Math.max(8,h-sh-pad);
           const x=-sw+18;
           const tx=18;
           santa.style.width=sw+'px';santa.style.setProperty('--flip','scaleX(1)');
@@ -2128,7 +2140,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
           santa.classList.remove('show');void santa.offsetWidth;santa.classList.add('show');
         }
         setTimeout(peek,2500);setInterval(peek,30000);
-        window.addEventListener('resize',()=>santa.classList.remove('show'));
+        window.addEventListener('resize',()=>{alignSantaLayer();santa.classList.remove('show');});
       })();
     </script></body></html>''', height=1, scrolling=False)
 
