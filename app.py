@@ -4230,7 +4230,7 @@ def main():
                     if ai_config:
                         st.caption(f"AI provider connected: {ai_config['provider']} · Model: {ai_config['model']}")
                     else:
-                        st.caption("Local analytics active · Connect Gemini only for advanced narrative analysis")
+                        st.caption("Local analytics active · Add a Gemini or Groq API key for AI narrative analysis")
                     if st.button("Generate AI analysis", key="dt_ai_analyse"):
                         if ai_config:
                             prompt = (
@@ -4253,7 +4253,7 @@ def main():
                             st.session_state["_dt_ai_analysis_result"] = build_local_management_summary(ai_metrics)
                             st.session_state["_dt_ai_analysis_is_local"] = True
                     if st.session_state.get("_dt_ai_analysis_error") and st.session_state.get("_dt_ai_analysis_is_local"):
-                        st.warning("Gemini was unavailable, so this summary was generated locally from verified report figures.")
+                        st.warning("AI providers were unavailable, so this summary was generated locally from verified report figures.")
                         st.caption(st.session_state.pop("_dt_ai_analysis_error"))
                     if st.session_state.get("_dt_ai_analysis_result"):
                         st.markdown(st.session_state["_dt_ai_analysis_result"])
@@ -4289,11 +4289,11 @@ def main():
                             )
                             st.session_state["_dt_ai_chat_is_local"] = True
                     if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
-                        st.warning("Gemini was unavailable. Showing a local report summary instead.")
+                        st.warning("AI providers were unavailable. Showing a local report summary instead.")
                         st.caption(st.session_state.pop("_dt_ai_chat_error"))
                     if st.session_state.get("_dt_ai_chat_answer"):
                         st.markdown(st.session_state["_dt_ai_chat_answer"])
-                        st.caption("Local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "Gemini-generated answer")
+                        st.caption("Local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "AI-generated answer")
                     if st.button("Clear AI answers", key="dt_ai_clear"):
                         for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
                             st.session_state.pop(key, None)
