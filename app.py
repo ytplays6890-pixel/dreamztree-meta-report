@@ -11,7 +11,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
-from ai_features import get_openai_api_key, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals
+from ai_features import get_ai_config, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals
 import streamlit.components.v1 as components
 from supabase import create_client
 from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
@@ -4056,11 +4056,14 @@ def main():
                         "average_daily_spend_kwd": round(average_spend, 3),
                         "indicative_next_7_day_leads": forecast["next_7_day_leads"],
                     }
-                api_key = get_openai_api_key()
+                ai_config = get_ai_config()
                 with st.container(border=True):
                     st.markdown("#### AI analyst & management summary")
-                    if not api_key:
-                        st.warning("AI-generated analysis and chat require OPENAI_API_KEY in Streamlit Secrets. The rule-based alerts, branch analysis and estimates above work without it.")
+                    if not ai_config:
+                        st.warning("Connect a Gemini API key by adding GEMINI_API_KEY to Streamlit Secrets. AI analysis and report chat will then be available; rule-based alerts, branch analysis and estimates already work without an API key.")
+                    else:
+                        st.caption(f"AI provider connected: {ai_config['provider']} · Model: {ai_config['model']}")
+                        api_key = ai_config['api_key']
                     else:
                         if st.button("Generate AI analysis", key="dt_ai_analyse"):
                             prompt = (
@@ -4073,7 +4076,7 @@ def main():
                             )
                             with st.spinner("Analysing campaign performance…"):
                                 try:
-                                    st.session_state["_dt_ai_analysis_result"] = generate_ai_response(api_key, prompt)
+                                    st.session_state["_dt_ai_analysis_result"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
                                 except Exception as exc:
                                     st.error(f"AI analysis failed: {exc}")
                         if st.session_state.get("_dt_ai_analysis_result"):
