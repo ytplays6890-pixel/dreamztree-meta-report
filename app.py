@@ -4075,7 +4075,7 @@ def main():
                             )
                             with st.spinner("Analysing campaign performance…"):
                                 try:
-                                    st.session_state["_dt_ai_analysis_result"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                    st.session_state["_dt_ai_analysis_result"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
                                     st.session_state["_dt_ai_analysis_is_local"] = False
                                 except Exception as exc:
                                     st.session_state["_dt_ai_analysis_result"] = build_local_management_summary(ai_metrics)
@@ -4107,7 +4107,7 @@ def main():
                             )
                             with st.spinner("Checking report data…"):
                                 try:
-                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(api_key, prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
                                     st.session_state["_dt_ai_chat_is_local"] = False
                                     st.session_state.pop("_dt_ai_chat_error", None)
                                 except Exception as exc:
