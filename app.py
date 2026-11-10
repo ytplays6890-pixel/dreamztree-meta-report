@@ -1975,6 +1975,48 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
   -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
   backdrop-filter: blur(24px) saturate(150%) !important;
 }
+/* Subtle animated lightning around the login-card edges; all effects are click-through. */
+@keyframes dtLightningFlash {
+  0%, 7%, 9%, 41%, 43%, 100% { opacity:0; filter:brightness(1); }
+  8%, 42% { opacity:.92; filter:brightness(1.8); }
+  8.35%, 42.35% { opacity:.22; filter:brightness(1.2); }
+  8.7%, 42.7% { opacity:.78; filter:brightness(1.6); }
+}
+@keyframes dtLightningGlow {
+  0%, 7%, 9%, 41%, 43%, 100% { box-shadow:inset 0 1px 0 rgba(255,255,255,.20), inset 0 0 42px rgba(139,190,235,.075), 0 28px 80px rgba(0,0,0,.38), 0 0 30px rgba(105,164,220,.10); }
+  8%, 42% { box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 55px rgba(139,190,235,.16), 0 28px 80px rgba(0,0,0,.38), 0 0 58px rgba(95,190,255,.38), 0 0 90px rgba(150,120,255,.20); }
+  8.7%, 42.7% { box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 46px rgba(139,190,235,.11), 0 28px 80px rgba(0,0,0,.38), 0 0 42px rgba(95,190,255,.22); }
+}
+.block-container:has([data-testid="stTabs"]) {
+  position:relative !important;
+  isolation:isolate !important;
+  animation:dtLightningGlow 7.5s linear infinite;
+}
+.block-container:has([data-testid="stTabs"])::before,
+.block-container:has([data-testid="stTabs"])::after {
+  content:"";
+  position:absolute;
+  z-index:0;
+  width:24px;
+  height:118px;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(110,218,255,.92) 38%, rgba(154,132,255,.75) 72%, transparent);
+  filter:drop-shadow(0 0 5px rgba(95,205,255,.95)) drop-shadow(0 0 13px rgba(125,145,255,.7));
+  clip-path:polygon(54% 0,100% 0,63% 36%,88% 36%,15% 100%,39% 53%,8% 53%);
+  animation:dtLightningFlash 7.5s linear infinite;
+}
+.block-container:has([data-testid="stTabs"])::before { left:-13px; top:12%; }
+.block-container:has([data-testid="stTabs"])::after { right:-13px; bottom:8%; animation-delay:-3.75s; transform:scaleX(-1) rotate(8deg); }
+.block-container:has([data-testid="stTabs"]) > div {
+  position:relative;
+  z-index:1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .block-container:has([data-testid="stTabs"]),
+  .block-container:has([data-testid="stTabs"])::before,
+  .block-container:has([data-testid="stTabs"])::after { animation:none !important; }
+}
 .block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"],
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { max-width:100% !important; width:100% !important; }
