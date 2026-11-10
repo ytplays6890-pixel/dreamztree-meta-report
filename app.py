@@ -1977,37 +1977,38 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 }
 /* Subtle animated lightning around the login-card edges; all effects are click-through. */
 @keyframes dtLightningFlash {
-  0%, 7%, 9%, 41%, 43%, 100% { opacity:0; filter:brightness(1); }
-  8%, 42% { opacity:.92; filter:brightness(1.8); }
-  8.35%, 42.35% { opacity:.22; filter:brightness(1.2); }
-  8.7%, 42.7% { opacity:.78; filter:brightness(1.6); }
+  0%, 30%, 72%, 100% { opacity:.24; filter:brightness(1.15); }
+  8%, 12%, 48%, 53% { opacity:1; filter:brightness(2.4); }
+  9.5%, 13.5%, 50%, 55% { opacity:.62; filter:brightness(1.7); }
 }
 @keyframes dtLightningGlow {
-  0%, 7%, 9%, 41%, 43%, 100% { box-shadow:inset 0 1px 0 rgba(255,255,255,.20), inset 0 0 42px rgba(139,190,235,.075), 0 28px 80px rgba(0,0,0,.38), 0 0 30px rgba(105,164,220,.10); }
-  8%, 42% { box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 55px rgba(139,190,235,.16), 0 28px 80px rgba(0,0,0,.38), 0 0 58px rgba(95,190,255,.38), 0 0 90px rgba(150,120,255,.20); }
-  8.7%, 42.7% { box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 0 46px rgba(139,190,235,.11), 0 28px 80px rgba(0,0,0,.38), 0 0 42px rgba(95,190,255,.22); }
+  0%, 30%, 72%, 100% { box-shadow:inset 0 1px 0 rgba(255,255,255,.20), inset 0 0 42px rgba(139,190,235,.075), 0 28px 80px rgba(0,0,0,.38), 0 0 30px rgba(105,164,220,.10); }
+  8%, 12%, 48%, 53% { box-shadow:inset 0 1px 0 rgba(255,255,255,.42), inset 0 0 65px rgba(139,190,235,.20), 0 28px 80px rgba(0,0,0,.38), 0 0 70px rgba(65,205,255,.48), 0 0 110px rgba(150,120,255,.28); }
+  9.5%, 13.5%, 50%, 55% { box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 48px rgba(139,190,235,.12), 0 28px 80px rgba(0,0,0,.38), 0 0 48px rgba(65,205,255,.28); }
 }
 .block-container:has([data-testid="stTabs"]) {
   position:relative !important;
   isolation:isolate !important;
-  animation:dtLightningGlow 7.5s linear infinite;
+  animation:dtLightningGlow 3.6s linear infinite;
 }
 .block-container:has([data-testid="stTabs"])::before,
 .block-container:has([data-testid="stTabs"])::after {
   content:"";
   position:absolute;
-  z-index:30;
-  width:30px;
-  height:138px;
+  z-index:100000 !important;
+  width:54px;
+  height:230px;
   pointer-events:none;
-  opacity:0;
-  background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(110,218,255,.92) 38%, rgba(154,132,255,.75) 72%, transparent);
-  filter:drop-shadow(0 0 5px rgba(95,205,255,.95)) drop-shadow(0 0 13px rgba(125,145,255,.7));
-  clip-path:polygon(54% 0,100% 0,63% 36%,88% 36%,15% 100%,39% 53%,8% 53%);
-  animation:dtLightningFlash 4.8s linear infinite;
+  opacity:.24;
+  background:linear-gradient(180deg, #ffffff 0%, rgba(115,225,255,.98) 34%, rgba(155,135,255,.9) 68%, transparent 100%);
+  filter:drop-shadow(0 0 7px rgba(95,215,255,1)) drop-shadow(0 0 18px rgba(125,145,255,.95)) drop-shadow(0 0 30px rgba(95,190,255,.55));
+  clip-path:polygon(52% 0,100% 0,62% 35%,91% 35%,14% 100%,39% 54%,4% 54%);
+  mix-blend-mode:screen;
+  animation:dtLightningFlash 3.6s ease-in-out infinite;
+  will-change:opacity,filter;
 }
- .block-container:has([data-testid="stTabs"])::before { left:-15px; top:12%; }
- .block-container:has([data-testid="stTabs"])::after { right:-15px; bottom:8%; animation-delay:-2.4s; transform:scaleX(-1) rotate(8deg); }
+.block-container:has([data-testid="stTabs"])::before { left:-26px; top:10%; }
+.block-container:has([data-testid="stTabs"])::after { right:-26px; bottom:8%; animation-delay:-1.8s; transform:scaleX(-1) rotate(8deg); }
 .block-container:has([data-testid="stTabs"]) > div {
   position:relative;
   z-index:1;
