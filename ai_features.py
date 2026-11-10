@@ -26,15 +26,19 @@ def get_ai_config():
 
 
 def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
+    """Call the configured AI provider with bounded latency and one transient retry."""
     if provider.lower() == "openai":
         model = model or _secret_value("OPENAI_MODEL", "gpt-4o-mini")
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": [
-                {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
-                {"role": "user", "content": prompt}], "temperature": 0.2},
-            timeout=60)
+        try:
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": [
+                    {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
+                    {"role": "user", "content": prompt}], "temperature": 0.2},
+                timeout=(5, 25))
+        except requests.RequestException as exc:
+            raise RuntimeError("The AI request timed out or could not connect. Please try again.") from exc
         if response.status_code >= 400:
             try: detail = response.json().get("error", {}).get("message", response.text)
             except Exception: detail = response.text
@@ -47,29 +51,23 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
     payload = {
         "systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2}
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 700}
     }
 
-    # Gemini can return transient 429/5xx errors during traffic spikes.
-    # Retry with short exponential backoff rather than immediately failing.
+    # Keep the UI responsive: one short retry only for temporary capacity/rate errors.
     retryable_statuses = {429, 500, 502, 503, 504}
     response = None
-    for attempt in range(4):
+    for attempt in range(2):
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-        except requests.RequestException:
-            if attempt == 3:
-                raise RuntimeError("Could not reach Gemini after 4 attempts. Check the connection and try again.")
-            time.sleep(2 ** attempt)
-            continue
-        if response.status_code not in retryable_statuses or attempt == 3:
+            response = requests.post(url, headers=headers, json=payload, timeout=(5, 20))
+        except requests.RequestException as exc:
+            if attempt == 0:
+                time.sleep(1)
+                continue
+            raise RuntimeError("Gemini did not respond within the time limit. Please try again.") from exc
+        if response.status_code not in retryable_statuses or attempt == 1:
             break
-        retry_after = response.headers.get("Retry-After")
-        try:
-            delay = min(15, max(1, int(float(retry_after)))) if retry_after else 2 ** attempt
-        except (TypeError, ValueError):
-            delay = 2 ** attempt
-        time.sleep(delay)
+        time.sleep(1)
 
     if response is not None and response.status_code >= 400:
         try:
@@ -78,11 +76,14 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
         except Exception:
             detail = response.text
         if response.status_code in retryable_statuses:
-            raise RuntimeError(f"Gemini is temporarily busy (HTTP {response.status_code}) after 4 attempts. Please wait a minute and try again. Details: {detail}")
+            raise RuntimeError(f"Gemini is temporarily busy (HTTP {response.status_code}). Please wait briefly and try again. Details: {detail}")
         raise RuntimeError(f"Gemini API error ({response.status_code}): {detail}")
     try:
         parts = response.json()["candidates"][0]["content"]["parts"]
-        return "\\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+        answer = "\\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+        if not answer:
+            raise RuntimeError("Gemini returned an empty answer. Please try a shorter question.")
+        return answer
     except (KeyError, IndexError, TypeError):
         raise RuntimeError("Gemini returned no text. The response may have been blocked by safety filters.")
 
