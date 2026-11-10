@@ -2496,7 +2496,9 @@ def require_login():
           <rect x="91" y="151" width="13" height="19" rx="2"/><rect x="1270" y="165" width="13" height="19" rx="2"/>
           <rect x="1450" y="148" width="13" height="19" rx="2"/>
         </g>
-        <path d="M0 226 Q200 206 400 228 T800 221 T1200 228 T1600 215 V240 H0Z" fill="url(#dtVillageSnow)"/>
+        <!-- Dark, soft snowbank silhouette: avoids a bright horizontal stripe across the sign-in button. -->
+        <path d="M0 226 Q200 206 400 228 T800 221 T1200 228 T1600 215 V240 H0Z" fill="#0b1928" opacity=".78"/>
+        <path d="M0 226 Q200 206 400 228 T800 221 T1200 228 T1600 215" fill="none" stroke="#7894ad" stroke-opacity=".16" stroke-width="3"/>
       </svg>
     </div>
     <div class="dt-auth-shell">
