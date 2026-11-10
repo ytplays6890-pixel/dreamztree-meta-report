@@ -2,20 +2,22 @@
 
 The AI features are optional. Rule-based campaign alerts, branch summaries, cost-per-lead comparisons, and run-rate estimates work without an AI API key.
 
-## Enable OpenAI analysis and report chat
+## Enable Google Gemini (recommended)
 
-1. Create an OpenAI API key in your OpenAI developer account.
+1. Create or copy your Gemini API key from [Google AI Studio](https://aistudio.google.com/).
 2. Open your deployed Streamlit app's app settings and find **Secrets**.
-3. Add the following values (replace the example with your own key):
+3. Add these values at the top level of the TOML file, outside any section such as [supabase]:
 
 ```toml
-OPENAI_API_KEY = "your-private-api-key"
-OPENAI_MODEL = "gpt-4o-mini"
+GEMINI_API_KEY = "your-gemini-api-key"
+GEMINI_MODEL = "gemini-2.5-flash"
 ```
 
-4. Save the secrets and restart/redeploy the Streamlit app.
+4. Save the secrets and allow the app to restart/redeploy.
 
-For local development, place the same values in `.streamlit/secrets.toml`. Do not commit that file to GitHub.
+The app prefers Gemini whenever GEMINI_API_KEY is configured. If Gemini is not configured, it can still use the existing OPENAI_API_KEY / OPENAI_MODEL settings as a fallback.
+
+For local development, place the same values in `.streamlit/secrets.toml`. Do not commit that file to GitHub. Never paste API keys into chat or screenshots.
 
 ## Included capabilities
 
@@ -23,13 +25,14 @@ For local development, place the same values in `.streamlit/secrets.toml`. Do no
 - Branch performance comparisons using attributed campaign data.
 - Relative budget recommendations; the app never changes Meta campaign budgets.
 - Lead run-rate estimates using today's upload and optional historical daily exports.
-- OpenAI-generated campaign analysis and management summary.
+- Gemini-generated campaign analysis and management summary.
 - Chat with the currently uploaded report.
 
 ## Data and forecast limitations
 
-- AI answers use the campaign metrics supplied in the current report session. Do not upload personal or sensitive lead-level information.
+- Gemini answers use the campaign metrics supplied in the current report session. Do not upload personal or sensitive lead-level information.
 - The app's calculations remain local Python calculations; the AI service is used to interpret aggregate campaign metrics.
+- Gemini API free-tier availability, model access, rate limits, and data-use terms are controlled by Google and may change. Check the terms for your account and region.
 - Upload one previous-day file and/or multiple historical daily exports to improve trend context.
 - The forecast is an arithmetic average/run-rate estimate, not a trained machine-learning model or a guarantee.
 - A weekly summary is only meaningful when at least seven daily exports are supplied. Otherwise the AI should describe the actual uploaded reporting period.
