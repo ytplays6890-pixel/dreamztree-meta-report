@@ -11,11 +11,81 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from ai_features import get_ai_config, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals, answer_report_question, build_local_management_summary
 import streamlit.components.v1 as components
 from supabase import create_client
 from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
 from cryptography.fernet import Fernet, InvalidToken
+
+
+def build_daily_report_files(report_date, leads, spend_kwd, market_rows, hiring, branch_rows):
+    doc = Document()
+    sec = doc.sections[0]
+    sec.top_margin = Inches(.55); sec.bottom_margin = Inches(.55)
+    sec.left_margin = Inches(.65); sec.right_margin = Inches(.65)
+    doc.styles["Normal"].font.name = "Aptos"
+    doc.styles["Normal"].font.size = Pt(9)
+    def shade(cell, fill):
+        tcPr=cell._tc.get_or_add_tcPr()
+        shd=OxmlElement("w:shd"); shd.set(qn("w:fill"),fill); tcPr.append(shd)
+    p=doc.add_paragraph(); p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+    x=p.add_run("DREAMZTREE"); x.bold=True; x.font.size=Pt(12); x.font.color.rgb=RGBColor(15,116,110)
+    p=doc.add_paragraph(); p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+    x=p.add_run("DAILY LEAD GENERATION REPORT"); x.bold=True; x.font.size=Pt(19)
+    p=doc.add_paragraph(); p.alignment=WD_ALIGN_PARAGRAPH.CENTER; p.add_run(report_date.strftime("%d %b %Y")).italic=True
+    total_hiring=sum(int(v) for v in hiring.values())
+    def heading(txt):
+        p=doc.add_paragraph(); p.paragraph_format.space_before=Pt(10)
+        x=p.add_run(txt); x.bold=True; x.font.size=Pt(12); x.font.color.rgb=RGBColor(15,116,110)
+    def add_table(headers, rows):
+        t=doc.add_table(rows=1,cols=len(headers)); t.style="Table Grid"; t.alignment=WD_TABLE_ALIGNMENT.CENTER
+        for i,h in enumerate(headers):
+            c=t.rows[0].cells[i]; c.text=str(h); shade(c,"17324D")
+            for rr in c.paragraphs[0].runs: rr.bold=True; rr.font.color.rgb=RGBColor(255,255,255)
+        for row in rows:
+            cells=t.add_row().cells
+            for i,val in enumerate(row): cells[i].text=str(val)
+        return t
+    heading("Overall Performance")
+    add_table(["Total Leads","Hiring","Total Ad Spend"],[[f"{leads:,}",f"{total_hiring:,}",f"{spend_kwd:.3f} KD"]])
+    heading("Market Performance")
+    rows=[[n,f"{int(l):,}",f"{int(hiring.get(n,0)):,}",f"{float(sp):.3f} KD"] for n,l,sp in market_rows]
+    rows.append(["Total",f"{leads:,}",f"{total_hiring:,}",f"{spend_kwd:.3f} KD"])
+    add_table(["Market","Leads","Hiring","Ad Spend"],rows)
+    heading("Kuwait Lead Breakdown")
+    add_table(["Branch","Leads"],[[n,f"{int(v):,}"] for n,v in branch_rows])
+    p=doc.add_paragraph(); p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+    x=p.add_run("Dreamztree Training Academy | Daily Marketing Performance"); x.italic=True; x.font.size=Pt(8)
+    word=io.BytesIO(); doc.save(word)
+    styles=getSampleStyleSheet()
+    title=ParagraphStyle("DTTitle",parent=styles["Title"],fontSize=18,textColor=colors.HexColor("#1c2738"),alignment=1)
+    section=ParagraphStyle("DTSection",parent=styles["Heading2"],fontSize=12,textColor=colors.HexColor("#0f746e"),spaceBefore=12,spaceAfter=6)
+    story=[Paragraph("DREAMZTREE",ParagraphStyle("Brand",parent=title,fontSize=11,textColor=colors.HexColor("#0f746e"))),Paragraph("DAILY LEAD GENERATION REPORT",title),Paragraph(report_date.strftime("%d %b %Y"),ParagraphStyle("Date",parent=styles["Normal"],alignment=1))]
+    def pdf_table(data):
+        t=Table(data,repeatRows=1)
+        t.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),colors.HexColor("#17324d")),("TEXTCOLOR",(0,0),(-1,0),colors.white),("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),("FONTSIZE",(0,0),(-1,-1),9),("GRID",(0,0),(-1,-1),.4,colors.HexColor("#d8dee8")),("ROWBACKGROUNDS",(0,1),(-1,-1),[colors.white,colors.HexColor("#f3f6f9")]),("PADDING",(0,0),(-1,-1),7)]))
+        story.append(t)
+    story.append(Paragraph("Overall Performance",section))
+    pdf_table([["Total Leads","Hiring","Total Ad Spend"],[f"{leads:,}",f"{total_hiring:,}",f"{spend_kwd:.3f} KD"]])
+    story.append(Paragraph("Market Performance",section))
+    pdf_table([["Market","Leads","Hiring","Ad Spend"]]+[[n,f"{int(l):,}",f"{int(hiring.get(n,0)):,}",f"{float(sp):.3f} KD"] for n,l,sp in market_rows]+[["Total",f"{leads:,}",f"{total_hiring:,}",f"{spend_kwd:.3f} KD"]])
+    story.append(Paragraph("Kuwait Lead Breakdown",section))
+    pdf_table([["Branch","Leads"]]+[[n,f"{int(v):,}"] for n,v in branch_rows])
+    pdfbuf=io.BytesIO(); SimpleDocTemplate(pdfbuf,pagesize=A4,rightMargin=17*mm,leftMargin=17*mm).build(story)
+    return word.getvalue(),pdfbuf.getvalue()
+
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
@@ -3774,6 +3844,31 @@ def main():
                     pass
             st.subheader("3. Generated report")
             st.code(report, language=None)
+            st.markdown("### Daily Lead Generation Report")
+            st.caption("Lead and spend figures are calculated from the Meta export. Enter hiring outcomes separately because they are not supplied by Meta Ads.")
+            _market_alias = {"mangaf":"Kuwait","salmiya":"Kuwait","kuwait":"Kuwait","bahrain":"Bahrain","kerala":"Kerala"}
+            _market_data = {"Kuwait":{"leads":0,"spend":0.0},"Bahrain":{"leads":0,"spend":0.0},"Kerala":{"leads":0,"spend":0.0}}
+            for _,_rpt_row in all_campaigns.iterrows():
+                _m = _market_alias.get(str(_rpt_row.get("Branch","")).strip().lower(),"Unassigned")
+                if _m not in _market_data: _market_data[_m]={"leads":0,"spend":0.0}
+                _market_data[_m]["leads"] += int(float(_rpt_row.get("Results",0) or 0))
+                _market_data[_m]["spend"] += float(_rpt_row.get("Spent",0) or 0)*float(factor)
+            _market_names=["Kuwait","Bahrain","Kerala"]+(["Unassigned"] if "Unassigned" in _market_data else [])
+            _market_rows=[(n,_market_data[n]["leads"],_market_data[n]["spend"]) for n in _market_names]
+            _hc=st.columns(3); _hiring={}
+            for _i,_name in enumerate(["Kuwait","Bahrain","Kerala"]):
+                with _hc[_i]:
+                    _hiring[_name]=st.number_input(f"{_name} hiring",min_value=0,step=1,value=0,key=f"dt_daily_hiring_{_name.lower()}")
+            _branch_rows=[]
+            for _name in ["Mangaf","Salmiya"]:
+                _num=int(all_campaigns.loc[all_campaigns["Branch"].astype(str).str.strip().str.lower()==_name.lower(),"Results"].sum())
+                _branch_rows.append((_name,_num))
+            _word_bytes,_pdf_bytes=build_daily_report_files(date_value,grand_leads,grand_spent*factor,_market_rows,_hiring,_branch_rows)
+            _dl1,_dl2=st.columns(2)
+            with _dl1:
+                st.download_button("Download Daily Report (.docx)",_word_bytes,f"dreamztree_daily_leads_{date_value.strftime('%Y%m%d')}.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",use_container_width=True)
+            with _dl2:
+                st.download_button("Download Daily Report (.pdf)",_pdf_bytes,f"dreamztree_daily_leads_{date_value.strftime('%Y%m%d')}.pdf","application/pdf",use_container_width=True)
             st.download_button("Download report (.txt)", report.encode("utf-8"), f"dreamztree_leads_{date_value.strftime('%Y%m%d')}.txt", "text/plain")
             st.download_button("Download reviewed mappings (.csv)", edited[["Campaign", "Staff", "Course", "Branch"]].to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping_updated.csv", "text/csv")
             m1, m2, m3 = st.columns(3)
