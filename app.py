@@ -3781,9 +3781,17 @@ def main():
             m2.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
             m3.metric("Campaigns included", f"{len(all_campaigns):,}")
             st.subheader("Performance analytics")
-            branch_chart = valid.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
+            # Build charts from the same complete campaign set used by the report.
+            # The former "valid" variable belonged to a separate helper and was
+            # undefined in this scope, causing a NameError after report generation.
+            analytics_data = all_campaigns.copy()
+            analytics_data["Branch"] = analytics_data["Branch"].fillna("").astype(str).str.strip().replace("", "Unassigned")
+            analytics_data["Course"] = analytics_data["Course"].fillna("").astype(str).str.strip().replace("", "Unclassified course")
+            analytics_data["Results"] = pd.to_numeric(analytics_data["Results"], errors="coerce").fillna(0)
+            analytics_data["Spent"] = pd.to_numeric(analytics_data["Spent"], errors="coerce").fillna(0.0)
+            branch_chart = analytics_data.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
             branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
-            course_chart = valid.assign(Course=valid["Course"].astype(str).str.strip().replace("", "Unclassified course")).groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
+            course_chart = analytics_data.groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
             chart_left, chart_right = st.columns(2, gap="large")
             with chart_left:
                 st.markdown("#### Leads by branch")
