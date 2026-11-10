@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+from ai_features import get_openai_api_key, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals
 import streamlit.components.v1 as components
 from supabase import create_client
 from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
@@ -3754,6 +3755,12 @@ def main():
             grand_spent = float(pd.to_numeric(all_campaigns["Spent"], errors="coerce").fillna(0).sum())
             lines.extend(["——————————", f"*🏆 Grand Total  —  {grand_leads} Leads  |  Total Cost: {round(grand_spent * factor, 2)} KD*"])
             report = "\n".join(lines)
+            # Persist this upload in session state so AI tools remain available after reruns.
+            st.session_state["_dt_ai_report_context"] = {
+                "date": date_value.strftime("%d/%m/%Y"),
+                "campaigns": all_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
+                "factor": float(factor),
+            }
             st.subheader("3. Generated report")
             st.code(report, language=None)
             st.download_button("Download report (.txt)", report.encode("utf-8"), f"dreamztree_leads_{date_value.strftime('%Y%m%d')}.txt", "text/plain")
@@ -3952,6 +3959,86 @@ def main():
                 except Exception as compare_exc:
                     st.error(f"Could not compare yesterday's report: {compare_exc}")
                     st.caption("Check that both files use the same Meta Ads export format and that the mapping is reviewed.")
+        # Persistent AI workspace: rendered outside the Generate report button branch.
+        ai_context = st.session_state.get("_dt_ai_report_context")
+        if ai_context:
+            st.divider()
+            st.subheader("✦ AI Marketing Intelligence")
+            st.caption("Python calculates all figures. AI interprets the verified report data; no budgets are changed automatically.")
+            ai_campaigns = pd.DataFrame(ai_context.get("campaigns", []))
+            if not ai_campaigns.empty:
+                ai_metrics = build_ai_metrics(ai_campaigns, float(ai_context.get("factor", 1.0)))
+                with st.container(border=True):
+                    st.markdown("#### Smart alerts")
+                    for alert in rule_based_insights(ai_metrics):
+                        if alert["level"] == "high": st.error(alert["text"])
+                        elif alert["level"] == "medium": st.warning(alert["text"])
+                        else: st.info(alert["text"])
+                with st.container(border=True):
+                    st.markdown("#### Branch performance intelligence")
+                    if ai_metrics["branches"]:
+                        st.dataframe(pd.DataFrame(ai_metrics["branches"]), use_container_width=True, hide_index=True)
+                    else:
+                        st.info("Branch comparisons will appear when campaigns have recognised branch assignments.")
+                with st.container(border=True):
+                    st.markdown("#### Budget recommendations")
+                    if ai_metrics["budget_recommendations"]:
+                        st.dataframe(pd.DataFrame(ai_metrics["budget_recommendations"]), use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No clear budget recommendation from this upload. More campaign history and lead-quality data would improve decisions.")
+                    st.caption("Suggestions use relative cost-per-lead comparisons. Validate lead quality before changing budgets.")
+                with st.container(border=True):
+                    st.markdown("#### Lead forecasting")
+                    forecast = forecast_from_daily_totals(None, None, ai_metrics["totals"]["leads"], ai_metrics["totals"]["spend_kwd"])
+                    fc1, fc2, fc3 = st.columns(3)
+                    fc1.metric("Indicative next-day leads", f"{forecast['next_day_leads']:,}")
+                    fc2.metric("Indicative 7-day leads", f"{forecast['next_7_day_leads']:,}")
+                    fc3.metric("Forecast basis", forecast["basis"])
+                    st.caption("This is a simple one-day run-rate projection, not a trained predictive model. Multi-day historical data is needed for reliable forecasting.")
+                api_key = get_openai_api_key()
+                with st.container(border=True):
+                    st.markdown("#### AI analyst & management summary")
+                    if not api_key:
+                        st.warning("AI-generated analysis and chat require OPENAI_API_KEY in Streamlit Secrets. The rule-based alerts, branch analysis and estimates above work without it.")
+                    else:
+                        if st.button("Generate AI analysis", key="dt_ai_analyse"):
+                            prompt = (
+                                "You are a careful performance marketing analyst for a multi-branch training academy. "
+                                "Analyse only these verified figures. Provide an executive summary, strongest and weakest signals, "
+                                "branch observations, campaign risks, practical budget recommendations, and a concise management summary "
+                                "for the uploaded reporting period. Do not invent causes, audiences, conversions, or missing data. "
+                                "Label hypotheses clearly and do not call a single-day report a weekly report.\n\n"
+                                + json.dumps(ai_metrics, ensure_ascii=False, default=str)
+                            )
+                            with st.spinner("Analysing campaign performance…"):
+                                try:
+                                    st.session_state["_dt_ai_analysis_result"] = generate_ai_response(api_key, prompt)
+                                except Exception as exc:
+                                    st.error(f"AI analysis failed: {exc}")
+                        if st.session_state.get("_dt_ai_analysis_result"):
+                            st.markdown(st.session_state["_dt_ai_analysis_result"])
+                        st.markdown("#### Chat with your reports")
+                        question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
+                        if st.button("Ask AI", key="dt_ai_ask") and question.strip():
+                            prompt = (
+                                "Answer using only the supplied report data. Show calculations when useful. "
+                                "If the data cannot answer the question, say so. Do not invent metrics. "
+                                "Separate attributed figures from unassigned campaign totals.\n\nDATA:\n"
+                                + json.dumps(ai_metrics, ensure_ascii=False, default=str)
+                                + "\n\nQUESTION:\n" + question.strip()
+                            )
+                            with st.spinner("Checking report data…"):
+                                try:
+                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(api_key, prompt)
+                                except Exception as exc:
+                                    st.error(f"AI response failed: {exc}")
+                        if st.session_state.get("_dt_ai_chat_answer"):
+                            st.markdown(st.session_state["_dt_ai_chat_answer"])
+                        if st.button("Clear AI answers", key="dt_ai_clear"):
+                            st.session_state.pop("_dt_ai_analysis_result", None)
+                            st.session_state.pop("_dt_ai_chat_answer", None)
+                            st.rerun()
+
     except Exception as e:
         st.error(f"Could not process this Excel file: {e}")
         st.exception(e)
