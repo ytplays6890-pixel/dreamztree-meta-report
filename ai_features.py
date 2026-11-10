@@ -151,3 +151,70 @@ def forecast_from_daily_totals(yesterday_leads, yesterday_spend_kwd, today_leads
         daily_spend=max(0.0,(float(yesterday_spend_kwd)+float(today_spend_kwd))/2); basis="2-day average"
     return {"next_day_leads":int(daily_leads),"next_7_day_leads":int(daily_leads*7),
         "basis":basis,"estimated_daily_spend_kwd":round(daily_spend,3)}
+
+
+def answer_report_question(metrics, question):
+    """Answer common report questions deterministically without an external AI API."""
+    q = str(question or "").lower()
+    totals = metrics.get("totals", {})
+    branches = metrics.get("branches", [])
+    campaigns = metrics.get("campaigns", [])
+    money = lambda x: f"{float(x):.3f} KD"
+    if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost"]):
+        valid = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads", 0)) > 0]
+        if valid:
+            best = min(valid, key=lambda x: float(x["CPL_KWD"]))
+            return (f"**Lowest cost per lead: {best['Branch']}**\\n\\n"
+                    f"- Leads: {int(best['Leads']):,}\\n- Spend: {money(best['Spend_KWD'])}\\n"
+                    f"- Cost per lead: **{money(best['CPL_KWD'])}**\\n\\n"
+                    "Comparison includes campaigns assigned to a recognised staff member and branch.")
+        return "There are no recognised branch assignments with leads, so a branch-level cost-per-lead comparison is not available."
+    if any(k in q for k in ["highest lead", "most leads", "best campaign", "top campaign"]):
+        valid = [c for c in campaigns if float(c.get("Results") or 0) > 0]
+        if valid:
+            best = max(valid, key=lambda x: float(x.get("Results") or 0))
+            return (f"**Campaign with the most leads: {best.get('Campaign','Unassigned')}**\\n\\n"
+                    f"- Leads: {int(float(best.get('Results') or 0)):,}\\n"
+                    f"- Spend: {money(best.get('Cost_KWD') or 0)}\\n"
+                    f"- Branch: {best.get('Branch') or 'Unassigned'}")
+        return "No campaign in this report has recorded leads."
+    if any(k in q for k in ["highest spend", "spent most", "most expensive campaign"]):
+        if campaigns:
+            best = max(campaigns, key=lambda x: float(x.get("Cost_KWD") or 0))
+            return f"**Highest-spend campaign: {best.get('Campaign','Unassigned')}**\\n\\n- Spend: {money(best.get('Cost_KWD') or 0)}\\n- Leads: {int(float(best.get('Results') or 0)):,}"
+    if "total lead" in q or "how many lead" in q or "lead count" in q:
+        return f"**Total leads: {int(totals.get('leads',0)):,}** across {int(totals.get('campaign_count',0))} campaigns."
+    if "total cost" in q or "total spend" in q or "how much" in q:
+        return f"**Total spend: {money(totals.get('spend_kwd',0))}** ({float(totals.get('spend_usd',0)):.2f} USD)."
+    if "unassigned" in q or "new campaign" in q:
+        return (f"**Unassigned campaigns: {int(totals.get('unassigned_campaigns',0))}**\\n\\n"
+                f"- Leads from unassigned campaigns: {int(totals.get('unassigned_leads',0)):,}\\n"
+                "These campaigns remain included in overall totals; no staff or branch is guessed.")
+    if "campaign" in q and ("count" in q or "how many" in q or "number" in q):
+        return f"**Campaigns included: {int(totals.get('campaign_count',0)):,}**."
+    return None
+
+
+def build_local_management_summary(metrics):
+    """Create a concise, verified management summary without calling an AI service."""
+    totals = metrics.get("totals", {})
+    branches = metrics.get("branches", [])
+    campaigns = metrics.get("campaigns", [])
+    lines = [
+        "### Local report summary",
+        f"- **Leads:** {int(totals.get('leads',0)):,}",
+        f"- **Spend:** {float(totals.get('spend_kwd',0)):.3f} KD",
+        f"- **Campaigns included:** {int(totals.get('campaign_count',0)):,}",
+        f"- **Unassigned campaigns:** {int(totals.get('unassigned_campaigns',0)):,}",
+    ]
+    valid_branches = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads",0)) > 0]
+    if valid_branches:
+        low = min(valid_branches, key=lambda x: float(x["CPL_KWD"]))
+        high = max(valid_branches, key=lambda x: float(x["CPL_KWD"]))
+        lines.append(f"- **Lowest branch CPL:** {low['Branch']} ({float(low['CPL_KWD']):.3f} KD)")
+        lines.append(f"- **Highest branch CPL:** {high['Branch']} ({float(high['CPL_KWD']):.3f} KD)")
+    if campaigns:
+        top = max(campaigns, key=lambda x: float(x.get("Results") or 0))
+        lines.append(f"- **Most leads from one campaign:** {top.get('Campaign','Unassigned')} ({int(float(top.get('Results') or 0)):,} leads)")
+    lines.append("\\n*Calculated locally from this upload. No Gemini API call is required for these figures.*")
+    return "\\n".join(lines)
