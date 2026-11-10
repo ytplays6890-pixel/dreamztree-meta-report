@@ -3111,7 +3111,8 @@ def inject_performance_patch():
 
 def main():
     require_login()
-    inject_christmas_snow()
+    # Christmas snowfall is intentionally limited to the login screen.
+    # Do not mount its full-viewport animated iframe inside the dashboard.
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
