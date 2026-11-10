@@ -2096,7 +2096,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
         ) + '</g></svg></i>'
         for _ in range(24)
     ) + r'''</div></body></html>'''
-    snow_html = snow_html.replace('</body>', "<script>const f=window.frameElement;if(f){f.style.position='fixed';f.style.inset='0';f.style.width='100vw';f.style.height='100vh';f.style.zIndex='2';f.style.border='0';f.style.background='transparent';f.style.pointerEvents='none';}</script></body>")
+    snow_html = snow_html.replace('</body>', "<script>const f=window.frameElement;if(f){f.style.position='fixed';f.style.inset='0';f.style.width='100vw';f.style.height='100vh';f.style.zIndex='0';f.style.border='0';f.style.background='transparent';f.style.pointerEvents='none';}</script></body>")
     components.html(snow_html, height=1, scrolling=False)
 
     # Santa uses the supplied transparent 3D reference image and peeks from a random
@@ -2229,7 +2229,19 @@ def require_login():
         background: radial-gradient(ellipse at 50% 48%, rgba(116,132,164,.10), transparent 48%);
         animation: dtAmbient 12s ease-in-out infinite;
       }
-      .main .block-container > div { position: relative; z-index: 1; }
+      .main .block-container > div { position: relative; z-index: 10; }
+      /* Keep native login controls interactive above decorative overlays. */
+      [data-testid="stForm"], [data-testid="stTextInput"],
+      [data-testid="stTextInput"] > div, [data-testid="stTextInput"] input {
+        position: relative !important;
+        z-index: 20 !important;
+        pointer-events: auto !important;
+      }
+      [data-testid="stTextInput"] input {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        cursor: text !important;
+      }
 
       .dt-auth-shell {
         box-sizing: border-box; width: 100%; max-width: none;
