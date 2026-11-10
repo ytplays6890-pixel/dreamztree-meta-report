@@ -17,7 +17,7 @@ def get_ai_config():
     gemini_key = _secret_value("GEMINI_API_KEY")
     if gemini_key:
         return {"provider": "Gemini", "api_key": gemini_key,
-                "model": _secret_value("GEMINI_MODEL", "gemini-2.5-flash")}
+                "model": _secret_value("GEMINI_MODEL", "gemini-3.8-flash")}
     openai_key = _secret_value("OPENAI_API_KEY")
     if openai_key:
         return {"provider": "OpenAI", "api_key": openai_key,
@@ -41,7 +41,7 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
             raise RuntimeError(f"OpenAI API error ({response.status_code}): {detail}")
         return response.json()["choices"][0]["message"]["content"].strip()
 
-    model = model or _secret_value("GEMINI_MODEL", "gemini-2.5-flash")
+    model = model or _secret_value("GEMINI_MODEL", "gemini-3.8-flash")
     response = requests.post(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
@@ -49,6 +49,16 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
               "contents": [{"role": "user", "parts": [{"text": prompt}]}],
               "generationConfig": {"temperature": 0.2}},
         timeout=60)
+    if response.status_code == 404 and model != "gemini-3.8-flash":
+        # Automatically recover when a previously configured Gemini model is retired.
+        model = "gemini-3.8-flash"
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+            headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+            json={"systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
+                  "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                  "generationConfig": {"temperature": 0.2}},
+            timeout=60)
     if response.status_code >= 400:
         try:
             err = response.json().get("error", {})
