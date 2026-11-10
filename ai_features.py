@@ -80,7 +80,7 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
         raise RuntimeError(f"Gemini API error ({response.status_code}): {detail}")
     try:
         parts = response.json()["candidates"][0]["content"]["parts"]
-        answer = "\\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
+        answer = "\n".join(part.get("text", "") for part in parts if part.get("text")).strip()
         if not answer:
             raise RuntimeError("Gemini returned an empty answer. Please try a shorter question.")
         return answer
@@ -160,35 +160,35 @@ def answer_report_question(metrics, question):
     branches = metrics.get("branches", [])
     campaigns = metrics.get("campaigns", [])
     money = lambda x: f"{float(x):.3f} KD"
-    if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost"]):
+    if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost", "low cost branch", "cheapest branch", "best cpl"]):
         valid = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads", 0)) > 0]
         if valid:
             best = min(valid, key=lambda x: float(x["CPL_KWD"]))
-            return (f"**Lowest cost per lead: {best['Branch']}**\\n\\n"
-                    f"- Leads: {int(best['Leads']):,}\\n- Spend: {money(best['Spend_KWD'])}\\n"
-                    f"- Cost per lead: **{money(best['CPL_KWD'])}**\\n\\n"
+            return (f"**Lowest cost per lead: {best['Branch']}**\n\n"
+                    f"- Leads: {int(best['Leads']):,}\n- Spend: {money(best['Spend_KWD'])}\n"
+                    f"- Cost per lead: **{money(best['CPL_KWD'])}**\n\n"
                     "Comparison includes campaigns assigned to a recognised staff member and branch.")
         return "There are no recognised branch assignments with leads, so a branch-level cost-per-lead comparison is not available."
     if any(k in q for k in ["highest lead", "most leads", "best campaign", "top campaign"]):
         valid = [c for c in campaigns if float(c.get("Results") or 0) > 0]
         if valid:
             best = max(valid, key=lambda x: float(x.get("Results") or 0))
-            return (f"**Campaign with the most leads: {best.get('Campaign','Unassigned')}**\\n\\n"
-                    f"- Leads: {int(float(best.get('Results') or 0)):,}\\n"
-                    f"- Spend: {money(best.get('Cost_KWD') or 0)}\\n"
+            return (f"**Campaign with the most leads: {best.get('Campaign','Unassigned')}**\n\n"
+                    f"- Leads: {int(float(best.get('Results') or 0)):,}\n"
+                    f"- Spend: {money(best.get('Cost_KWD') or 0)}\n"
                     f"- Branch: {best.get('Branch') or 'Unassigned'}")
         return "No campaign in this report has recorded leads."
     if any(k in q for k in ["highest spend", "spent most", "most expensive campaign"]):
         if campaigns:
             best = max(campaigns, key=lambda x: float(x.get("Cost_KWD") or 0))
-            return f"**Highest-spend campaign: {best.get('Campaign','Unassigned')}**\\n\\n- Spend: {money(best.get('Cost_KWD') or 0)}\\n- Leads: {int(float(best.get('Results') or 0)):,}"
+            return f"**Highest-spend campaign: {best.get('Campaign','Unassigned')}**\n\n- Spend: {money(best.get('Cost_KWD') or 0)}\n- Leads: {int(float(best.get('Results') or 0)):,}"
     if "total lead" in q or "how many lead" in q or "lead count" in q:
         return f"**Total leads: {int(totals.get('leads',0)):,}** across {int(totals.get('campaign_count',0))} campaigns."
     if "total cost" in q or "total spend" in q or "how much" in q:
         return f"**Total spend: {money(totals.get('spend_kwd',0))}** ({float(totals.get('spend_usd',0)):.2f} USD)."
     if "unassigned" in q or "new campaign" in q:
-        return (f"**Unassigned campaigns: {int(totals.get('unassigned_campaigns',0))}**\\n\\n"
-                f"- Leads from unassigned campaigns: {int(totals.get('unassigned_leads',0)):,}\\n"
+        return (f"**Unassigned campaigns: {int(totals.get('unassigned_campaigns',0))}**\n\n"
+                f"- Leads from unassigned campaigns: {int(totals.get('unassigned_leads',0)):,}\n"
                 "These campaigns remain included in overall totals; no staff or branch is guessed.")
     if "campaign" in q and ("count" in q or "how many" in q or "number" in q):
         return f"**Campaigns included: {int(totals.get('campaign_count',0)):,}**."
@@ -216,5 +216,5 @@ def build_local_management_summary(metrics):
     if campaigns:
         top = max(campaigns, key=lambda x: float(x.get("Results") or 0))
         lines.append(f"- **Most leads from one campaign:** {top.get('Campaign','Unassigned')} ({int(float(top.get('Results') or 0)):,} leads)")
-    lines.append("\\n*Calculated locally from this upload. No Gemini API call is required for these figures.*")
-    return "\\n".join(lines)
+    lines.append("\n*Calculated locally from this upload. No Gemini API call is required for these figures.*")
+    return "\n".join(lines)
