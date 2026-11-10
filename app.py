@@ -3109,13 +3109,54 @@ def inject_performance_patch():
     </style>
     """, unsafe_allow_html=True)
 
+def inject_dashboard_snow():
+    """Lightweight dendritic snowfall for the dashboard only."""
+    import random
+    random.seed(42)
+    flakes = []
+    for _ in range(12):
+        arms = ''.join(
+            f'<path d="M0 0 V-42 M0 -31 L-8 -23 M0 -31 L8 -23 M0 -18 L-6 -12 M0 -18 L6 -12" transform="rotate({angle})"/>'
+            for angle in range(0, 360, 60)
+        )
+        flakes.append(
+            f'<i class="flake" style="left:{random.randint(2,98)}%;--size:{random.randint(14,22)}px;'
+            f'--duration:{random.randint(24,38)}s;--delay:{random.randint(-35,0)}s;'
+            f'--drift:{random.randint(-28,28)}px;--opacity:{random.uniform(.22,.38):.2f}">'
+            f'<svg viewBox="0 0 100 100" aria-hidden="true"><g transform="translate(50 50)">{arms}</g></svg></i>'
+        )
+    snow_html = r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
+.snow{position:fixed;inset:0;width:100vw;height:100vh;overflow:hidden;pointer-events:none}
+.flake{position:absolute;top:-32px;width:var(--size);height:var(--size);opacity:var(--opacity);
+ animation:dashboard-fall var(--duration) linear var(--delay) infinite;will-change:transform}
+.flake svg{display:block;width:100%;height:100%;overflow:visible}
+.flake path{fill:none;stroke:rgba(238,246,255,.76);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes dashboard-fall{
+ 0%{transform:translate3d(0,-5vh,0) rotate(0deg)}
+ 50%{transform:translate3d(var(--drift),52vh,0) rotate(180deg)}
+ 100%{transform:translate3d(calc(var(--drift)*-.35),108vh,0) rotate(360deg)}
+}
+@media(prefers-reduced-motion:reduce){.flake{animation:none!important;display:none!important}}
+</style></head><body><div class="snow" aria-hidden="true">''' + ''.join(flakes) + r'''</div>
+<script>
+const frame=window.frameElement;
+if(frame){
+ frame.style.position='fixed';frame.style.left='0';frame.style.top='0';
+ frame.style.width='100vw';frame.style.height='100vh';frame.style.zIndex='999999';
+ frame.style.border='0';frame.style.background='transparent';frame.style.pointerEvents='none';
+}
+</script></body></html>'''
+    components.html(snow_html, height=1, scrolling=False)
+
+
 def main():
     require_login()
-    # Christmas snowfall is intentionally limited to the login screen.
-    # Do not mount its full-viewport animated iframe inside the dashboard.
     st.session_state.pop("login_just_succeeded", False)
     inject_premium_theme()
     inject_performance_patch()
+    inject_dashboard_snow()
     st.markdown(r"""
     <style>
       [data-testid="stExpander"] { border:1px solid rgba(145,164,190,.20)!important; border-radius:12px!important; overflow:hidden; background:rgba(18,24,34,.78)!important; box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035)!important; transition:border-color .18s ease,box-shadow .18s ease!important; }
