@@ -1959,6 +1959,22 @@ html, body { overflow-x:hidden !important; overflow-y:auto !important; }
 .room[class*="pull-step-"] .string-handle { animation:dt-bead-spring .95s cubic-bezier(.22,.61,.36,1) both!important; transform-origin:top center!important; }
 .room .night-sky { position:fixed !important; left:3vw !important; top:9vh !important; }
 .block-container { position:relative !important; z-index:5 !important; }
+/* Clearly visible frosted-glass surface across the complete login panel. */
+.block-container:has([data-testid="stTabs"]) {
+  background:
+    radial-gradient(ellipse at 14% 0%, rgba(125,190,235,.24), transparent 48%),
+    linear-gradient(135deg, rgba(35,61,88,.94) 0%, rgba(25,35,61,.96) 54%, rgba(30,29,57,.95) 100%) !important;
+  border: 1px solid rgba(190,222,255,.34) !important;
+  border-radius: 34px !important;
+  padding: 34px 42px 30px !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.20),
+    inset 0 0 42px rgba(139,190,235,.075),
+    0 28px 80px rgba(0,0,0,.38),
+    0 0 46px rgba(105,164,220,.13) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+}
 .block-container:has([data-testid="stTabs"]) { width:min(680px, 48vw) !important; max-width:680px !important; margin-left:auto !important; margin-right:5vw !important; padding-top:7vh !important; }
 .block-container:has([data-testid="stTabs"]) [data-testid="stTabs"],
 .block-container:has([data-testid="stTabs"]) [data-testid="stForm"] { max-width:100% !important; width:100% !important; }
