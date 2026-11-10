@@ -2397,9 +2397,16 @@ def require_login():
         position: fixed; left: 0; right: 0; bottom: 0;
         height: clamp(72px, 11vh, 118px);
         z-index: 1; pointer-events: none; overflow: hidden;
-        opacity: .62; line-height: 0;
-        mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 34%);
+        opacity: .48; line-height: 0;
+        /* Feather the upper skyline and both horizontal ends into the page background. */
+        -webkit-mask-image:
+          linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.10) 28%, #000 68%),
+          linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%);
+        -webkit-mask-composite: source-in;
+        mask-image:
+          linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.10) 28%, #000 68%),
+          linear-gradient(to right, transparent 0%, #000 9%, #000 91%, transparent 100%);
+        mask-composite: intersect;
       }
       /* Keep the entire login card and its controls above the village artwork. */
       .main .block-container {
@@ -2456,8 +2463,9 @@ def require_login():
             <stop offset="1" stop-color="#07101c" stop-opacity=".96"/>
           </linearGradient>
           <linearGradient id="dtVillageSnow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#b9d5ec" stop-opacity=".30"/>
-            <stop offset="1" stop-color="#172b40" stop-opacity=".92"/>
+            <stop offset="0" stop-color="#7894ad" stop-opacity=".12"/>
+            <stop offset=".48" stop-color="#526d87" stop-opacity=".34"/>
+            <stop offset="1" stop-color="#101e2d" stop-opacity=".82"/>
           </linearGradient>
         </defs>
         <path d="M0 155 Q170 95 340 150 T680 145 T1020 135 T1360 145 T1600 125 V240 H0Z" fill="#102338" opacity=".48"/>
