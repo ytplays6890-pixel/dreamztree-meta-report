@@ -3892,6 +3892,7 @@ def main():
                 "date": date_value.strftime("%d/%m/%Y"),
                 "upload_fingerprint": hashlib.sha256(uploaded.getvalue()).hexdigest(),
                 "campaigns": lead_campaigns[["Campaign", "Results", "Spent", "Staff", "Course", "Branch"]].to_dict("records"),
+                "hiring_campaigns": hiring_campaigns[["Campaign", "Results", "Staff", "Course", "Branch"]].to_dict("records"),
                 "factor": float(factor),
                 "yesterday": None,
             }
@@ -4190,6 +4191,7 @@ def main():
             ai_campaigns = pd.DataFrame(ai_context.get("campaigns", []))
             if not ai_campaigns.empty:
                 ai_metrics = build_ai_metrics(ai_campaigns, float(ai_context.get("factor", 1.0)))
+                ai_metrics["hiring"] = ai_context.get("hiring_campaigns", [])
                 with st.container(border=True):
                     st.markdown("#### Smart alerts")
                     for alert in rule_based_insights(ai_metrics):
