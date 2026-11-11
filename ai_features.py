@@ -239,7 +239,29 @@ def answer_report_question(metrics, question):
     totals = metrics.get("totals", {})
     branches = metrics.get("branches", [])
     campaigns = metrics.get("campaigns", [])
+    hiring = metrics.get("hiring", [])
     money = lambda x: f"{float(x):.3f} KD"
+    if "hir" in q or "recruit" in q or "staff currently" in q:
+        if hiring:
+            assigned_hiring = [
+                row for row in hiring
+                if str(row.get("Staff", "")).strip()
+                and str(row.get("Branch", "")).strip()
+                and ("kerala" not in q or str(row.get("Branch", "")).strip().lower() in {
+                    "kerala", "konni", "kochi", "malappuram", "trivandrum"
+                })
+            ]
+            if assigned_hiring:
+                grouped = {}
+                for row in assigned_hiring:
+                    key = (str(row.get("Staff", "")).strip(), str(row.get("Branch", "")).strip())
+                    grouped[key] = grouped.get(key, 0) + int(float(row.get("Results") or 0))
+                lines = ["**Staff with hiring results in this report:**"]
+                for (staff_name, branch_name), count in sorted(grouped.items(), key=lambda item: item[1], reverse=True):
+                    lines.append(f"- **{staff_name}** — {branch_name}: {count} hiring")
+                return "\\n".join(lines)
+            return "No hiring campaigns with both staff and branch assigned were found in this report."
+        return "No hiring campaign data is available in this report. Check that the campaign course is mapped to a name containing 'Hiring'."
     if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost", "low cost branch", "cheapest branch", "best cpl"]):
         valid = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads", 0)) > 0]
         if valid:
