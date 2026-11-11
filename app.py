@@ -3690,6 +3690,65 @@ def main():
         with st.container(border=True):
             st.markdown('<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="color:#a99abf;font-size:1.2rem">◷</span><span style="font-weight:720;color:#f4effb">Previous day</span><span style="font-size:.65rem;color:#b8b1c3;background:#34313b;padding:3px 7px;border-radius:20px">OPTIONAL</span></div><div style="font-size:.75rem;color:#a6a1b1;margin-bottom:8px">Compare leads, spend and campaign changes</div>', unsafe_allow_html=True)
             yesterday_uploaded = st.file_uploader("Yesterday's Meta Ads Excel report (optional)", type=["xlsx", "xls"], key="yesterday_meta_excel", help="Upload yesterday's export to compare leads, spend, and top-performing campaigns.", label_visibility="collapsed")
+    with st.expander("Weekly Campaign Performance Analysis", expanded=False):
+        st.caption("Upload a weekly Meta Ads Excel export to identify zero-result, low-lead, high-cost and best-performing campaigns. Campaign names are shown in every result table.")
+        weekly_file = st.file_uploader("Weekly Meta Ads Excel report", type=["xlsx", "xls"], key="weekly_meta_excel", help="Upload an export covering the full week. If a campaign appears on multiple rows, its results and spend will be combined.")
+        low_lead_limit = st.number_input("Flag campaigns with leads at or below", min_value=0, max_value=10000, value=5, step=1, key="weekly_low_lead_limit", help="Adjust this threshold to match your weekly expectations.")
+        high_cpl_limit = st.number_input("Flag campaigns with CPL above (KWD)", min_value=0.0, value=3.0, step=0.25, format="%.3f", key="weekly_high_cpl_limit", help="A campaign is high-cost when its cost per result exceeds this threshold.")
+        if weekly_file is not None:
+            try:
+                weekly_raw = pd.read_excel(weekly_file)
+                weekly_cols = list(weekly_raw.columns)
+                if len(weekly_cols) < 3:
+                    st.error("The weekly Excel file must contain campaign, results and spend columns.")
+                else:
+                    weekly_norm = [normalize(x) for x in weekly_cols]
+                    def weekly_find_col(predicate, fallback):
+                        return next((weekly_cols[i] for i, value in enumerate(weekly_norm) if predicate(value)), weekly_cols[min(fallback, len(weekly_cols)-1)])
+                    weekly_campaign_col = weekly_find_col(lambda x: "campaign" in x, 0)
+                    weekly_result_col = weekly_find_col(lambda x: "result" in x and "initial" not in x, 1)
+                    weekly_spend_col = weekly_find_col(lambda x: "spent" in x or "amount" in x, 2)
+                    weekly_df = weekly_raw[[weekly_campaign_col, weekly_result_col, weekly_spend_col]].copy()
+                    weekly_df.columns = ["Campaign", "Results", "Spent"]
+                    weekly_df["Campaign"] = weekly_df["Campaign"].fillna("").astype(str).str.strip()
+                    weekly_df["Results"] = pd.to_numeric(weekly_df["Results"], errors="coerce").fillna(0)
+                    weekly_df["Spent"] = pd.to_numeric(weekly_df["Spent"], errors="coerce").fillna(0.0)
+                    weekly_df = weekly_df[weekly_df["Campaign"] != ""]
+                    weekly_df = weekly_df.groupby("Campaign", as_index=False).agg(Results=("Results", "sum"), Spent=("Spent", "sum"))
+                    weekly_df["Results"] = weekly_df["Results"].round().astype(int)
+                    weekly_df["Spend (KWD)"] = weekly_df["Spent"] * factor
+                    weekly_df["CPL (KWD)"] = weekly_df.apply(lambda row: row["Spend (KWD)"] / row["Results"] if row["Results"] > 0 else None, axis=1)
+                    weekly_assignments = weekly_df["Campaign"].apply(lambda name: infer_campaign(name, mappings))
+                    weekly_df["Staff"] = weekly_assignments.apply(lambda item: item[0])
+                    weekly_df["Branch"] = weekly_assignments.apply(lambda item: item[2])
+                    zero_week = weekly_df[weekly_df["Results"] <= 0].copy()
+                    low_week = weekly_df[(weekly_df["Results"] > 0) & (weekly_df["Results"] <= int(low_lead_limit))].copy()
+                    high_week = weekly_df[(weekly_df["Results"] > 0) & (weekly_df["CPL (KWD)"] > float(high_cpl_limit))].copy()
+                    best_week = weekly_df[weekly_df["Results"] > 0].sort_values(["CPL (KWD)", "Results"], ascending=[True, False]).head(10).copy()
+                    wk1, wk2, wk3, wk4 = st.columns(4)
+                    wk1.metric("Zero-result campaigns", f"{len(zero_week):,}")
+                    wk2.metric("Low-lead campaigns", f"{len(low_week):,}")
+                    wk3.metric("High-CPL campaigns", f"{len(high_week):,}")
+                    wk4.metric("Campaigns analysed", f"{len(weekly_df):,}")
+                    st.metric("Spend on zero-result campaigns", f"{zero_week['Spend (KWD)'].sum():,.3f} KD")
+                    weekly_display_cols = ["Campaign", "Staff", "Branch", "Results", "Spent", "Spend (KWD)", "CPL (KWD)"]
+                    def show_weekly_group(title, frame, empty_message):
+                        st.markdown("#### " + title)
+                        if frame.empty:
+                            st.success(empty_message)
+                        else:
+                            display = frame[weekly_display_cols].copy().rename(columns={"Campaign": "Campaign name", "Results": "Leads", "Spent": "Spend (USD)"})
+                            st.dataframe(display, use_container_width=True, hide_index=True)
+                            safe_title = re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")
+                            st.download_button("Download " + title.lower() + " (CSV)", frame[weekly_display_cols].to_csv(index=False).encode("utf-8-sig"), "dreamztree_" + safe_title + ".csv", "text/csv", key="weekly_download_" + safe_title)
+                    show_weekly_group("Zero-result campaigns", zero_week, "No zero-result campaigns found.")
+                    show_weekly_group("Low-lead campaigns", low_week, "No campaigns fall at or below this lead threshold.")
+                    show_weekly_group("High-cost campaigns (CPL)", high_week, "No campaigns exceed this CPL threshold.")
+                    show_weekly_group("Best-performing campaigns", best_week, "No campaigns with positive results were found.")
+                    st.caption("Low-lead and high-CPL flags use your selected thresholds. Spend is converted using the app's current USD-to-KWD rate. The file is treated as a weekly total; duplicate campaign rows are combined.")
+            except Exception as weekly_exc:
+                st.error(f"Could not analyse the weekly Excel file: {weekly_exc}")
+                st.caption("Check that the workbook contains campaign, results and amount spent columns.")
     if uploaded is None:
         st.markdown('<div class="dt-upload-note">✦ &nbsp; Your workspace is ready. Add today’s Excel export to generate the report; include the previous day for a performance comparison.</div>', unsafe_allow_html=True)
         with st.expander("Campaign intelligence     ·     Review assigned teams and courses", expanded=False):
