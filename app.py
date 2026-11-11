@@ -3092,12 +3092,12 @@ function tower(){
 function fruit(){
  const g=canvas('🍉 Fruit Slice','Swipe through flying fruits to split them. Avoid bombs. Real-time motion, gravity, juice particles and slice trails.');
  const {c,x,score,controls}=g;
- let fruits=[],halves=[],particles=[],trails=[],points=0,frame=0,left=45,over=false,running=true,dragging=false,last=null,spawnEvery=48;
+ let fruits=[],halves=[],particles=[],trails=[],points=0,frame=0,left=45,over=false,running=true,dragging=false,last=null,spawnEvery=78,elapsed=0,speedLevel=0;
  const skins=[{fill:'#ef4444',light:'#fca5a5',inner:'#fde68a',name:'apple'},{fill:'#22c55e',light:'#86efac',inner:'#fef3c7',name:'lime'},{fill:'#f59e0b',light:'#fde68a',inner:'#fff7ed',name:'orange'},{fill:'#a855f7',light:'#d8b4fe',inner:'#f5d0fe',name:'berry'},{fill:'#ec4899',light:'#f9a8d4',inner:'#fce7f3',name:'melon'}];
  function pos(e){const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height};}
  function spawn(){
   const bomb=Math.random()<.16,skin=skins[Math.floor(Math.random()*skins.length)];
-  const x0=75+Math.random()*450, y0=350, vx=(Math.random()-.5)*4.8, vy=-11-Math.random()*4.5;
+  const x0=75+Math.random()*450, y0=350, pace=1+speedLevel*.13, vx=(Math.random()-.5)*3.0*pace, vy=(-8.5-Math.random()*2.2)*pace;
   fruits.push({x:x0,y:y0,vx,vy,r:bomb?19:22+Math.random()*7,rot:Math.random()*6.28,vr:(Math.random()-.5)*.12,bomb,skin,alive:true,age:0});
  }
  function burst(px,py,color,n=15){
@@ -3155,22 +3155,22 @@ function fruit(){
   x.fillStyle='#ffffffaa';for(let i=0;i<5;i++){x.beginPath();x.ellipse((i-2)*5,Math.sin(i*2)*7,2,4,i*.7,0,Math.PI*2);x.fill();}
   x.restore();
  }
- function restart(){stop();fruits=[];halves=[];particles=[];trails=[];points=0;frame=0;left=45;over=false;running=true;dragging=false;last=null;loop();}
+ function restart(){stop();fruits=[];halves=[];particles=[];trails=[];points=0;frame=0;left=45;elapsed=0;speedLevel=0;spawnEvery=78;over=false;running=true;dragging=false;last=null;loop();}
  control(controls,'↻ RESTART',restart);
  function loop(){
-  if(!running)return;frame++;if(frame%60===0)left--;
-  if(frame%spawnEvery===0){spawn();if(frame>420&&Math.random()<.35)spawn();}
+  if(!running)return;frame++;elapsed=frame/60;if(frame%60===0)left--;speedLevel=Math.min(5,Math.floor(elapsed/8));spawnEvery=Math.max(25,78-speedLevel*10);
+  if(frame%spawnEvery===0){spawn();if(speedLevel>=2&&Math.random()<.22)spawn();if(speedLevel>=4&&Math.random()<.28)spawn();}
   x.fillStyle='#0b1225';x.fillRect(0,0,600,330);
   const bg=x.createLinearGradient(0,0,600,330);bg.addColorStop(0,'#172554');bg.addColorStop(1,'#111827');x.fillStyle=bg;x.globalAlpha=.48;x.fillRect(0,0,600,330);x.globalAlpha=1;
   x.strokeStyle='#ffffff0d';x.lineWidth=1;for(let i=0;i<12;i++){x.beginPath();x.moveTo(i*55,0);x.lineTo(i*55,330);x.stroke();}
-  fruits.forEach(f=>{if(!f.alive)return;f.x+=f.vx;f.y+=f.vy;f.vy+=.23;f.vx*=.999;f.rot+=f.vr;f.age++;drawFruit(f);if(f.y>390||f.x<-70||f.x>670)f.alive=false;});
+  fruits.forEach(f=>{if(!f.alive)return;f.x+=f.vx;f.y+=f.vy;f.vy+=.23+speedLevel*.018;f.vx*=.999;f.rot+=f.vr;f.age++;drawFruit(f);if(f.y>390||f.x<-70||f.x>670)f.alive=false;});
   halves.forEach(h=>{h.x+=h.vx;h.y+=h.vy;h.vy+=.28;h.vx*=.995;h.rot+=h.vr;h.life--;drawHalf(h);});
   halves=halves.filter(h=>h.life>0&&h.y<390);
   particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.vx*=.98;p.life--;x.globalAlpha=Math.max(0,p.life/p.max);x.fillStyle=p.color;x.beginPath();x.arc(p.x,p.y,p.size,0,Math.PI*2);x.fill();});
   x.globalAlpha=1;particles=particles.filter(p=>p.life>0);
   trails.forEach(t=>{x.globalAlpha=Math.max(0,t.life/12);x.strokeStyle='#e0f2fe';x.lineWidth=7*(t.life/12)+1;x.lineCap='round';x.shadowColor='#67e8f9';x.shadowBlur=16;x.beginPath();x.moveTo(t.x1,t.y1);x.lineTo(t.x2,t.y2);x.stroke();t.life--;});
   x.globalAlpha=1;x.shadowBlur=0;trails=trails.filter(t=>t.life>0);fruits=fruits.filter(f=>f.alive);
-  score.textContent='Score: '+points+' · Time: '+left+'s · Avoid the bombs!';
+  score.textContent='Score: '+points+' · Time: '+left+'s · Speed: '+(speedLevel===0?'SLOW':speedLevel<3?'MEDIUM':'FAST')+' · Avoid the bombs!';
   if(left<=0)over=true;
   if(over){running=false;x.fillStyle='#020617bb';x.fillRect(0,0,600,330);x.fillStyle='#fff';x.textAlign='center';x.font='bold 31px system-ui';x.fillText('GAME OVER',300,140);x.font='bold 23px system-ui';x.fillText('Score: '+points,300,178);x.font='15px system-ui';x.fillText('Tap RESTART to play again',300,207);}
   else raf=requestAnimationFrame(loop);
