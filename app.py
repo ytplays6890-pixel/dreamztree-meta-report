@@ -3552,14 +3552,15 @@ def main():
     inject_dashboard_music()
     st.markdown(r"""
     <style>
-      [data-testid="stExpander"] { border:1px solid rgba(145,164,190,.20)!important; border-radius:12px!important; overflow:hidden; background:rgba(18,24,34,.78)!important; box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.035)!important; transition:border-color .18s ease,box-shadow .18s ease!important; }
-      [data-testid="stExpander"]:hover { border-color:rgba(103,216,208,.38)!important; box-shadow:0 10px 28px rgba(0,0,0,.22),0 0 0 1px rgba(103,216,208,.045)!important; }
-      [data-testid="stExpander"] details > summary { min-height:54px!important; padding:13px 17px!important; background:linear-gradient(90deg,rgba(103,216,208,.075),rgba(255,255,255,.018))!important; color:#e8eef7!important; font-weight:680!important; letter-spacing:.015em!important; }
-      [data-testid="stExpander"] details > summary:hover { background:linear-gradient(90deg,rgba(103,216,208,.12),rgba(255,255,255,.035))!important; }
-      [data-testid="stExpander"] details > summary p,[data-testid="stExpander"] details > summary span { color:#e8eef7!important; font-weight:680!important; }
-      [data-testid="stExpander"] details > summary svg { color:#86dcd4!important; }
-      [data-testid="stExpander"] details[open] > summary { border-bottom:1px solid rgba(145,164,190,.16)!important; }
-      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { background:rgba(9,13,20,.30)!important; padding:18px!important; }
+      [data-testid="stExpander"] { border:1px solid rgba(158,139,194,.23)!important; border-radius:15px!important; overflow:hidden; background:linear-gradient(145deg,rgba(30,29,43,.96),rgba(17,21,31,.97))!important; box-shadow:0 10px 30px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.045)!important; transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease!important; }
+      [data-testid="stExpander"]:hover { border-color:rgba(190,158,239,.48)!important; box-shadow:0 14px 34px rgba(0,0,0,.27),0 0 0 1px rgba(177,137,232,.07)!important; transform:translateY(-1px); }
+      [data-testid="stExpander"] details > summary { min-height:66px!important; padding:15px 20px!important; background:linear-gradient(100deg,rgba(133,91,184,.19),rgba(70,76,105,.12) 48%,rgba(255,255,255,.018))!important; color:#f4effb!important; font-weight:740!important; letter-spacing:.012em!important; position:relative!important; }
+      [data-testid="stExpander"] details > summary:before { content:""; position:absolute; left:0; top:13px; bottom:13px; width:3px; border-radius:4px; background:linear-gradient(180deg,#d2b4ff,#8e70c2)!important; box-shadow:0 0 14px rgba(190,158,239,.38); }
+      [data-testid="stExpander"] details > summary:hover { background:linear-gradient(100deg,rgba(153,105,205,.24),rgba(80,86,119,.15) 48%,rgba(255,255,255,.025))!important; }
+      [data-testid="stExpander"] details > summary p,[data-testid="stExpander"] details > summary span { color:#f4effb!important; font-weight:740!important; }
+      [data-testid="stExpander"] details > summary svg { color:#c8a8f4!important; }
+      [data-testid="stExpander"] details[open] > summary { border-bottom:1px solid rgba(177,151,211,.20)!important; background:linear-gradient(100deg,rgba(133,91,184,.22),rgba(70,76,105,.13) 48%,rgba(255,255,255,.02))!important; }
+      [data-testid="stExpander"] [data-testid="stExpanderDetails"] { background:linear-gradient(180deg,rgba(12,15,24,.52),rgba(10,13,20,.34))!important; padding:20px!important; }
       .stButton button,[data-testid="stDownloadButton"] button { border-radius:9px!important; border:1px solid rgba(145,164,190,.23)!important; background:rgba(255,255,255,.045)!important; color:#e7edf6!important; box-shadow:none!important; transition:transform .16s ease,border-color .16s ease,background .16s ease!important; }
       .stButton button:hover,[data-testid="stDownloadButton"] button:hover { transform:translateY(-1px)!important; border-color:rgba(103,216,208,.42)!important; background:rgba(103,216,208,.075)!important; }
       @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],.stButton button,[data-testid="stDownloadButton"] button { transition:none!important; } }
@@ -3636,7 +3637,7 @@ def main():
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div id="report-form"></div><div id="campaign-insights"></div>', unsafe_allow_html=True)
-    with st.expander("Report settings     ·     Currency and campaign mapping", expanded=False):
+    with st.expander("01  WORKSPACE SETTINGS     ·     Currency & campaign mapping", expanded=False):
         settings_left, settings_right = st.columns(2, gap="large")
         with settings_left:
             st.subheader("Currency conversion · USD to KWD")
@@ -3690,7 +3691,7 @@ def main():
         with st.container(border=True):
             st.markdown('<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><span style="color:#a99abf;font-size:1.2rem">◷</span><span style="font-weight:720;color:#f4effb">Previous day</span><span style="font-size:.65rem;color:#b8b1c3;background:#34313b;padding:3px 7px;border-radius:20px">OPTIONAL</span></div><div style="font-size:.75rem;color:#a6a1b1;margin-bottom:8px">Compare leads, spend and campaign changes</div>', unsafe_allow_html=True)
             yesterday_uploaded = st.file_uploader("Yesterday's Meta Ads Excel report (optional)", type=["xlsx", "xls"], key="yesterday_meta_excel", help="Upload yesterday's export to compare leads, spend, and top-performing campaigns.", label_visibility="collapsed")
-    with st.expander("Weekly Campaign Performance Analysis", expanded=False):
+    with st.expander("02  WEEKLY INTELLIGENCE     ·     Campaign performance", expanded=False):
         st.caption("Upload a weekly Meta Ads Excel export to identify zero-result, low-lead, high-cost and best-performing campaigns. Campaign names are shown in every result table.")
         weekly_file = st.file_uploader("Weekly Meta Ads Excel report", type=["xlsx", "xls"], key="weekly_meta_excel", help="Upload an export covering the full week. If a campaign appears on multiple rows, its results and spend will be combined.")
         low_lead_limit = st.number_input("Flag campaigns with leads at or below", min_value=0, max_value=10000, value=5, step=1, key="weekly_low_lead_limit", help="Adjust this threshold to match your weekly expectations.")
@@ -3751,7 +3752,7 @@ def main():
                 st.caption("Check that the workbook contains campaign, results and amount spent columns.")
     if uploaded is None:
         st.markdown('<div class="dt-upload-note">✦ &nbsp; Your workspace is ready. Add today’s Excel export to generate the report; include the previous day for a performance comparison.</div>', unsafe_allow_html=True)
-        with st.expander("Campaign intelligence     ·     Review assigned teams and courses", expanded=False):
+        with st.expander("03  CAMPAIGN LIBRARY     ·     Team & course mappings", expanded=False):
             st.dataframe(mappings, use_container_width=True, hide_index=True)
         st.download_button("↓  Download mapping template", mappings.to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping.csv", "text/csv")
         return
