@@ -3572,9 +3572,19 @@ def main():
       [data-testid="stExpander"] details > summary svg { color:#eadbff!important; }
       [data-testid="stExpander"] details[open] > summary { border-color:rgba(218,195,255,.58)!important; border-radius:13px 13px 9px 9px!important; background:linear-gradient(105deg,rgba(82,62,119,.98),rgba(43,53,79,.98))!important; box-shadow:0 5px 15px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.12)!important; }
       [data-testid="stExpander"] [data-testid="stExpanderDetails"] { margin-top:8px!important; border:1px solid rgba(158,139,194,.18)!important; border-radius:12px!important; background:rgba(13,17,27,.58)!important; padding:20px!important; }
-      .stButton button,[data-testid="stDownloadButton"] button { border-radius:9px!important; border:1px solid rgba(145,164,190,.23)!important; background:rgba(255,255,255,.045)!important; color:#e7edf6!important; box-shadow:none!important; transition:transform .16s ease,border-color .16s ease,background .16s ease!important; }
-      .stButton button:hover,[data-testid="stDownloadButton"] button:hover { transform:translateY(-1px)!important; border-color:rgba(103,216,208,.42)!important; background:rgba(103,216,208,.075)!important; }
-      @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],[data-testid="stExpander"] details > summary,.stButton button,[data-testid="stDownloadButton"] button { transition:none!important; animation:none!important; } }
+      @keyframes dtButtonSheen { 0% { left:-130%; opacity:0; } 18% { opacity:.8; } 100% { left:140%; opacity:0; } }
+      @keyframes dtUploadBorder { 0%,100% { border-color:rgba(151,133,190,.35); box-shadow:0 0 0 0 rgba(167,130,224,0); } 50% { border-color:rgba(190,155,244,.85); box-shadow:0 0 0 3px rgba(167,130,224,.10); } }
+      .stButton button,[data-testid="stDownloadButton"] button { position:relative!important; overflow:hidden!important; isolation:isolate!important; border-radius:10px!important; border:1px solid rgba(145,164,190,.26)!important; background:linear-gradient(110deg,rgba(255,255,255,.055),rgba(255,255,255,.025))!important; color:#e7edf6!important; box-shadow:0 3px 10px rgba(0,0,0,.12)!important; transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s ease,background .22s ease,box-shadow .22s ease!important; }
+      .stButton button:after,[data-testid="stDownloadButton"] button:after { content:""; position:absolute; z-index:-1; pointer-events:none; top:-40%; bottom:-40%; left:-130%; width:48%; transform:skewX(-22deg); background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); opacity:0; }
+      .stButton button:hover { transform:translateY(-2px)!important; border-color:rgba(177,142,232,.72)!important; background:linear-gradient(110deg,rgba(111,78,158,.30),rgba(70,83,120,.22))!important; box-shadow:0 8px 20px rgba(0,0,0,.22),0 0 0 2px rgba(167,130,224,.08)!important; }
+      .stButton button:hover:after { animation:dtButtonSheen .8s ease-out 1!important; }
+      [data-testid="stDownloadButton"] button:hover { transform:translateY(-2px)!important; border-color:rgba(102,211,164,.7)!important; background:linear-gradient(110deg,rgba(35,128,91,.22),rgba(55,105,100,.16))!important; box-shadow:0 8px 20px rgba(0,0,0,.22),0 0 0 2px rgba(102,211,164,.08)!important; }
+      [data-testid="stDownloadButton"] button:hover:after { animation:dtButtonSheen .8s ease-out 1!important; }
+      [data-testid="stFileUploader"] button { border-radius:10px!important; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important; }
+      [data-testid="stFileUploader"] button:hover { transform:translateY(-2px)!important; border-color:rgba(190,158,239,.85)!important; box-shadow:0 0 0 3px rgba(167,130,224,.12),0 7px 18px rgba(0,0,0,.2)!important; }
+      [data-testid="stFileUploader"] section { transition:border-color .2s ease,box-shadow .2s ease!important; }
+      [data-testid="stFileUploader"] section:hover { border-color:rgba(190,158,239,.65)!important; box-shadow:0 0 0 2px rgba(167,130,224,.07)!important; }
+      @media(prefers-reduced-motion:reduce) { [data-testid="stExpander"],[data-testid="stExpander"] details > summary,.stButton button,[data-testid="stDownloadButton"] button,[data-testid="stFileUploader"] button { transition:none!important; animation:none!important; } }
     </style>
     """, unsafe_allow_html=True)
     page = st.query_params.get("page", "dashboard")
