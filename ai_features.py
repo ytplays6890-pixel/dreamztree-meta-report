@@ -30,14 +30,40 @@ def get_ai_config():
 
 
 def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label):
+    is_gpt_oss = "gpt-oss" in str(model).lower()
+    system_instruction = (
+        "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics. "
+        "Answer the user's question directly and concisely."
+    )
+    if is_gpt_oss:
+        # Groq's GPT-OSS models use max_completion_tokens and an explicit
+        # reasoning format. A small legacy max_tokens budget can be consumed
+        # by reasoning, leaving message.content empty.
+        messages = [{"role": "user", "content": system_instruction + "\\n\\n" + prompt}]
+        request_options = {
+            "max_completion_tokens": 1800,
+            "reasoning_effort": "low",
+            "reasoning_format": "hidden",
+        }
+    else:
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prompt},
+        ]
+        request_options = {"max_tokens": 1200}
+
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.2,
+        **request_options,
+    }
     try:
         response = requests.post(
             base_url.rstrip("/") + "/chat/completions",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": [
-                {"role": "system", "content": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."},
-                {"role": "user", "content": prompt}], "temperature": 0.2, "max_tokens": 900},
-            timeout=(5, 30))
+            json=payload,
+            timeout=(5, 45))
     except requests.RequestException as exc:
         raise RuntimeError(f"{provider_label} request timed out or could not connect.") from exc
     if response.status_code >= 400:
@@ -47,11 +73,24 @@ def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label
             detail = response.text
         raise RuntimeError(f"{provider_label} API error ({response.status_code}): {detail}")
     try:
-        answer = response.json()["choices"][0]["message"]["content"].strip()
+        result = response.json()
+        choice = result["choices"][0]
+        message = choice["message"]
+        content = message.get("content", "")
+        if isinstance(content, list):
+            answer = "\\n".join(
+                part.get("text", "") for part in content if isinstance(part, dict)
+            ).strip()
+        else:
+            answer = str(content or "").strip()
     except (KeyError, IndexError, TypeError, AttributeError):
         raise RuntimeError(f"{provider_label} returned no readable text.")
     if not answer:
-        raise RuntimeError(f"{provider_label} returned an empty answer.")
+        finish_reason = choice.get("finish_reason", "unknown")
+        raise RuntimeError(
+            f"{provider_label} returned an empty answer (finish reason: {finish_reason}). "
+            "Check the model's output-token limit or try another configured model."
+        )
     return answer
 
 
