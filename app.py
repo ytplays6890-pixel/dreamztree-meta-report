@@ -3600,7 +3600,7 @@ def main():
         st.markdown('<div class="dt-side-brand"><div class="dt-side-logo">D</div><div><div class="dt-side-name">Dreamztree</div><div class="dt-side-sub">Marketing Intelligence</div></div></div><div class="dt-side-label">Workspace</div>', unsafe_allow_html=True)
         if st.button("⌂  Dashboard", key="side_dashboard", use_container_width=True):
             st.query_params["page"] = "dashboard"; st.rerun()
-        st.markdown('<a href="#report-form" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">▤ &nbsp; Reports</a><a href="#campaign-insights" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">◇ &nbsp; Campaign Mapping</a>', unsafe_allow_html=True)
+        st.markdown('<a href="#executive-overview" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">▦ &nbsp; Executive Overview</a><a href="#report-form" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">▤ &nbsp; Reports</a><a href="#campaign-insights" style="display:block;padding:10px 12px;color:#d8d2e2;text-decoration:none;border-radius:10px">◇ &nbsp; Campaign Mapping</a>', unsafe_allow_html=True)
         if st.button("♧  Team Chat", key="side_chat", use_container_width=True):
             st.query_params["page"] = "chat"; st.rerun()
         if st.button("♧  Game Zone", key="side_game", use_container_width=True):
@@ -3775,6 +3775,7 @@ def main():
             num_rows="fixed",
             key="assignments_editor",
         )
+        st.markdown('<div id="executive-overview"></div>', unsafe_allow_html=True)
         st.divider()
         with st.expander("Executive marketing intelligence", expanded=True):
             render_intelligence_dashboard(edited, factor, date_value)
