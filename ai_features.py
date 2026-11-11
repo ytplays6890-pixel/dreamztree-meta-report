@@ -39,7 +39,7 @@ def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label
         # Groq's GPT-OSS models use max_completion_tokens and an explicit
         # reasoning format. A small legacy max_tokens budget can be consumed
         # by reasoning, leaving message.content empty.
-        messages = [{"role": "user", "content": system_instruction + "\\n\\n" + prompt}]
+        messages = [{"role": "user", "content": system_instruction + "\n\n" + prompt}]
         request_options = {
             "max_completion_tokens": 1800,
             "reasoning_effort": "low",
@@ -78,7 +78,7 @@ def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label
         message = choice["message"]
         content = message.get("content", "")
         if isinstance(content, list):
-            answer = "\\n".join(
+            answer = "\n".join(
                 part.get("text", "") for part in content if isinstance(part, dict)
             ).strip()
         else:
