@@ -3798,7 +3798,7 @@ def main():
             # Any course label containing "Hiring" is a hiring outcome
             # (for example Hiring, Medical Hiring, Coordinator Hiring, or Hiring GDA).
             # Keep these results separate from Meta lead totals, but report them by staff.
-            _is_hiring_campaign = all_campaigns["Course"].str.contains(r"\\bhiring\\b", case=False, na=False)
+            _is_hiring_campaign = all_campaigns["Course"].str.contains(r"\bhiring\b", case=False, na=False)
             hiring_campaigns = all_campaigns[_is_hiring_campaign].copy()
             lead_campaigns = all_campaigns[~_is_hiring_campaign].copy()
 
@@ -3917,7 +3917,7 @@ def main():
             for _,_rpt_row in all_campaigns.iterrows():
                 _m = _market_alias.get(str(_rpt_row.get("Branch","")).strip().lower(),"Unassigned")
                 if _m not in _market_data: _market_data[_m]={"leads":0,"spend":0.0}
-                if not re.search(r"\\bhiring\\b", str(_rpt_row.get("Course", "")), flags=re.IGNORECASE):
+                if not re.search(r"\bhiring\b", str(_rpt_row.get("Course", "")), flags=re.IGNORECASE):
                     _market_data[_m]["leads"] += int(float(_rpt_row.get("Results",0) or 0))
                 # Hiring campaign spend remains part of the market's ad spend.
                 _market_data[_m]["spend"] += float(_rpt_row.get("Spent",0) or 0)*float(factor)
