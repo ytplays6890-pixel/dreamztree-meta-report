@@ -3058,7 +3058,84 @@ function race(){let g=canvas('🏎️ Cyber Racing','Dodge traffic, survive as l
 function tower(){let g=canvas('🧱 Tower Builder','Tap DROP when the moving block lines up. Build the tallest tower.');let {c,x,score,controls}=g,blocks=[{x:205,w:190,y:290}],moving={x:0,w:190,dir:1},level=1,over=false;function draw(){x.fillStyle='#111827';x.fillRect(0,0,600,330);x.fillStyle='#a78bfa';blocks.forEach((b,i)=>{x.fillRect(b.x,b.y, b.w,24);x.fillStyle='#ddd6fe';x.fillRect(b.x,b.y,b.w,4);x.fillStyle='#a78bfa'});if(!over){x.fillStyle='#f472b6';x.fillRect(moving.x,blocks[blocks.length-1].y-27,moving.w,24);moving.x+=moving.dir*3.2;if(moving.x<0||moving.x+moving.w>600)moving.dir*=-1}score.textContent='Floor: '+(blocks.length-1);if(over){x.fillStyle='white';x.font='bold 30px system-ui';x.textAlign='center';x.fillText('Tower complete! '+(blocks.length-1)+' floors',300,165)}else raf=requestAnimationFrame(draw)}function drop(){if(over)return;let prev=blocks[blocks.length-1],left=Math.max(prev.x,moving.x),right=Math.min(prev.x+prev.w,moving.x+moving.w),w=right-left;if(w<12){over=true;return}blocks.push({x:left,w,y:prev.y-27});moving={x:0,w,dir:1};if(blocks.length>10){blocks.forEach(b=>b.y+=24);blocks[0].y=290} }control(controls,'DROP BLOCK',drop);control(controls,'↻ RESTART',()=>{stop();tower()});draw()}
 function fruit(){let g=canvas('🍉 Fruit Slice','Tap or swipe across the fruits. Avoid bombs. 30-second round.');let {c,x,score,controls}=g,items=[],points=0,frame=0,left=30,over=false;control(controls,'START / RESTART',()=>{stop();items=[];points=0;frame=0;left=30;over=false;loop()});function hit(e){if(over)return;let r=c.getBoundingClientRect(),px=(e.clientX-r.left)*600/r.width,py=(e.clientY-r.top)*330/r.height;items.forEach(o=>{if(!o.hit&&Math.hypot(o.x-px,o.y-py)<o.r+15){o.hit=true;if(o.bomb)over=true;else points++}})}c.addEventListener('pointerdown',hit);function loop(){frame++;if(frame%60===0)left--;if(frame%34===0)items.push({x:40+Math.random()*520,y:340,vx:(Math.random()-.5)*3,vy:-8-Math.random()*3,r:18+Math.random()*8,bomb:Math.random()<.18,hit:false});x.fillStyle='#111827';x.fillRect(0,0,600,330);items.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=.18;x.beginPath();x.fillStyle=o.bomb?'#475569':['#f43f5e','#22c55e','#facc15','#a78bfa'][Math.floor(o.x)%4];x.arc(o.x,o.y,o.r,0,Math.PI*2);x.fill();x.fillStyle='white';x.font='18px system-ui';x.textAlign='center';x.fillText(o.bomb?'✹':'✦',o.x,o.y+6)});items=items.filter(o=>o.y<370&&!o.hit);score.textContent='Score: '+points+' · Time: '+left+'s';if(left<=0)over=true;if(over){x.fillStyle='white';x.font='bold 28px system-ui';x.textAlign='center';x.fillText('Round over · '+points+' points',300,165)}else raf=requestAnimationFrame(loop)}loop()}
 function runner(){let g=canvas('🏃 Neon Runner','Jump over glowing barriers. Tap JUMP or press Space.');let {c,x,score,controls}=g,py=255,vy=0,obs=[],points=0,frame=0,over=false;control(controls,'⬆ JUMP',()=>{if(py>=254)vy=-12});control(controls,'↻ RESTART',()=>{stop();runner()});window.onkeydown=e=>{if(e.code==='Space'||e.key==='ArrowUp'){e.preventDefault();if(py>=254)vy=-12}};function loop(){frame++;x.fillStyle='#080d22';x.fillRect(0,0,600,330);x.strokeStyle='#22d3ee';x.lineWidth=3;x.beginPath();x.moveTo(0,285);x.lineTo(600,285);x.stroke();if(!over){py+=vy;vy+=.55;if(py>255){py=255;vy=0}if(frame%65===0)obs.push({x:610});obs.forEach(o=>o.x-=5);obs=obs.filter(o=>o.x>-40);points++;obs.forEach(o=>{if(o.x<115&&o.x>65&&py>220)over=true})}x.fillStyle='#a78bfa';x.fillRect(85,py,35,30);x.fillStyle='#22d3ee';obs.forEach(o=>x.fillRect(o.x,245,24,40));score.textContent='Distance: '+Math.floor(points/5);if(over){x.fillStyle='white';x.font='bold 30px system-ui';x.textAlign='center';x.fillText('RUN OVER! '+Math.floor(points/5),300,160)}else raf=requestAnimationFrame(loop)}loop()}
-function bubble(){let g=canvas('🫧 Bubble Shooter','Aim and tap to shoot. Match three or more bubbles of the same colour.');let {c,x,score,controls}=g,colors=['#fb7185','#60a5fa','#facc15','#4ade80'],grid=[],shots=0;for(let r=0;r<5;r++)for(let q=0;q<8;q++)grid.push({x:50+q*70,y:35+r*38,col:colors[Math.floor(Math.random()*4)],alive:true});let selected=0;colors.forEach((co,i)=>{let b=btn(['Pink','Blue','Yellow','Green'][i]);b.style.background=co;b.onclick=()=>selected=i;controls.appendChild(b)});function draw(){x.fillStyle='#101a33';x.fillRect(0,0,600,330);grid.filter(b=>b.alive).forEach(b=>{x.beginPath();x.fillStyle=b.col;x.arc(b.x,b.y,16,0,Math.PI*2);x.fill()});x.beginPath();x.fillStyle=colors[selected];x.arc(300,300,15,0,Math.PI*2);x.fill();score.textContent='Bubbles popped: '+shots;c.onclick=e=>{let r=c.getBoundingClientRect(),px=(e.clientX-r.left)*600/r.width,py=(e.clientY-r.top)*330/r.height;let target=grid.filter(b=>b.alive).sort((a,b)=>Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py))[0];if(target&&Math.hypot(target.x-px,target.y-py)<65){let same=grid.filter(b=>b.alive&&b.col===target.col&&Math.hypot(b.x-target.x,b.y-target.y)<48);if(target.col===colors[selected]||same.length>=2){same.forEach(b=>b.alive=false);target.alive=false;shots+=same.length+1}else{target.col=colors[selected]}draw()}};};control(controls,'NEW BOARD',()=>{grid.forEach(b=>{b.alive=true;b.col=colors[Math.floor(Math.random()*4)]});shots=0;draw()});draw()}
+function bubble(){
+ let g=canvas('🫧 Bubble Shooter','Aim with your mouse or finger, then tap to shoot. Match 3 or more connected bubbles.'),
+ {c,x,score,controls}=g;
+ const colors=['#fb7185','#60a5fa','#facc15','#4ade80','#c084fc'];
+ const rows=7,cols=8,stepX=70,stepY=37,baseX=55,baseY=32;
+ let grid=[],selected=0,shots=0,popped=0,projectile=null,aim={x:300,y:55},finished=false;
+ function reset(){
+  grid=Array.from({length:rows},(_,r)=>Array.from({length:cols},(_,q)=>({col:(r<5?colors[Math.floor(Math.random()*4)]:null)})));
+  shots=0;popped=0;projectile=null;finished=false;selected=Math.floor(Math.random()*4);
+ }
+ function center(r,q){return {x:baseX+q*stepX,y:baseY+r*stepY};}
+ function draw(){
+  x.fillStyle='#101a33';x.fillRect(0,0,600,330);
+  x.fillStyle='#1e293b';x.fillRect(10,10,580,305);
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){
+   const cell=grid[r][q];if(!cell.col)continue;const p=center(r,q);
+   x.beginPath();x.fillStyle=cell.col;x.arc(p.x,p.y,16,0,Math.PI*2);x.fill();
+   x.beginPath();x.fillStyle='#ffffff55';x.arc(p.x-5,p.y-6,5,0,Math.PI*2);x.fill();
+  }
+  const sx=300,sy=300,dx=aim.x-sx,dy=aim.y-sy,len=Math.hypot(dx,dy)||1;
+  if(!projectile&&!finished){x.setLineDash([6,6]);x.strokeStyle='#e2e8f0';x.lineWidth=2;x.beginPath();x.moveTo(sx,sy);x.lineTo(sx+dx/len*145,sy+dy/len*145);x.stroke();x.setLineDash([]);}
+  x.fillStyle='#64748b';x.beginPath();x.arc(sx,sy,23,Math.PI,0);x.fill();
+  x.fillStyle=colors[selected];x.beginPath();x.arc(sx,sy-10,14,0,Math.PI*2);x.fill();
+  if(projectile){x.fillStyle=projectile.col;x.beginPath();x.arc(projectile.x,projectile.y,14,0,Math.PI*2);x.fill();}
+  score.textContent='Popped: '+popped+'  ·  Shots: '+shots;
+  if(finished){x.fillStyle='#020617cc';x.fillRect(0,0,600,330);x.fillStyle='white';x.textAlign='center';x.font='bold 28px system-ui';x.fillText('Board cleared! 🎉',300,155);x.font='16px system-ui';x.fillText('Press NEW GAME to play again',300,185);}
+  else if(grid[rows-1].some(v=>v.col)){x.fillStyle='#fca5a5';x.textAlign='center';x.font='bold 18px system-ui';x.fillText('Careful — bubbles are getting low!',300,285);}
+ }
+ function neighbors(r,q){
+  return [[r-1,q],[r+1,q],[r,q-1],[r,q+1]].filter(([rr,qq])=>rr>=0&&rr<rows&&qq>=0&&qq<cols);
+ }
+ function placeShot(){
+  if(!projectile)return;
+  let best=null,bestD=Infinity;
+  for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){
+   if(grid[r][q].col)continue;
+   const p=center(r,q),d=Math.hypot(p.x-projectile.x,p.y-projectile.y);
+   if(d<bestD){bestD=d;best={r,q};}
+  }
+  if(!best){projectile=null;return;}
+  const {r,q}=best;grid[r][q].col=projectile.col;projectile=null;shots++;
+  const stack=[[r,q]],seen=new Set([r+','+q]),group=[];
+  while(stack.length){
+   const [rr,qq]=stack.pop();group.push([rr,qq]);
+   neighbors(rr,qq).forEach(([nr,nq])=>{
+    const key=nr+','+nq;
+    if(!seen.has(key)&&grid[nr][nq].col===grid[r][q].col){seen.add(key);stack.push([nr,nq]);}
+   });
+  }
+  if(group.length>=3){group.forEach(([rr,qq])=>grid[rr][qq].col=null);popped+=group.length;}
+  if(grid.every(row=>row.every(v=>!v.col)))finished=true;
+ }
+ function tick(){
+  if(projectile){
+   projectile.x+=projectile.vx;projectile.y+=projectile.vy;
+   let hit=projectile.y<18||projectile.x<18||projectile.x>582;
+   for(let r=0;r<rows&&!hit;r++)for(let q=0;q<cols;q++){
+    if(!grid[r][q].col)continue;const p=center(r,q);
+    if(Math.hypot(projectile.x-p.x,projectile.y-p.y)<29){hit=true;break;}
+   }
+   if(hit)placeShot();
+  }
+  draw();
+  if(!finished)raf=requestAnimationFrame(tick);
+ }
+ function coords(e){const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*330/r.height};}
+ c.addEventListener('pointermove',e=>{const p=coords(e);aim={x:p.x,y:Math.min(aim.y,p.y)};});
+ c.addEventListener('pointerdown',e=>{
+  if(projectile||finished)return;
+  const p=coords(e),dx=p.x-300,dy=p.y-290;
+  if(dy>=-8)return;
+  const len=Math.hypot(dx,dy)||1;
+  projectile={x:300,y:290,vx:dx/len*10,vy:dy/len*10,col:colors[selected]};
+ });
+ colors.forEach((co,i)=>{const b=btn(['Pink','Blue','Yellow','Green','Purple'][i]);b.style.background=co;b.onclick=()=>{selected=i;draw();};controls.appendChild(b);});
+ control(controls,'NEW GAME',()=>{stop();reset();tick();});
+ reset();tick();
+}
 function golf(){let g=canvas('⛳ Mini Golf','Drag from the ball backwards to aim and set power, then release to putt.');let {c,x,score,controls}=g,ball={x:95,y:260,vx:0,vy:0},hole={x:510,y:90},strokes=0,drag=null,done=false;function draw(){x.fillStyle='#14532d';x.fillRect(0,0,600,330);x.fillStyle='#166534';x.fillRect(15,15,570,300);x.beginPath();x.fillStyle='#020617';x.arc(hole.x,hole.y,17,0,Math.PI*2);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.moveTo(hole.x,hole.y-5);x.lineTo(hole.x,hole.y-65);x.stroke();if(!done){ball.x+=ball.vx;ball.y+=ball.vy;ball.vx*=.985;ball.vy*=.985;if(Math.abs(ball.vx)+Math.abs(ball.vy)<.12){ball.vx=0;ball.vy=0}if(Math.hypot(ball.x-hole.x,ball.y-hole.y)<18&&ball.vx===0&&ball.vy===0)done=true}x.beginPath();x.fillStyle='#f8fafc';x.arc(ball.x,ball.y,9,0,Math.PI*2);x.fill();if(drag){x.strokeStyle='#facc15';x.lineWidth=3;x.beginPath();x.moveTo(ball.x,ball.y);x.lineTo(drag.x,drag.y);x.stroke()}score.textContent='Strokes: '+strokes+(done?' · HOLE IN!':'');if(!done)raf=requestAnimationFrame(draw)}c.onpointerdown=e=>{let r=c.getBoundingClientRect(),px=(e.clientX-r.left)*600/r.width,py=(e.clientY-r.top)*330/r.height;if(Math.hypot(px-ball.x,py-ball.y)<35&&!ball.vx&&!ball.vy)drag={x:px,y:py}};c.onpointermove=e=>{if(drag){let r=c.getBoundingClientRect();drag.x=(e.clientX-r.left)*600/r.width;drag.y=(e.clientY-r.top)*330/r.height}};c.onpointerup=()=>{if(drag){ball.vx=Math.max(-9,Math.min(9,(ball.x-drag.x)*.08));ball.vy=Math.max(-9,Math.min(9,(ball.y-drag.y)*.08));if(Math.abs(ball.vx)+Math.abs(ball.vy)>.4)strokes++;drag=null}};control(controls,'↻ NEW HOLE',()=>{stop();golf()});draw()}
 function quiz(){let qs=[['Which planet is known as the Red Planet?',['Venus','Mars','Jupiter'],1],['How many sides does a hexagon have?',['5','6','8'],1],['What is 12 × 8?',['86','96','108'],1],['Which gas do plants absorb?',['Oxygen','Carbon dioxide','Nitrogen'],1],['What is the largest ocean?',['Atlantic','Indian','Pacific'],2],['How many minutes are in 2 hours?',['100','120','140'],1],['Which is a primary color?',['Green','Red','Pink'],1],['What is the square root of 81?',['8','9','10'],1]];let q=0,s=0;function draw(){panel.innerHTML='<h2>🏆 Quiz Battle</h2><p class="muted">Answer eight quick questions and beat your score.</p><div class="score">Score: '+s+' / 8</div><h3>'+qs[q][0]+'</h3><div id="opts"></div><p id="msg" class="muted"></p>';qs[q][1].forEach((v,i)=>{let b=document.createElement('button');b.className='quizopt';b.textContent=v;b.onclick=()=>{if(b.disabled)return;[...document.querySelectorAll('.quizopt')].forEach(z=>z.disabled=true);if(i===qs[q][2])s++;document.getElementById('msg').textContent=i===qs[q][2]?'Correct!':'Correct answer: '+qs[q][1][qs[q][2]];panel.appendChild(btn(q===7?'FINISH':'NEXT QUESTION',()=>{if(q===7){panel.innerHTML='<h2>Challenge complete!</h2><div class="score">Final score: '+s+'/8</div>';panel.appendChild(btn('PLAY AGAIN',()=>{q=0;s=0;draw()}))}else{q++;draw()}}))};document.getElementById('opts').appendChild(b)})}draw()}
 function game2048(){let board=Array(16).fill(0),scoreN=0;function add(){let z=board.map((v,i)=>v?null:i).filter(v=>v!==null);if(z.length)board[z[Math.floor(Math.random()*z.length)]]=Math.random()<.9?2:4}function draw(){panel.innerHTML='<h2>🔢 2048 Challenge</h2><p class="muted">Use arrow keys or swipe. Combine matching numbers to reach 2048.</p><p class="score">Score: '+scoreN+'</p><div class="board">'+board.map(v=>'<div class="cell" style="background:'+(v?'hsl('+(35+Math.log2(v)*18)+',65%,42%)':'#26334d')+'">'+(v||'')+'</div>').join('')+'</div>';panel.appendChild(btn('NEW GAME',()=>{board=Array(16).fill(0);scoreN=0;add();add();draw()}))}function move(d){let old=board.slice();for(let l=0;l<4;l++){let ids=[];for(let j=0;j<4;j++){let r=d==='up'?j:d==='down'?3-j:l,c=d==='left'?j:d==='right'?3-j:l;ids.push(r*4+c)}let vals=ids.map(i=>board[i]).filter(Boolean);for(let j=0;j<vals.length-1;j++)if(vals[j]===vals[j+1]){vals[j]*=2;scoreN+=vals[j];vals.splice(j+1,1)}while(vals.length<4)vals.push(0);ids.forEach((id,j)=>board[id]=vals[j])}if(old.some((v,i)=>v!==board[i]))add();draw()}window.onkeydown=e=>{let m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};if(m[e.key]){e.preventDefault();move(m[e.key])}};let sx=0,sy=0;panel.ontouchstart=e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY};panel.ontouchend=e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))>25)move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))};board=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];add();add();draw()}
