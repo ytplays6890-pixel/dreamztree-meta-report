@@ -24,6 +24,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from ai_features import get_ai_config, generate_ai_response, build_ai_metrics, rule_based_insights, forecast_from_daily_totals, answer_report_question, build_local_management_summary
+from intelligence_dashboard import render_intelligence_dashboard
 import streamlit.components.v1 as components
 from supabase import create_client
 from streamlit_cookies_controller import CookieController, RemoveEmptyElementContainer
@@ -3774,6 +3775,9 @@ def main():
             num_rows="fixed",
             key="assignments_editor",
         )
+        st.divider()
+        with st.expander("Executive marketing intelligence", expanded=True):
+            render_intelligence_dashboard(edited, factor, date_value)
         unresolved = edited[(edited["Staff"].astype(str).str.strip() == "") | (edited["Course"].astype(str).str.strip() == "") | (edited["Branch"].astype(str).str.strip() == "")]
         if not unresolved.empty:
             can_include = unresolved[(unresolved["Staff"].astype(str).str.strip() != "") & (unresolved["Branch"].astype(str).str.strip() != "")]
