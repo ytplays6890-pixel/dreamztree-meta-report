@@ -142,7 +142,21 @@ def generate_ai_response(api_key, prompt, model=None, provider="Gemini"):
     except Exception as exc:
         primary_error = exc
 
-    # Groq is a separate free-tier provider; it is only used if the user adds its key.
+    # If GPT-OSS 20B returns no visible answer, retry once with Groq's
+    # currently listed production GPT-OSS 120B model. This path is only used
+    # after the primary request fails and can have different API pricing.
+    if "groq" in provider_key and groq_key and "gpt-oss-20b" in str(model or _secret_value("GROQ_MODEL", "openai/gpt-oss-20b")).lower():
+        fallback_model = _secret_value("GROQ_FALLBACK_MODEL", "openai/gpt-oss-120b")
+        try:
+            return _generate_openai_compatible(
+                groq_key, prompt, fallback_model,
+                "https://api.groq.com/openai/v1", "Groq fallback")
+        except Exception as fallback_exc:
+            raise RuntimeError(
+                f"{primary_error} | Groq backup model ({fallback_model}) also failed: {fallback_exc}"
+            ) from fallback_exc
+
+    # Groq is also available as a fallback when another provider is selected.
     if groq_key and "groq" not in provider_key:
         try:
             return _generate_openai_compatible(
