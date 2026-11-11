@@ -33,7 +33,7 @@ def _safe_frame(frame):
     return data
 
 
-def _aggregate(data, dimension):
+def _aggregate(data, dimension, exchange_rate):
     result = (
         data.groupby(dimension, dropna=False, as_index=False)
         .agg(
@@ -42,9 +42,7 @@ def _aggregate(data, dimension):
             Spend_USD=("Spent", "sum"),
         )
     )
-    result["Spend_KD"] = result["Spend_USD"] * st.session_state.get(
-        "_dt_intelligence_exchange_rate", 1.0
-    )
+    result["Spend_KD"] = result["Spend_USD"] * float(exchange_rate or 1.0)
     result["CPL_KD"] = result.apply(
         lambda row: row["Spend_KD"] / row["Leads"] if row["Leads"] else 0.0,
         axis=1,
@@ -55,8 +53,6 @@ def _aggregate(data, dimension):
 def render_intelligence_dashboard(frame, exchange_rate, report_date=None):
     """Render a read-only executive overview from the reviewed campaign table."""
     data = _safe_frame(frame)
-    st.session_state["_dt_intelligence_exchange_rate"] = float(exchange_rate or 1.0)
-
     total_leads = int(data["Results"].sum())
     total_spend_usd = float(data["Spent"].sum())
     total_spend_kd = total_spend_usd * float(exchange_rate or 1.0)
@@ -94,9 +90,9 @@ def render_intelligence_dashboard(frame, exchange_rate, report_date=None):
         st.dataframe(data, use_container_width=True, hide_index=True)
         return
 
-    branch = _aggregate(assigned, "Branch")
-    staff = _aggregate(assigned, "Staff")
-    course = _aggregate(assigned.assign(Course=assigned["Course display"]), "Course")
+    branch = _aggregate(assigned, "Branch", exchange_rate)
+    staff = _aggregate(assigned, "Staff", exchange_rate)
+    course = _aggregate(assigned.assign(Course=assigned["Course display"]), "Course", exchange_rate)
     campaign = assigned.copy()
     campaign["Spend_KD"] = campaign["Spent"] * float(exchange_rate or 1.0)
     campaign["CPL_KD"] = campaign.apply(
