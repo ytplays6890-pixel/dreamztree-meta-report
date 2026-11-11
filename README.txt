@@ -29,3 +29,21 @@ The app looks for columns containing Campaign, Results (excluding Initial Result
 ## Currency
 
 The default USD-to-KD factor is `0.308`, inherited from the existing script. Verify the correct factor for your Meta export currency before relying on costs.
+
+
+## Executive marketing intelligence
+
+The development branch includes a read-only Executive Marketing Intelligence panel.
+After uploading today's Meta Ads export and reviewing campaign assignments, open
+**Executive Overview** in the sidebar. It displays total leads, spend, blended CPL,
+campaign count, mapping coverage, branch comparisons, staff/course performance,
+campaign-level detail, and an attributed campaign CSV export.
+
+Overall KPIs include all positive-result campaigns in the reviewed upload.
+Branch, staff, and course comparisons include campaigns with both staff and branch
+assigned. The panel does not change uploaded data or campaign mappings.
+
+## Development branch
+
+Use the `development` branch for testing upgrades. Keep `main` as the production
+branch until the development version has been reviewed and approved.
