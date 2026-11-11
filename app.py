@@ -3055,7 +3055,40 @@ function control(box,label,down,up){let b=btn(label,()=>{});box.appendChild(b);b
 function start(){stop();tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));({race,tower,fruit,runner,bubble,golf,quiz, '2048':game2048}[tab])()}
 tabs.forEach(b=>b.onclick=()=>{tab=b.dataset.tab;start()});
 function race(){let g=canvas('🏎️ Cyber Racing','Dodge traffic, survive as long as possible and beat your high score.');let {c,x,score,controls}=g,car=270,obs=[],points=0,over=false,frame=0;control(controls,'◀ LEFT',()=>keys.left=true,()=>keys.left=false);control(controls,'RIGHT ▶',()=>keys.right=true,()=>keys.right=false);control(controls,'↻ RESTART',()=>{stop();race()});function loop(){frame++;x.fillStyle='#101a33';x.fillRect(0,0,600,330);x.fillStyle='#273449';x.fillRect(125,0,350,330);x.strokeStyle='#f8fafc';x.setLineDash([24,20]);x.lineWidth=5;x.lineDashOffset=-frame*5;x.beginPath();x.moveTo(300,0);x.lineTo(300,330);x.stroke();x.setLineDash([]);if(!over){if(keys.left)car-=5;if(keys.right)car+=5;car=Math.max(145,Math.min(415,car));if(frame%48===0)obs.push({x:150+Math.random()*260,y:-45});obs.forEach(o=>o.y+=4+points/180);obs=obs.filter(o=>o.y<360);points+=1;obs.forEach(o=>{if(Math.abs(o.x-car)<38&&o.y>245&&o.y<315)over=true})}x.fillStyle='#38bdf8';x.fillRect(car,267,42,52);x.fillStyle='#bae6fd';x.fillRect(car+7,274,28,13);obs.forEach(o=>{x.fillStyle='#fb7185';x.fillRect(o.x, o.y,42,54);x.fillStyle='#fecdd3';x.fillRect(o.x+7,o.y+7,28,12)});score.textContent='Score: '+Math.floor(points);if(over){x.fillStyle='#0009';x.fillRect(0,0,600,330);x.fillStyle='white';x.font='bold 32px system-ui';x.textAlign='center';x.fillText('CRASH! Score '+Math.floor(points),300,160);x.font='16px system-ui';x.fillText('Press RESTART to race again',300,195)}else raf=requestAnimationFrame(loop)}window.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='a')keys.left=true;if(e.key==='ArrowRight'||e.key==='d')keys.right=true};window.onkeyup=e=>{keys.left=false;keys.right=false};loop()}
-function tower(){let g=canvas('🧱 Tower Builder','Tap DROP when the moving block lines up. Build the tallest tower.');let {c,x,score,controls}=g,blocks=[{x:205,w:190,y:290}],moving={x:0,w:190,dir:1},level=1,over=false;function draw(){x.fillStyle='#111827';x.fillRect(0,0,600,330);x.fillStyle='#a78bfa';blocks.forEach((b,i)=>{x.fillRect(b.x,b.y, b.w,24);x.fillStyle='#ddd6fe';x.fillRect(b.x,b.y,b.w,4);x.fillStyle='#a78bfa'});if(!over){x.fillStyle='#f472b6';x.fillRect(moving.x,blocks[blocks.length-1].y-27,moving.w,24);moving.x+=moving.dir*3.2;if(moving.x<0||moving.x+moving.w>600)moving.dir*=-1}score.textContent='Floor: '+(blocks.length-1);if(over){x.fillStyle='white';x.font='bold 30px system-ui';x.textAlign='center';x.fillText('Tower complete! '+(blocks.length-1)+' floors',300,165)}else raf=requestAnimationFrame(draw)}function drop(){if(over)return;let prev=blocks[blocks.length-1],left=Math.max(prev.x,moving.x),right=Math.min(prev.x+prev.w,moving.x+moving.w),w=right-left;if(w<12){over=true;return}blocks.push({x:left,w,y:prev.y-27});moving={x:0,w,dir:1};if(blocks.length>10){blocks.forEach(b=>b.y+=24);blocks[0].y=290} }control(controls,'DROP BLOCK',drop);control(controls,'↻ RESTART',()=>{stop();tower()});draw()}
+function tower(){
+ let g=canvas('🧱 Tower Builder','Time your drop! Stack moving blocks, keep the tower balanced and build as high as you can.'),
+ {c,x,score,controls}=g;
+ let blocks=[],moving=null,level=0,over=false,frame=0,perfects=0;
+ function reset(){blocks=[{x:190,w:220,y:285}];moving={x:0,w:220,dir:1};level=0;over=false;frame=0;perfects=0;}
+ function draw(){
+  x.fillStyle='#10172d';x.fillRect(0,0,600,330);
+  for(let i=0;i<24;i++){x.fillStyle='#ffffff0a';x.fillRect(i*27,0,1,330);}
+  x.fillStyle='#263653';x.fillRect(0,310,600,20);
+  blocks.forEach((b,i)=>{let hue=(265+i*19)%360;x.fillStyle='hsl('+hue+',75%,62%)';x.fillRect(b.x,b.y,b.w,25);x.fillStyle='#ffffff66';x.fillRect(b.x,b.y,b.w,4);});
+  if(!over&&moving){x.fillStyle='#f472b6';x.fillRect(moving.x,blocks[blocks.length-1].y-28,moving.w,25);x.fillStyle='#ffffff88';x.fillRect(moving.x,blocks[blocks.length-1].y-28,moving.w,4);}
+  score.textContent='Floors: '+level+'  ·  Perfect drops: '+perfects;
+  if(over){x.fillStyle='#020617cc';x.fillRect(0,0,600,330);x.fillStyle='white';x.textAlign='center';x.font='bold 30px system-ui';x.fillText('Tower collapsed!',300,145);x.font='17px system-ui';x.fillText('You built '+level+' floors · '+perfects+' perfect drops',300,180);x.font='14px system-ui';x.fillText('Press RESTART to try again',300,208);}
+  else raf=requestAnimationFrame(draw);
+ }
+ function drop(){
+  if(over||!moving)return;
+  const prev=blocks[blocks.length-1],left=Math.max(prev.x,moving.x),right=Math.min(prev.x+prev.w,moving.x+moving.w),w=right-left;
+  if(w<13){over=true;moving=null;return;}
+  if(Math.abs(w-prev.w)<9)perfects++;
+  const y=prev.y-28;
+  blocks.push({x:left,w,y});level++;
+  if(blocks.length>9)blocks.forEach(v=>v.y+=28);
+  moving={x:moving.dir>0?0:600-w,w,dir:moving.dir,speed:Math.min(7,2.5+level*.18)};
+  moving.dir=moving.dir||1;
+ }
+ function tick(){if(moving&&!over){moving.x+=moving.dir*(moving.speed||2.5);if(moving.x<=0){moving.x=0;moving.dir=1;}if(moving.x+moving.w>=600){moving.x=600-moving.w;moving.dir=-1;}}}
+ const originalDraw=draw;
+ function animate(){tick();originalDraw();}
+ control(controls,'DROP BLOCK',drop);
+ control(controls,'↻ RESTART',()=>{stop();reset();animate();});
+ c.addEventListener('pointerdown',drop);
+ reset();animate();
+}
 function fruit(){let g=canvas('🍉 Fruit Slice','Tap or swipe across the fruits. Avoid bombs. 30-second round.');let {c,x,score,controls}=g,items=[],points=0,frame=0,left=30,over=false;control(controls,'START / RESTART',()=>{stop();items=[];points=0;frame=0;left=30;over=false;loop()});function hit(e){if(over)return;let r=c.getBoundingClientRect(),px=(e.clientX-r.left)*600/r.width,py=(e.clientY-r.top)*330/r.height;items.forEach(o=>{if(!o.hit&&Math.hypot(o.x-px,o.y-py)<o.r+15){o.hit=true;if(o.bomb)over=true;else points++}})}c.addEventListener('pointerdown',hit);function loop(){frame++;if(frame%60===0)left--;if(frame%34===0)items.push({x:40+Math.random()*520,y:340,vx:(Math.random()-.5)*3,vy:-8-Math.random()*3,r:18+Math.random()*8,bomb:Math.random()<.18,hit:false});x.fillStyle='#111827';x.fillRect(0,0,600,330);items.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=.18;x.beginPath();x.fillStyle=o.bomb?'#475569':['#f43f5e','#22c55e','#facc15','#a78bfa'][Math.floor(o.x)%4];x.arc(o.x,o.y,o.r,0,Math.PI*2);x.fill();x.fillStyle='white';x.font='18px system-ui';x.textAlign='center';x.fillText(o.bomb?'✹':'✦',o.x,o.y+6)});items=items.filter(o=>o.y<370&&!o.hit);score.textContent='Score: '+points+' · Time: '+left+'s';if(left<=0)over=true;if(over){x.fillStyle='white';x.font='bold 28px system-ui';x.textAlign='center';x.fillText('Round over · '+points+' points',300,165)}else raf=requestAnimationFrame(loop)}loop()}
 function runner(){let g=canvas('🏃 Neon Runner','Jump over glowing barriers. Tap JUMP or press Space.');let {c,x,score,controls}=g,py=255,vy=0,obs=[],points=0,frame=0,over=false;control(controls,'⬆ JUMP',()=>{if(py>=254)vy=-12});control(controls,'↻ RESTART',()=>{stop();runner()});window.onkeydown=e=>{if(e.code==='Space'||e.key==='ArrowUp'){e.preventDefault();if(py>=254)vy=-12}};function loop(){frame++;x.fillStyle='#080d22';x.fillRect(0,0,600,330);x.strokeStyle='#22d3ee';x.lineWidth=3;x.beginPath();x.moveTo(0,285);x.lineTo(600,285);x.stroke();if(!over){py+=vy;vy+=.55;if(py>255){py=255;vy=0}if(frame%65===0)obs.push({x:610});obs.forEach(o=>o.x-=5);obs=obs.filter(o=>o.x>-40);points++;obs.forEach(o=>{if(o.x<115&&o.x>65&&py>220)over=true})}x.fillStyle='#a78bfa';x.fillRect(85,py,35,30);x.fillStyle='#22d3ee';obs.forEach(o=>x.fillRect(o.x,245,24,40));score.textContent='Distance: '+Math.floor(points/5);if(over){x.fillStyle='white';x.font='bold 30px system-ui';x.textAlign='center';x.fillText('RUN OVER! '+Math.floor(points/5),300,160)}else raf=requestAnimationFrame(loop)}loop()}
 function bubble(){
@@ -3136,7 +3169,44 @@ function bubble(){
  control(controls,'NEW GAME',()=>{stop();reset();tick();});
  reset();tick();
 }
-function golf(){let g=canvas('⛳ Mini Golf','Drag from the ball backwards to aim and set power, then release to putt.');let {c,x,score,controls}=g,ball={x:95,y:260,vx:0,vy:0},hole={x:510,y:90},strokes=0,drag=null,done=false;function draw(){x.fillStyle='#14532d';x.fillRect(0,0,600,330);x.fillStyle='#166534';x.fillRect(15,15,570,300);x.beginPath();x.fillStyle='#020617';x.arc(hole.x,hole.y,17,0,Math.PI*2);x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.beginPath();x.moveTo(hole.x,hole.y-5);x.lineTo(hole.x,hole.y-65);x.stroke();if(!done){ball.x+=ball.vx;ball.y+=ball.vy;ball.vx*=.985;ball.vy*=.985;if(Math.abs(ball.vx)+Math.abs(ball.vy)<.12){ball.vx=0;ball.vy=0}if(Math.hypot(ball.x-hole.x,ball.y-hole.y)<18&&ball.vx===0&&ball.vy===0)done=true}x.beginPath();x.fillStyle='#f8fafc';x.arc(ball.x,ball.y,9,0,Math.PI*2);x.fill();if(drag){x.strokeStyle='#facc15';x.lineWidth=3;x.beginPath();x.moveTo(ball.x,ball.y);x.lineTo(drag.x,drag.y);x.stroke()}score.textContent='Strokes: '+strokes+(done?' · HOLE IN!':'');if(!done)raf=requestAnimationFrame(draw)}c.onpointerdown=e=>{let r=c.getBoundingClientRect(),px=(e.clientX-r.left)*600/r.width,py=(e.clientY-r.top)*330/r.height;if(Math.hypot(px-ball.x,py-ball.y)<35&&!ball.vx&&!ball.vy)drag={x:px,y:py}};c.onpointermove=e=>{if(drag){let r=c.getBoundingClientRect();drag.x=(e.clientX-r.left)*600/r.width;drag.y=(e.clientY-r.top)*330/r.height}};c.onpointerup=()=>{if(drag){ball.vx=Math.max(-9,Math.min(9,(ball.x-drag.x)*.08));ball.vy=Math.max(-9,Math.min(9,(ball.y-drag.y)*.08));if(Math.abs(ball.vx)+Math.abs(ball.vy)>.4)strokes++;drag=null}};control(controls,'↻ NEW HOLE',()=>{stop();golf()});draw()}
+function golf(){
+ let g=canvas('⛳ Mini Golf','Drag backwards from the ball to aim. Release to putt. Avoid the bumpers and sink the ball.'),
+ {c,x,score,controls}=g;
+ let ball={x:82,y:260,vx:0,vy:0},hole={x:515,y:72},strokes=0,drag=null,done=false,frame=0;
+ const walls=[{x:205,y:80,w:22,h:150},{x:365,y:155,w:22,h:135}];
+ function reset(){ball={x:82,y:260,vx:0,vy:0};strokes=0;drag=null;done=false;frame=0;}
+ function roundedRect(px,py,w,h,r,color){x.fillStyle=color;x.beginPath();x.roundRect(px,py,w,h,r);x.fill();}
+ function draw(){
+  x.fillStyle='#0f172a';x.fillRect(0,0,600,330);
+  roundedRect(12,12,576,306,22,'#166534');
+  x.strokeStyle='#86efac';x.lineWidth=3;x.setLineDash([8,8]);x.strokeRect(24,24,552,282);x.setLineDash([]);
+  x.fillStyle='#052e16';x.beginPath();x.arc(hole.x,hole.y,19,0,Math.PI*2);x.fill();
+  x.strokeStyle='#f8fafc';x.lineWidth=3;x.beginPath();x.moveTo(hole.x+5,hole.y-5);x.lineTo(hole.x+5,hole.y-55);x.stroke();
+  x.fillStyle='#fb7185';x.beginPath();x.moveTo(hole.x+5,hole.y-55);x.lineTo(hole.x+35,hole.y-46);x.lineTo(hole.x+5,hole.y-36);x.fill();
+  walls.forEach(w=>{roundedRect(w.x,w.y,w.w,w.h,8,'#94a3b8');roundedRect(w.x+4,w.y+4,5,w.h-8,3,'#e2e8f0');});
+  if(!done){
+   ball.x+=ball.vx;ball.y+=ball.vy;
+   if(ball.x<34||ball.x>566){ball.vx*=-.72;ball.x=Math.max(34,Math.min(566,ball.x));}
+   if(ball.y<34||ball.y>296){ball.vy*=-.72;ball.y=Math.max(34,Math.min(296,ball.y));}
+   walls.forEach(w=>{if(ball.x+8>w.x&&ball.x-8<w.x+w.w&&ball.y+8>w.y&&ball.y-8<w.y+w.h){if(ball.x<w.x||ball.x>w.x+w.w)ball.vx*=-.78;else ball.vy*=-.78;}});
+   ball.vx*=.986;ball.vy*=.986;
+   if(Math.abs(ball.vx)+Math.abs(ball.vy)<.13){ball.vx=0;ball.vy=0;}
+   const dist=Math.hypot(ball.x-hole.x,ball.y-hole.y);
+   if(dist<19&&Math.hypot(ball.vx,ball.vy)<2.2){ball.x=hole.x;ball.y=hole.y;ball.vx=0;ball.vy=0;done=true;}
+  }
+  if(drag&&!done){x.strokeStyle='#facc15';x.lineWidth=4;x.setLineDash([7,5]);x.beginPath();x.moveTo(ball.x,ball.y);x.lineTo(drag.x,drag.y);x.stroke();x.setLineDash([]);const power=Math.min(100,Math.round(Math.hypot(ball.x-drag.x,ball.y-drag.y)*1.4));x.fillStyle='#f8fafc';x.font='13px system-ui';x.fillText('Power '+power+'%',18,300);}
+  x.beginPath();x.fillStyle='#ffffff';x.arc(ball.x,ball.y,9,0,Math.PI*2);x.fill();x.beginPath();x.fillStyle='#94a3b8';x.arc(ball.x-3,ball.y-3,3,0,Math.PI*2);x.fill();
+  score.textContent='Strokes: '+strokes+(done?'  ·  HOLE IN! 🏆':'  ·  Par 3');
+  if(done){x.fillStyle='#ffffff';x.textAlign='center';x.font='bold 23px system-ui';x.fillText('Great putt!',300,170);x.font='15px system-ui';x.fillText('You finished in '+strokes+' stroke(s)',300,196);}
+  else raf=requestAnimationFrame(draw);
+ }
+ function point(e){const r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*330/r.height};}
+ c.addEventListener('pointerdown',e=>{const p=point(e);if(!done&&!ball.vx&&!ball.vy&&Math.hypot(p.x-ball.x,p.y-ball.y)<32){drag=p;c.setPointerCapture(e.pointerId);}});
+ c.addEventListener('pointermove',e=>{if(drag){drag=point(e);}});
+ c.addEventListener('pointerup',()=>{if(!drag||done)return;const dx=ball.x-drag.x,dy=ball.y-drag.y,len=Math.hypot(dx,dy),power=Math.min(12,len*.075);if(len>5){ball.vx=dx/len*power;ball.vy=dy/len*power;strokes++;}drag=null;});
+ control(controls,'↻ NEW HOLE',()=>{stop();reset();draw();});
+ reset();draw();
+}
 function quiz(){let qs=[['Which planet is known as the Red Planet?',['Venus','Mars','Jupiter'],1],['How many sides does a hexagon have?',['5','6','8'],1],['What is 12 × 8?',['86','96','108'],1],['Which gas do plants absorb?',['Oxygen','Carbon dioxide','Nitrogen'],1],['What is the largest ocean?',['Atlantic','Indian','Pacific'],2],['How many minutes are in 2 hours?',['100','120','140'],1],['Which is a primary color?',['Green','Red','Pink'],1],['What is the square root of 81?',['8','9','10'],1]];let q=0,s=0;function draw(){panel.innerHTML='<h2>🏆 Quiz Battle</h2><p class="muted">Answer eight quick questions and beat your score.</p><div class="score">Score: '+s+' / 8</div><h3>'+qs[q][0]+'</h3><div id="opts"></div><p id="msg" class="muted"></p>';qs[q][1].forEach((v,i)=>{let b=document.createElement('button');b.className='quizopt';b.textContent=v;b.onclick=()=>{if(b.disabled)return;[...document.querySelectorAll('.quizopt')].forEach(z=>z.disabled=true);if(i===qs[q][2])s++;document.getElementById('msg').textContent=i===qs[q][2]?'Correct!':'Correct answer: '+qs[q][1][qs[q][2]];panel.appendChild(btn(q===7?'FINISH':'NEXT QUESTION',()=>{if(q===7){panel.innerHTML='<h2>Challenge complete!</h2><div class="score">Final score: '+s+'/8</div>';panel.appendChild(btn('PLAY AGAIN',()=>{q=0;s=0;draw()}))}else{q++;draw()}}))};document.getElementById('opts').appendChild(b)})}draw()}
 function game2048(){let board=Array(16).fill(0),scoreN=0;function add(){let z=board.map((v,i)=>v?null:i).filter(v=>v!==null);if(z.length)board[z[Math.floor(Math.random()*z.length)]]=Math.random()<.9?2:4}function draw(){panel.innerHTML='<h2>🔢 2048 Challenge</h2><p class="muted">Use arrow keys or swipe. Combine matching numbers to reach 2048.</p><p class="score">Score: '+scoreN+'</p><div class="board">'+board.map(v=>'<div class="cell" style="background:'+(v?'hsl('+(35+Math.log2(v)*18)+',65%,42%)':'#26334d')+'">'+(v||'')+'</div>').join('')+'</div>';panel.appendChild(btn('NEW GAME',()=>{board=Array(16).fill(0);scoreN=0;add();add();draw()}))}function move(d){let old=board.slice();for(let l=0;l<4;l++){let ids=[];for(let j=0;j<4;j++){let r=d==='up'?j:d==='down'?3-j:l,c=d==='left'?j:d==='right'?3-j:l;ids.push(r*4+c)}let vals=ids.map(i=>board[i]).filter(Boolean);for(let j=0;j<vals.length-1;j++)if(vals[j]===vals[j+1]){vals[j]*=2;scoreN+=vals[j];vals.splice(j+1,1)}while(vals.length<4)vals.push(0);ids.forEach((id,j)=>board[id]=vals[j])}if(old.some((v,i)=>v!==board[i]))add();draw()}window.onkeydown=e=>{let m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};if(m[e.key]){e.preventDefault();move(m[e.key])}};let sx=0,sy=0;panel.ontouchstart=e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY};panel.ontouchend=e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))>25)move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))};board=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];add();add();draw()}
 start();
