@@ -3634,18 +3634,8 @@ def main():
         if st.button("♧  Game Zone", key="side_game", use_container_width=True):
             st.query_params["page"] = "game"; st.rerun()
         st.markdown('<div class="dt-side-label">Account</div><div class="dt-side-foot">● &nbsp; Secure session<br><span style="color:#a69bb6">Dreamztree reporting workspace</span></div>', unsafe_allow_html=True)
-
-    # Compact utility row: actions and editable reporting date share one line,
-    # eliminating the large empty area left by the removed hero/header.
-    game_col, chat_col, signout_col, date_col = st.columns([1.0,  1.0, .82, 1.35], vertical_alignment="center")
-    with game_col:
-        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
-            st.query_params["page"] = "game"; st.rerun()
-    with chat_col:
-        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
-            st.query_params["page"] = "chat"; st.rerun()
-    with signout_col:
-        if st.button("Sign out", key="sign_out_main", use_container_width=True):
+        st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
+        if st.button("↪  Sign Out", key="side_sign_out", use_container_width=True):
             _delete_auth_cookie()
             if st.session_state.get("auth_method") == "supabase":
                 try:
@@ -3656,6 +3646,15 @@ def main():
             st.session_state.pop("authenticated_user", None); st.session_state.pop("auth_method", None)
             st.session_state.pop("supabase_access_token", None); st.session_state.pop("supabase_refresh_token", None)
             st.rerun()
+
+    # Compact utility row: navigation shortcuts and reporting date share one line.
+    game_col, chat_col, date_col = st.columns([1.0, 1.0, 1.35], vertical_alignment="center")
+    with game_col:
+        if st.button("🎮 Game Zone", key="open_game_zone_main", use_container_width=True):
+            st.query_params["page"] = "game"; st.rerun()
+    with chat_col:
+        if st.button("💬 Team Chat", key="open_team_chat_main", use_container_width=True):
+            st.query_params["page"] = "chat"; st.rerun()
     with date_col:
         st.markdown('<div class="dt-date-shell"><div class="dt-date-caption">Report Date</div>', unsafe_allow_html=True)
         date_value = st.date_input("Reporting date", value=datetime.today().date(), key="reporting_date_selector", label_visibility="collapsed", help="Choose the date used in report headings and downloaded files.")
