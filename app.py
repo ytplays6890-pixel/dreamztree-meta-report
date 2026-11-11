@@ -551,6 +551,8 @@ def infer_campaign(name, mappings):
         (r"\btestimonial\s+healthcare\b", "Healthcare"),
         (r"\bnursing\s+tutor\b", "Nursing Tutor"),
         (r"\bhospital\s+administration\b|\bhospital\s+admin\b", "Hospital Admin"),
+        (r"\boffice\s+management\b", "Office Management"),
+        (r"\bhigher\s+education\b", "Higher Education"),
         (r"\bteacher\s+training\b", "Teacher Training"),
         (r"\blanguage\s+training\b", "Language Training"),
         (r"\bdigital\s+marketing\b|\bdm\b", "Digital Marketing"),
