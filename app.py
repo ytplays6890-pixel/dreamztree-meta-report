@@ -3217,7 +3217,141 @@ function golf(){
  control(controls,'NEW GAME',()=>{stop();total=0;loadLevel(0);draw();});
  loadLevel(0);draw();
 }
-function quiz(){let qs=[['Which planet is known as the Red Planet?',['Venus','Mars','Jupiter'],1],['How many sides does a hexagon have?',['5','6','8'],1],['What is 12 × 8?',['86','96','108'],1],['Which gas do plants absorb?',['Oxygen','Carbon dioxide','Nitrogen'],1],['What is the largest ocean?',['Atlantic','Indian','Pacific'],2],['How many minutes are in 2 hours?',['100','120','140'],1],['Which is a primary color?',['Green','Red','Pink'],1],['What is the square root of 81?',['8','9','10'],1]];let q=0,s=0;function draw(){panel.innerHTML='<h2>🏆 Quiz Battle</h2><p class="muted">Answer eight quick questions and beat your score.</p><div class="score">Score: '+s+' / 8</div><h3>'+qs[q][0]+'</h3><div id="opts"></div><p id="msg" class="muted"></p>';qs[q][1].forEach((v,i)=>{let b=document.createElement('button');b.className='quizopt';b.textContent=v;b.onclick=()=>{if(b.disabled)return;[...document.querySelectorAll('.quizopt')].forEach(z=>z.disabled=true);if(i===qs[q][2])s++;document.getElementById('msg').textContent=i===qs[q][2]?'Correct!':'Correct answer: '+qs[q][1][qs[q][2]];panel.appendChild(btn(q===7?'FINISH':'NEXT QUESTION',()=>{if(q===7){panel.innerHTML='<h2>Challenge complete!</h2><div class="score">Final score: '+s+'/8</div>';panel.appendChild(btn('PLAY AGAIN',()=>{q=0;s=0;draw()}))}else{q++;draw()}}))};document.getElementById('opts').appendChild(b)})}draw()}
+function quiz(){
+ const bank=[
+ ['Science','Which planet has the most prominent ring system?',['Saturn','Mars','Venus','Mercury'],0],
+ ['Geography','What is the capital of Japan?',['Kyoto','Tokyo','Osaka','Nagoya'],1],
+ ['Technology','What does CPU stand for?',['Central Processing Unit','Computer Power Utility','Core Program Upload','Central Performance User'],0],
+ ['Nature','What is the largest mammal on Earth?',['African elephant','Blue whale','Giraffe','Orca'],1],
+ ['Maths','What is 15% of 200?',['20','25','30','35'],2],
+ ['History','The ancient pyramids of Giza are in which country?',['Mexico','Greece','Egypt','Peru'],2],
+ ['Space','Which star is closest to Earth?',['Sirius','Polaris','The Sun','Proxima Centauri'],2],
+ ['Sports','How many players from one football team are on the field at kickoff?',['9','10','11','12'],2],
+ ['Literature','Who wrote Romeo and Juliet?',['Charles Dickens','William Shakespeare','Jane Austen','Mark Twain'],1],
+ ['Human Body','Which organ pumps blood around the body?',['Lungs','Liver','Heart','Kidneys'],2],
+ ['Geography','Which is the smallest continent by land area?',['Europe','Australia','South America','Antarctica'],1],
+ ['Science','What is the chemical symbol for gold?',['Ag','Gd','Au','Go'],2],
+ ['Technology','Which of these is a web browser?',['Linux','Firefox','Python','Bluetooth'],1],
+ ['Nature','What do bees collect from flowers to make honey?',['Nectar','Dew','Sap','Pollen only'],0],
+ ['Maths','What is the square of 12?',['124','132','144','156'],2],
+ ['History','Who was the first person to walk on the Moon?',['Buzz Aldrin','Yuri Gagarin','Neil Armstrong','Michael Collins'],2],
+ ['Space','Which planet is famous for its Great Red Spot?',['Jupiter','Neptune','Uranus','Mercury'],0],
+ ['Sports','In tennis, what word means a score of zero?',['Nil','Love','Blank','Duck'],1],
+ ['Food','Which vitamin is commonly produced in skin through sunlight exposure?',['Vitamin A','Vitamin B12','Vitamin C','Vitamin D'],3],
+ ['Geography','The River Nile flows into which sea?',['Red Sea','Arabian Sea','Mediterranean Sea','Black Sea'],2],
+ ['Science','At sea level, water boils at what temperature in Celsius?',['90°C','95°C','100°C','110°C'],2],
+ ['Technology','What does URL stand for?',['Uniform Resource Locator','Universal Reading Link','User Route List','Unified Reference Line'],0],
+ ['Nature','What is a baby frog called?',['Cub','Tadpole','Chick','Larva'],1],
+ ['Maths','What is 7 × 9?',['56','63','72','79'],1],
+ ['History','Which civilisation built Machu Picchu?',['Maya','Roman','Inca','Aztec'],2],
+ ['Space','What force keeps planets in orbit around the Sun?',['Magnetism','Friction','Gravity','Electricity'],2],
+ ['Sports','How many rings are on the Olympic symbol?',['Four','Five','Six','Seven'],1],
+ ['Literature','Who created the fictional detective Sherlock Holmes?',['Arthur Conan Doyle','Agatha Christie','Jules Verne','H. G. Wells'],0],
+ ['Human Body','How many chambers does a human heart have?',['Two','Three','Four','Five'],2],
+ ['Geography','Which country has the largest population?',['India','United States','Indonesia','Brazil'],0],
+ ['Science','Which gas makes up most of Earth’s atmosphere?',['Oxygen','Nitrogen','Carbon dioxide','Hydrogen'],1],
+ ['Technology','Which company developed the Android operating system initially?',['Apple','Microsoft','Google','IBM'],2],
+ ['Nature','What is the process by which plants make food using sunlight?',['Respiration','Photosynthesis','Fermentation','Pollination'],1],
+ ['Maths','What is the perimeter of a square with sides of 6 cm?',['12 cm','18 cm','24 cm','36 cm'],2],
+ ['History','In which year did World War II end?',['1943','1944','1945','1946'],2],
+ ['Space','Which planet is known as the Red Planet?',['Venus','Mars','Jupiter','Saturn'],1],
+ ['Sports','In cricket, how many runs is a boundary worth when the ball reaches the rope without bouncing?',['Two','Four','Five','Six'],3],
+ ['Food','Which grain is traditionally used to make risotto?',['Basmati rice','Arborio rice','Barley','Quinoa'],1],
+ ['Geography','Mount Fuji is located in which country?',['China','South Korea','Japan','Thailand'],2],
+ ['Science','What is the hardest naturally occurring mineral?',['Quartz','Diamond','Topaz','Granite'],1],
+ ['Technology','What does the “www” in a website address mean?',['World Wide Web','Web Window Widget','Wide World Wire','World Web Window'],0],
+ ['Nature','Which animal is known for changing its skin colour to blend in?',['Cheetah','Chameleon','Kangaroo','Panda'],1],
+ ['Maths','What is the next prime number after 7?',['9','10','11','13'],2],
+ ['History','The Great Wall is most associated with which country?',['Japan','China','India','Mongolia'],1],
+ ['Space','What is the name of our galaxy?',['Andromeda','Whirlpool','Milky Way','Sombrero'],2],
+ ['Sports','Which sport uses a shuttlecock?',['Squash','Badminton','Table tennis','Lacrosse'],1],
+ ['Literature','Who wrote The Jungle Book?',['Rudyard Kipling','Roald Dahl','J. R. R. Tolkien','C. S. Lewis'],0],
+ ['Human Body','Which part of the eye controls how much light enters?',['Retina','Cornea','Iris','Optic nerve'],2],
+ ['Geography','Which desert is the largest hot desert in the world?',['Gobi','Sahara','Kalahari','Atacama'],1],
+ ['Science','What is the pH value of a neutral solution at 25°C?',['0','5','7','14'],2],
+ ['Technology','Which language is primarily used to style web pages?',['HTML','CSS','SQL','C'],1],
+ ['Nature','What is the name for animals that are active mainly at night?',['Diurnal','Nocturnal','Aquatic','Arboreal'],1],
+ ['Maths','How many degrees are in a right angle?',['45','60','90','180'],2],
+ ['History','Who was the first President of the United States?',['Abraham Lincoln','George Washington','John Adams','Thomas Jefferson'],1],
+ ['Space','Which planet has the shortest year?',['Mercury','Earth','Mars','Neptune'],0],
+ ['Sports','How many points is a successful free throw worth in basketball?',['One','Two','Three','Four'],0],
+ ['Food','Which spice gives many curry dishes a yellow colour?',['Cinnamon','Turmeric','Paprika','Clove'],1],
+ ['Geography','What is the capital of Canada?',['Toronto','Vancouver','Ottawa','Montreal'],2],
+ ['Science','Which instrument measures temperature?',['Barometer','Thermometer','Hygrometer','Anemometer'],1],
+ ['Technology','What is the common file extension for a JavaScript file?',['.java','.js','.py','.css'],1],
+ ['Nature','Which bird is famous for its ability to mimic human speech?',['Eagle','Parrot','Penguin','Ostrich'],1],
+ ['Maths','What is three-quarters written as a percentage?',['25%','50%','75%','80%'],2],
+ ['History','Which ship famously sank in 1912 after hitting an iceberg?',['Britannic','Lusitania','Titanic','Endurance'],2],
+ ['Space','What is the name of the first artificial satellite launched into space?',['Apollo 11','Sputnik 1','Voyager 1','Hubble'],1],
+ ['Sports','Which country hosted the 2016 Summer Olympics?',['China','Brazil','United Kingdom','Japan'],1],
+ ['Literature','Which fictional school does Harry Potter attend?',['Narnia Academy','Hogwarts','Nevermore','Wellington'],1],
+ ['Human Body','Which blood cells help the body fight infections?',['Red blood cells','White blood cells','Platelets','Plasma cells'],1],
+ ['Geography','Which ocean lies between Africa and Australia?',['Atlantic','Arctic','Indian','Southern'],2],
+ ['Science','Which state of matter has a fixed volume but no fixed shape?',['Solid','Liquid','Gas','Plasma'],1],
+ ['Technology','What does Wi-Fi allow devices to do?',['Print without ink','Connect to a wireless network','Increase screen brightness','Charge wirelessly'],1],
+ ['Nature','What is the fastest land animal?',['Lion','Cheetah','Horse','Leopard'],1],
+ ['Maths','What is 144 divided by 12?',['10','11','12','14'],2],
+ ['History','Which ancient city was buried by the eruption of Mount Vesuvius?',['Athens','Pompeii','Sparta','Carthage'],1],
+ ['Space','What is the name of the closest large galaxy to the Milky Way?',['Andromeda','Triangulum','Whirlpool','Pinwheel'],0],
+ ['Sports','In volleyball, how many players per team are on court?',['Five','Six','Seven','Eight'],1],
+ ['Food','Which country is widely associated with the origin of sushi?',['Thailand','Japan','Vietnam','South Korea'],1],
+ ['Geography','What is the capital of Australia?',['Sydney','Melbourne','Canberra','Perth'],2],
+ ['Science','Which particle has a negative electric charge?',['Proton','Neutron','Electron','Photon'],2],
+ ['Technology','What is phishing?',['A way to compress files','A fraudulent attempt to steal sensitive information','A computer cooling method','A type of monitor'],1],
+ ['Nature','What is a group of lions called?',['Pack','Flock','Pride','Colony'],2],
+ ['Maths','What is 5 cubed (5 × 5 × 5)?',['25','75','100','125'],3],
+ ['History','Which explorer’s 1492 voyage reached the Caribbean?',['Ferdinand Magellan','Christopher Columbus','James Cook','Marco Polo'],1],
+ ['Space','Which planet is farthest from the Sun in our solar system?',['Uranus','Saturn','Neptune','Jupiter'],2],
+ ['Sports','Which sport is played at Wimbledon?',['Golf','Tennis','Cricket','Rugby'],1],
+ ['Literature','Who wrote the novel 1984?',['George Orwell','Aldous Huxley','Ernest Hemingway','F. Scott Fitzgerald'],0],
+ ['Human Body','Which bones protect the brain?',['Ribs','Vertebrae','Skull','Pelvis'],2],
+ ['Geography','Which line divides Earth into the Northern and Southern Hemispheres?',['Prime Meridian','Equator','Tropic of Cancer','International Date Line'],1],
+ ['Science','Which metal is liquid at ordinary room temperature?',['Iron','Mercury','Aluminium','Copper'],1],
+ ['Nature','Which ecosystem is dominated by grasses and has few trees?',['Grassland','Tundra','Coral reef','Rainforest'],0],
+ ['Maths','What is the median of 3, 8, and 10?',['3','8','10','21'],1],
+ ['History','Which empire was ruled from Constantinople for much of its history?',['Mongol Empire','Byzantine Empire','Mali Empire','Mughal Empire'],1],
+ ['Space','What do we call a rock from space that reaches Earth’s surface?',['Asteroid','Meteorite','Comet','Nebula'],1],
+ ['Sports','In chess, which piece moves in an L-shape?',['Bishop','Rook','Knight','Queen'],2],
+ ['Food','Which ingredient is essential for traditional bread to rise through fermentation?',['Yeast','Vinegar','Salt only','Oil'],0]
+ ];
+ const usedKey='dreamztree_quiz_used_v3',roundKey='dreamztree_quiz_round_v3';
+ let used=new Set();
+ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+ function makeRound(){
+  let available=bank.map((_,i)=>i).filter(i=>!used.has(i)),cycled=false;
+  if(available.length<15){used.clear();available=bank.map((_,i)=>i);cycled=true;}
+  const chosen=shuffle(available).slice(0,15);chosen.forEach(i=>used.add(i));
+  try{sessionStorage.setItem(usedKey,JSON.stringify([...used]));}catch(e){}
+  return {chosen,cycled};
+ }
+ try{used=new Set(JSON.parse(sessionStorage.getItem(usedKey)||'[]'));}catch(e){used=new Set();}
+ let round=makeRound(),q=0,points=0,locked=false,roundNo=Number(sessionStorage.getItem(roundKey)||0)+1;
+ function render(){
+  if(q>=15){finish();return;}
+  const item=bank[round.chosen[q]],opts=item[2].map((label,i)=>({label,correct:i===item[3]}));
+  shuffle(opts);locked=false;
+  panel.innerHTML='<h2>🏆 Quiz Battle</h2><p class="muted">Fresh questions every round · 15 questions per round</p><div class="score">Round '+roundNo+' · Question '+(q+1)+' / 15 · Score '+points+'</div><div style="height:7px;background:#334155;border-radius:9px;overflow:hidden;margin:10px 0 16px"><div style="height:100%;width:'+((q+1)/15*100)+'%;background:linear-gradient(90deg,#8b5cf6,#ec4899)"></div></div><p class="muted">'+item[0]+'</p><h3 style="line-height:1.4">'+item[1]+'</h3><div id="quizopts"></div><p id="quizmsg" class="muted" aria-live="polite"></p>';
+  const box=document.getElementById('quizopts');
+  opts.forEach(opt=>{
+   const b=document.createElement('button');b.className='quizopt';b.textContent=opt.label;
+   b.onclick=()=>{
+    if(locked)return;locked=true;
+    if(opt.correct){points++;document.getElementById('quizmsg').textContent='Correct! +1 point';}
+    else{document.getElementById('quizmsg').textContent='Not quite. Correct answer: '+item[2][item[3]];}
+    [...box.children].forEach(z=>z.disabled=true);
+    panel.appendChild(btn(q===14?'VIEW RESULTS':'NEXT QUESTION',()=>{q++;render();}));
+   };
+   box.appendChild(b);
+  });
+ }
+ function finish(){
+  try{sessionStorage.setItem(roundKey,String(roundNo));}catch(e){}
+  panel.innerHTML='<h2>🎉 Round '+roundNo+' completed!</h2><div class="score" style="font-size:25px">Your score: '+points+' / 15</div><p class="muted">'+(points===15?'Perfect score! Outstanding!':points>=11?'Excellent work!':points>=7?'Good effort — keep practising!':'Keep going. You can improve next round!')+'</p><p class="muted">Your next round will have 15 new questions. Questions are not repeated until the full question bank has been played.</p>';
+  panel.appendChild(btn('PLAY NEXT ROUND · 15 NEW QUESTIONS',()=>{roundNo++;round=makeRound();q=0;points=0;render();}));
+  panel.appendChild(btn('REPLAY THIS ROUND',()=>{q=0;points=0;render();}));
+ }
+ render();
+}
 function game2048(){let board=Array(16).fill(0),scoreN=0;function add(){let z=board.map((v,i)=>v?null:i).filter(v=>v!==null);if(z.length)board[z[Math.floor(Math.random()*z.length)]]=Math.random()<.9?2:4}function draw(){panel.innerHTML='<h2>🔢 2048 Challenge</h2><p class="muted">Use arrow keys or swipe. Combine matching numbers to reach 2048.</p><p class="score">Score: '+scoreN+'</p><div class="board">'+board.map(v=>'<div class="cell" style="background:'+(v?'hsl('+(35+Math.log2(v)*18)+',65%,42%)':'#26334d')+'">'+(v||'')+'</div>').join('')+'</div>';panel.appendChild(btn('NEW GAME',()=>{board=Array(16).fill(0);scoreN=0;add();add();draw()}))}function move(d){let old=board.slice();for(let l=0;l<4;l++){let ids=[];for(let j=0;j<4;j++){let r=d==='up'?j:d==='down'?3-j:l,c=d==='left'?j:d==='right'?3-j:l;ids.push(r*4+c)}let vals=ids.map(i=>board[i]).filter(Boolean);for(let j=0;j<vals.length-1;j++)if(vals[j]===vals[j+1]){vals[j]*=2;scoreN+=vals[j];vals.splice(j+1,1)}while(vals.length<4)vals.push(0);ids.forEach((id,j)=>board[id]=vals[j])}if(old.some((v,i)=>v!==board[i]))add();draw()}window.onkeydown=e=>{let m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};if(m[e.key]){e.preventDefault();move(m[e.key])}};let sx=0,sy=0;panel.ontouchstart=e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY};panel.ontouchend=e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))>25)move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))};board=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];add();add();draw()}
 start();
 </script></body></html>""", height=650, scrolling=False)
