@@ -281,7 +281,7 @@ def answer_report_question(metrics, question):
             top_name, top_count = ranked[0]
             lines = [f"**Staff with the most leads: {top_name} — {top_count:,} leads**", "", "| Staff | Total leads |", "|---|---:|"]
             lines.extend(f"| {name} | {count:,} |" for name, count in ranked)
-            return "\\n".join(lines)
+            return "\n".join(lines)
         return "No staff-attributed lead results are available in this report. Check the Staff assignments in the campaign mapping."
     if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost", "low cost branch", "cheapest branch", "best cpl"]):
         valid = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads", 0)) > 0]
