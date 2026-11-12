@@ -259,7 +259,7 @@ def answer_report_question(metrics, question):
                 lines = ["**Staff with hiring results in this report:**"]
                 for (staff_name, branch_name), count in sorted(grouped.items(), key=lambda item: item[1], reverse=True):
                     lines.append(f"- **{staff_name}** — {branch_name}: {count} hiring")
-                return "\\n".join(lines)
+                return "\n".join(lines)
             return "No hiring campaigns with both staff and branch assigned were found in this report."
         return "No hiring campaign data is available in this report. Check that the campaign course is mapped to a name containing 'Hiring'."
     # Staff lead questions are calculated locally from numeric campaign results.
