@@ -4890,6 +4890,52 @@ def main():
                         .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] p {
                           color:#d6deea!important;line-height:1.7!important;
                         }
+                        /* Distinct visual treatment for campaign risks and actions. */
+                        .st-key-dt_ai_analysis_panel .dt-risk-title {
+                          display:inline-flex;align-items:center;gap:8px;
+                          padding:8px 13px;border-radius:10px;
+                          color:#fecaca!important;font-weight:900!important;
+                          background:linear-gradient(100deg,rgba(127,29,29,.42),rgba(69,26,45,.25));
+                          border:1px solid rgba(248,113,113,.38);
+                          box-shadow:0 0 22px rgba(239,68,68,.10);
+                        }
+                        .st-key-dt_ai_analysis_panel .dt-action-title {
+                          display:inline-flex;align-items:center;gap:8px;
+                          padding:8px 13px;border-radius:10px;
+                          color:#bbf7d0!important;font-weight:900!important;
+                          background:linear-gradient(100deg,rgba(20,83,45,.40),rgba(6,78,59,.22));
+                          border:1px solid rgba(74,222,128,.30);
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h1:has(.dt-risk-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2:has(.dt-risk-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h3:has(.dt-risk-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h4:has(.dt-risk-title) {
+                          background:linear-gradient(100deg,rgba(127,29,29,.12),transparent)!important;
+                          border-color:rgba(248,113,113,.18)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h1:has(.dt-action-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2:has(.dt-action-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h3:has(.dt-action-title),
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h4:has(.dt-action-title) {
+                          background:linear-gradient(100deg,rgba(20,83,45,.16),transparent)!important;
+                          border-color:rgba(74,222,128,.18)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h1:has(.dt-risk-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2:has(.dt-risk-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h3:has(.dt-risk-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h4:has(.dt-risk-title) + ul li {
+                          background:linear-gradient(135deg,rgba(127,29,29,.30),rgba(69,26,45,.22))!important;
+                          border-color:rgba(248,113,113,.34)!important;
+                          box-shadow:inset 3px 0 0 #f87171,0 9px 22px rgba(0,0,0,.18)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h1:has(.dt-action-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2:has(.dt-action-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h3:has(.dt-action-title) + ul li,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h4:has(.dt-action-title) + ul li {
+                          background:linear-gradient(135deg,rgba(20,83,45,.27),rgba(6,78,59,.18))!important;
+                          border-color:rgba(74,222,128,.28)!important;
+                          box-shadow:inset 3px 0 0 #4ade80,0 9px 22px rgba(0,0,0,.16)!important;
+                        }
                         .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] strong {color:#fff!important}
                         @media(max-width:640px) {
                           .st-key-dt_ai_analysis_panel {padding:13px!important;border-radius:16px!important}
@@ -4899,7 +4945,15 @@ def main():
                         </style>
                         """, unsafe_allow_html=True)
                         with st.container(key="dt_ai_analysis_panel"):
-                            st.markdown(st.session_state["_dt_ai_analysis_result"])
+                            styled_analysis = str(st.session_state["_dt_ai_analysis_result"])
+                            styled_analysis = styled_analysis.replace(
+                                "Campaign Risks",
+                                "<span class='dt-risk-title'>🚨 Campaign Risks</span>"
+                            ).replace(
+                                "Practical Budget Recommendations",
+                                "<span class='dt-action-title'>✓ Practical Budget Recommendations</span>"
+                            )
+                            st.markdown(styled_analysis, unsafe_allow_html=True)
                     st.markdown("#### Chat with your reports")
                     question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
                     if st.button("Ask AI", key="dt_ai_ask") and question.strip():
