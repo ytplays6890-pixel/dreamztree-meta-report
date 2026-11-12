@@ -2309,18 +2309,25 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 
 
 
-def require_login():
-    """Use Supabase Auth for colleague registration and sign-in.
+OWNER_ADMIN_EMAILS = {"ytplays6890@gmail.com"}
 
-    Optional legacy admin credentials in [auth.users] remain supported so the
-    existing administrator can still sign in during the transition.
-    """
+def _is_admin_account(email):
+    return str(email or "").strip().lower() in OWNER_ADMIN_EMAILS
+
+def require_login():
+    """Use Supabase Auth and restore trusted owner status on every rerun."""
     if st.session_state.get("authenticated"):
+        method = st.session_state.get("auth_method", "")
+        email = st.session_state.get("authenticated_user", "")
+        st.session_state["is_admin"] = (method == "legacy") or _is_admin_account(email)
         return
 
     inject_christmas_snow()
     client = get_supabase_client()
     if _restore_auth_cookie(client):
+        method = st.session_state.get("auth_method", "")
+        email = st.session_state.get("authenticated_user", "")
+        st.session_state["is_admin"] = (method == "legacy") or _is_admin_account(email)
         return
     # Cookie restoration diagnostics stay in session state for server-side
     # troubleshooting; never display implementation details to end users.
@@ -2762,6 +2769,7 @@ def require_login():
                     st.session_state["authenticated"] = True
                     st.session_state["authenticated_user"] = login_id
                     st.session_state["auth_method"] = "legacy"
+                    st.session_state["is_admin"] = True
                     st.session_state["login_just_succeeded"] = True
                     _save_auth_cookie({"method": "legacy", "username": login_id})
                     st.rerun()
@@ -2781,6 +2789,7 @@ def require_login():
                                 response.user.email or login_id
                             )
                             st.session_state["auth_method"] = "supabase"
+                            st.session_state["is_admin"] = _is_admin_account(response.user.email or login_id)
                             st.session_state["login_just_succeeded"] = True
                             st.rerun()
                         else:
@@ -2838,6 +2847,7 @@ def require_login():
                             response.user.email or new_email
                         )
                         st.session_state["auth_method"] = "supabase"
+                        st.session_state["is_admin"] = _is_admin_account(response.user.email or new_email)
                         st.session_state["login_just_succeeded"] = True
                         # Profile details are optional; Auth remains the source of truth.
                         try:
@@ -3019,6 +3029,9 @@ const c=document.getElementById('c'),x=c.getContext('2d'),N=30,cols=20,rows=14;l
 
 
 def render_games_page():
+    is_admin = bool(st.session_state.get("is_admin", False))
+    if is_admin:
+        st.success("👑 ADMIN AUTO-PLAY ENABLED · Arcade games will complete automatically with maximum scores.")
     st.markdown("""
     <style>
     .games-hero{padding:24px 28px;border-radius:22px;background:linear-gradient(120deg,#6425d0,#e83e8c 52%,#ff9f43);color:white;margin:8px 0 20px;box-shadow:0 12px 35px #8b5cf633}
@@ -3029,7 +3042,7 @@ def render_games_page():
     if game == "🎮 Arcade Challenges":
         st.markdown("### ⚡ New Arcade Challenges")
         st.caption("Six new games plus Quiz Battle and 2048. Built for touchscreens, phones and desktops.")
-        components.html(r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        arcade_html = r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f8fafc;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
 .shell{padding:13px;border-radius:18px;background:linear-gradient(145deg,#111b36,#24134b);border:1px solid #ffffff20}
@@ -3047,12 +3060,38 @@ canvas{display:block;width:100%;max-width:620px;height:auto;margin:12px auto;bor
 <button class="active" data-tab="race">🏎️ Cyber Racing</button><button data-tab="tower">🧱 Tower Builder</button><button data-tab="fruit">🍉 Fruit Slice</button><button data-tab="runner">🏃 Neon Runner</button><button data-tab="bubble">🫧 Bubble Shooter</button><button data-tab="golf">⛳ Mini Golf</button><button data-tab="quiz">🏆 Quiz Battle</button><button data-tab="2048">🔢 2048</button>
 </div><div class="panel" id="panel"></div></div>
 <script>
+const ADMIN_MODE=__ADMIN_MODE__;
 const panel=document.getElementById('panel'),tabs=[...document.querySelectorAll('[data-tab]')];let raf=0,keys={},tab='race';
 function stop(){if(raf)cancelAnimationFrame(raf);raf=0;keys={}}
 function btn(t,fn){const b=document.createElement('button');b.className='action';b.textContent=t;b.onclick=fn;return b}
 function canvas(title,desc){panel.innerHTML='<h2>'+title+'</h2><p class="muted">'+desc+'</p><div class="score" id="score">Score: 0</div><canvas id="c" width="600" height="330"></canvas><div class="controls" id="controls"></div><p class="muted" id="hint">Use the on-screen controls or keyboard.</p>';return {c:document.getElementById('c'),x:document.getElementById('c').getContext('2d'),score:document.getElementById('score'),controls:document.getElementById('controls'),hint:document.getElementById('hint')}}
 function control(box,label,down,up){let b=btn(label,()=>{});box.appendChild(b);b.addEventListener('pointerdown',e=>{e.preventDefault();down()});if(up){['pointerup','pointercancel','pointerleave'].forEach(v=>b.addEventListener(v,e=>{e.preventDefault();up()}))}}
-function start(){stop();tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));({race,tower,fruit,runner,bubble,golf,quiz, '2048':game2048}[tab])()}
+function adminPlay(){
+ stop();tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+ const names={race:'Cyber Racing',tower:'Tower Builder',fruit:'Fruit Slice',runner:'Neon Runner',bubble:'Bubble Shooter',golf:'Mini Golf',quiz:'Quiz Battle','2048':'2048 Challenge'};
+ panel.innerHTML='<h2>👑 ADMIN AUTO-PLAY · '+names[tab]+'</h2><p class="muted">Playing automatically · No input required · Perfect completion</p><div class="score" id="adminScore">Score: 0</div><canvas id="adminCanvas" width="600" height="330"></canvas><div class="controls" id="adminControls"></div><p class="muted" id="adminStatus">Automatically completing all levels…</p>';
+ const c=document.getElementById('adminCanvas'),x=c.getContext('2d');let frame=0;
+ const status=document.getElementById('adminStatus'),score=document.getElementById('adminScore');
+ document.getElementById('adminControls').appendChild(btn('↻ Replay auto-win',()=>adminPlay()));
+ function draw(){
+  frame++;x.clearRect(0,0,600,330);const g=x.createLinearGradient(0,0,600,330);g.addColorStop(0,'#172554');g.addColorStop(1,'#312e81');x.fillStyle=g;x.fillRect(0,0,600,330);
+  x.fillStyle='#ffffff12';for(let i=0;i<12;i++)x.fillRect(i*55,0,1,330);
+  const progress=Math.min(1,frame/150);
+  if(tab==='race'||tab==='runner'){x.fillStyle='#334155';x.fillRect(125,0,350,330);x.strokeStyle='#fef08a';x.setLineDash([18,14]);x.lineDashOffset=-frame*4;x.beginPath();x.moveTo(300,0);x.lineTo(300,330);x.stroke();x.setLineDash([]);for(let i=0;i<5;i++){x.fillStyle='#fb7185';x.fillRect(155+i*65,(frame*5+i*67)%360-35,30,45)}x.fillStyle='#22d3ee';x.fillRect(270,255,48,58)}
+  else if(tab==='tower'){for(let i=0;i<12;i++){x.fillStyle='hsl('+(i*29+180)+' 80% 60%)';x.fillRect(185+i*3,290-i*23,230-i*6,20)}}
+  else if(tab==='fruit'){for(let i=0;i<18;i++){const xx=(i*83+frame*2)%600,yy=70+((i*37+frame*3)%220);x.fillStyle=['#fb7185','#facc15','#4ade80','#60a5fa'][i%4];x.beginPath();x.arc(xx,yy,12,0,Math.PI*2);x.fill();x.strokeStyle='white';x.beginPath();x.moveTo(xx-13,yy+14);x.lineTo(xx+13,yy-14);x.stroke()}}
+  else if(tab==='bubble'){for(let i=0;i<28;i++){x.fillStyle=['#fb7185','#38bdf8','#facc15','#4ade80'][i%4];x.beginPath();x.arc(55+(i%7)*82,65+Math.floor(i/7)*62,20+Math.sin(frame/8+i)*2,0,Math.PI*2);x.fill()}}
+  else if(tab==='golf'){x.fillStyle='#166534';x.fillRect(20,35,560,260);x.fillStyle='#020617';x.beginPath();x.arc(520,75,17,0,Math.PI*2);x.fill();x.fillStyle='white';x.beginPath();x.arc(70+progress*450,260-progress*180,9,0,Math.PI*2);x.fill()}
+  else if(tab==='quiz'){x.fillStyle='#facc15';x.font='bold 28px system-ui';x.textAlign='center';x.fillText('✓  ALL ANSWERS CORRECT',300,165)}
+  else if(tab==='2048'){for(let i=0;i<16;i++){x.fillStyle='hsl('+(35+(i%4)*22)+',65%,42%)';x.fillRect(130+(i%4)*86,45+Math.floor(i/4)*62,76,54);x.fillStyle='white';x.font='bold 18px system-ui';x.textAlign='center';x.fillText(i===15?'2048':String(2**(1+i%5)),168+(i%4)*86,78+Math.floor(i/4)*62)}}
+  x.fillStyle='#bbf7d0';x.font='900 20px system-ui';x.textAlign='center';x.fillText('PERFECT ADMIN RUN · '+Math.round(progress*100)+'%',300,25);
+  score.textContent='Score: '+(progress>=1?'999,999':Math.floor(999999*progress).toLocaleString());
+  if(progress<1){status.textContent='Auto-playing '+names[tab]+' · Level '+Math.max(1,Math.ceil(progress*10))+'/10';raf=requestAnimationFrame(draw)}
+  else{status.textContent='🏆 ADMIN PERFECT WIN · MAX SCORE · ALL LEVELS COMPLETED';score.textContent='Score: 999,999';}
+ }
+ draw();
+}
+function start(){stop();tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(ADMIN_MODE){adminPlay();return;}({race,tower,fruit,runner,bubble,golf,quiz, '2048':game2048}[tab])()}
 tabs.forEach(b=>b.onclick=()=>{tab=b.dataset.tab;start()});
 function race(){let g=canvas('🏎️ Cyber Racing','Dodge traffic, survive as long as possible and beat your high score.');let {c,x,score,controls}=g,car=270,obs=[],points=0,over=false,frame=0;control(controls,'◀ LEFT',()=>keys.left=true,()=>keys.left=false);control(controls,'RIGHT ▶',()=>keys.right=true,()=>keys.right=false);control(controls,'↻ RESTART',()=>{stop();race()});function loop(){frame++;x.fillStyle='#101a33';x.fillRect(0,0,600,330);x.fillStyle='#273449';x.fillRect(125,0,350,330);x.strokeStyle='#f8fafc';x.setLineDash([24,20]);x.lineWidth=5;x.lineDashOffset=-frame*5;x.beginPath();x.moveTo(300,0);x.lineTo(300,330);x.stroke();x.setLineDash([]);if(!over){if(keys.left)car-=5;if(keys.right)car+=5;car=Math.max(145,Math.min(415,car));if(frame%48===0)obs.push({x:150+Math.random()*260,y:-45});obs.forEach(o=>o.y+=4+points/180);obs=obs.filter(o=>o.y<360);points+=1;obs.forEach(o=>{if(Math.abs(o.x-car)<38&&o.y>245&&o.y<315)over=true})}x.fillStyle='#38bdf8';x.fillRect(car,267,42,52);x.fillStyle='#bae6fd';x.fillRect(car+7,274,28,13);obs.forEach(o=>{x.fillStyle='#fb7185';x.fillRect(o.x, o.y,42,54);x.fillStyle='#fecdd3';x.fillRect(o.x+7,o.y+7,28,12)});score.textContent='Score: '+Math.floor(points);if(over){x.fillStyle='#0009';x.fillRect(0,0,600,330);x.fillStyle='white';x.font='bold 32px system-ui';x.textAlign='center';x.fillText('CRASH! Score '+Math.floor(points),300,160);x.font='16px system-ui';x.fillText('Press RESTART to race again',300,195)}else raf=requestAnimationFrame(loop)}window.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='a')keys.left=true;if(e.key==='ArrowRight'||e.key==='d')keys.right=true};window.onkeyup=e=>{keys.left=false;keys.right=false};loop()}
 function tower(){
@@ -3441,7 +3480,8 @@ function quiz(){
 }
 function game2048(){let board=Array(16).fill(0),scoreN=0;function add(){let z=board.map((v,i)=>v?null:i).filter(v=>v!==null);if(z.length)board[z[Math.floor(Math.random()*z.length)]]=Math.random()<.9?2:4}function draw(){panel.innerHTML='<h2>🔢 2048 Challenge</h2><p class="muted">Use arrow keys or swipe. Combine matching numbers to reach 2048.</p><p class="score">Score: '+scoreN+'</p><div class="board">'+board.map(v=>'<div class="cell" style="background:'+(v?'hsl('+(35+Math.log2(v)*18)+',65%,42%)':'#26334d')+'">'+(v||'')+'</div>').join('')+'</div>';panel.appendChild(btn('NEW GAME',()=>{board=Array(16).fill(0);scoreN=0;add();add();draw()}))}function move(d){let old=board.slice();for(let l=0;l<4;l++){let ids=[];for(let j=0;j<4;j++){let r=d==='up'?j:d==='down'?3-j:l,c=d==='left'?j:d==='right'?3-j:l;ids.push(r*4+c)}let vals=ids.map(i=>board[i]).filter(Boolean);for(let j=0;j<vals.length-1;j++)if(vals[j]===vals[j+1]){vals[j]*=2;scoreN+=vals[j];vals.splice(j+1,1)}while(vals.length<4)vals.push(0);ids.forEach((id,j)=>board[id]=vals[j])}if(old.some((v,i)=>v!==board[i]))add();draw()}window.onkeydown=e=>{let m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};if(m[e.key]){e.preventDefault();move(m[e.key])}};let sx=0,sy=0;panel.ontouchstart=e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY};panel.ontouchend=e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))>25)move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))};board=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];add();add();draw()}
 start();
-</script></body></html>""", height=650, scrolling=False)
+</script></body></html>""".replace("__ADMIN_MODE__", "true" if is_admin else "false")
+        components.html(arcade_html, height=650, scrolling=False)
         return
     if game == "🧠 Brain Test":
         st.markdown("### 🧠 Brain Test · Quick Challenge")
