@@ -4788,7 +4788,76 @@ def main():
                         st.warning("AI providers were unavailable, so this summary was generated locally from verified report figures.")
                         st.caption(st.session_state.pop("_dt_ai_analysis_error"))
                     if st.session_state.get("_dt_ai_analysis_result"):
-                        st.markdown(st.session_state["_dt_ai_analysis_result"])
+                        # Premium presentation layer for the AI report. This only
+                        # changes rendering; the AI output and verified calculations stay intact.
+                        st.markdown(r"""
+                        <style>
+                        .st-key-dt_ai_analysis_panel {
+                          padding:clamp(16px,2.2vw,26px)!important;
+                          border:1px solid rgba(148,163,184,.22)!important;
+                          border-radius:22px!important;
+                          background:
+                            radial-gradient(ellipse at 0% 0%,rgba(59,130,246,.10),transparent 38%),
+                            radial-gradient(ellipse at 100% 0%,rgba(139,92,246,.12),transparent 42%),
+                            linear-gradient(145deg,rgba(29,33,43,.96),rgba(19,22,30,.98))!important;
+                          box-shadow:0 18px 48px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.045)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h1,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2,
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h3 {
+                          color:#f8fafc!important;letter-spacing:-.025em!important;
+                          margin-top:1.35rem!important;margin-bottom:.8rem!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] h2 {
+                          padding:12px 15px!important;border-radius:13px!important;
+                          border:1px solid rgba(139,92,246,.24)!important;
+                          background:linear-gradient(100deg,rgba(124,58,237,.17),rgba(59,130,246,.08))!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] ul {
+                          display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))!important;
+                          gap:10px!important;padding-left:0!important;list-style:none!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] li {
+                          list-style:none!important;margin:0!important;padding:14px 15px 14px 17px!important;
+                          border:1px solid rgba(148,163,184,.17)!important;border-radius:14px!important;
+                          background:linear-gradient(135deg,rgba(51,65,85,.38),rgba(30,41,59,.25))!important;
+                          color:#e7edf6!important;line-height:1.6!important;
+                          box-shadow:inset 3px 0 0 rgba(96,165,250,.72),0 7px 18px rgba(0,0,0,.12)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] li::marker {content:""}
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] table {
+                          width:100%!important;border-collapse:separate!important;border-spacing:0!important;
+                          overflow:hidden!important;border:1px solid rgba(148,163,184,.22)!important;
+                          border-radius:15px!important;background:rgba(15,23,42,.38)!important;
+                          box-shadow:0 12px 28px rgba(0,0,0,.16)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] thead th {
+                          background:linear-gradient(100deg,rgba(91,63,153,.72),rgba(35,91,133,.65))!important;
+                          color:#fff!important;font-weight:800!important;border-bottom:1px solid rgba(255,255,255,.16)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] tbody td {
+                          background:rgba(30,41,59,.42)!important;color:#e8edf5!important;
+                          border-bottom:1px solid rgba(148,163,184,.12)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] tbody tr:nth-child(even) td {
+                          background:rgba(51,65,85,.30)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] tbody tr:hover td {
+                          background:rgba(59,130,246,.13)!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] p {
+                          color:#d6deea!important;line-height:1.7!important;
+                        }
+                        .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] strong {color:#fff!important}
+                        @media(max-width:640px) {
+                          .st-key-dt_ai_analysis_panel {padding:13px!important;border-radius:16px!important}
+                          .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] ul {grid-template-columns:1fr!important}
+                          .st-key-dt_ai_analysis_panel [data-testid="stMarkdownContainer"] table {font-size:12px!important}
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
+                        with st.container(key="dt_ai_analysis_panel"):
+                            st.markdown(st.session_state["_dt_ai_analysis_result"])
                     st.markdown("#### Chat with your reports")
                     question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
                     if st.button("Ask AI", key="dt_ai_ask") and question.strip():
