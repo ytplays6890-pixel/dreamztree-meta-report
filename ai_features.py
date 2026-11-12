@@ -262,6 +262,27 @@ def answer_report_question(metrics, question):
                 return "\\n".join(lines)
             return "No hiring campaigns with both staff and branch assigned were found in this report."
         return "No hiring campaign data is available in this report. Check that the campaign course is mapped to a name containing 'Hiring'."
+    # Staff lead questions are calculated locally from numeric campaign results.
+    # This avoids sending a simple arithmetic question to an LLM that may echo
+    # values as text such as 1+1+1 instead of returning their sum.
+    if "staff" in q and any(k in q for k in ["lead", "result", "more", "most", "top", "highest"]):
+        staff_totals = {}
+        for row in campaigns:
+            staff_name = str(row.get("Staff") or "").strip()
+            if not staff_name:
+                continue
+            try:
+                lead_count = int(float(row.get("Results") or 0))
+            except (TypeError, ValueError):
+                lead_count = 0
+            staff_totals[staff_name] = staff_totals.get(staff_name, 0) + lead_count
+        if staff_totals:
+            ranked = sorted(staff_totals.items(), key=lambda item: item[1], reverse=True)
+            top_name, top_count = ranked[0]
+            lines = [f"**Staff with the most leads: {top_name} — {top_count:,} leads**", "", "| Staff | Total leads |", "|---|---:|"]
+            lines.extend(f"| {name} | {count:,} |" for name, count in ranked)
+            return "\\n".join(lines)
+        return "No staff-attributed lead results are available in this report. Check the Staff assignments in the campaign mapping."
     if any(k in q for k in ["lowest cost per lead", "lowest cpl", "cheapest lead", "lowest cost", "low cost branch", "cheapest branch", "best cpl"]):
         valid = [b for b in branches if b.get("CPL_KWD") is not None and float(b.get("Leads", 0)) > 0]
         if valid:
