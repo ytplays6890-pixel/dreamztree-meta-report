@@ -4249,7 +4249,9 @@ def main():
         df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
         df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
 
-        # Preserve zero-result campaigns for spend visibility, while keeping them out of the lead report.
+        # Preserve the complete uploaded campaign list before any lead-result filtering.
+        # The workload dashboard uses this source so zero-result and other filtered rows remain visible.
+        all_campaigns_df = df.copy().reset_index(drop=True)
         no_result_df = df[df["Results"] <= 0].copy().reset_index(drop=True)
         no_result_count = len(no_result_df)
         no_result_spend_usd = float(no_result_df["Spent"].sum())
@@ -4321,87 +4323,94 @@ def main():
             can_include = unresolved[(unresolved["Staff"].astype(str).str.strip() != "") & (unresolved["Branch"].astype(str).str.strip() != "")]
             needs_staff_branch = len(unresolved) - len(can_include)
             st.warning(f"{len(can_include)} campaign(s) with Staff and Branch identified can be included despite a missing course. {needs_staff_branch} campaign(s) still need Staff or Branch review.")
-        # Branch-wise → staff-wise campaign workload dashboard.
-        # Counts distinct campaign names within each branch/staff/course assignment;
-        # it does not count lead rows or results as campaigns.
+        # Complete campaign dashboard: build from every nonblank campaign row in the uploaded sheet,
+        # not from the positive-results subset used by the lead report.
         st.markdown("### Campaign workload · Branch-wise and staff-wise")
-        st.caption("Select a branch to inspect each staff member's campaign load, then drill down by course and campaign name. Counts are based on the reviewed assignments above.")
+        st.caption("Complete campaign inventory from the uploaded Excel sheet, including zero-result, zero-spend, and unmapped campaigns. Counts are source rows; repeated campaign names are not silently deduplicated.")
 
-        campaign_view = edited.copy()
-        for _col in ["Campaign", "Staff", "Course", "Branch"]:
-            campaign_view[_col] = campaign_view[_col].fillna("").astype(str).str.strip()
-        campaign_view = campaign_view[
-            (campaign_view["Campaign"] != "") &
-            (campaign_view["Staff"] != "") &
-            (campaign_view["Branch"] != "")
-        ].copy()
-        campaign_view["Course"] = campaign_view["Course"].replace("", "Unclassified course")
-
-        # Mangaf and Salmiya are presented together as Kuwait, without changing
-        # the underlying reviewed assignment values used by the existing report.
-        campaign_view["Dashboard branch"] = campaign_view["Branch"].replace(
-            {"Mangaf": "Kuwait", "Salmiya": "Kuwait"}
-        )
-        campaign_unique = campaign_view.drop_duplicates(
-            subset=["Dashboard branch", "Staff", "Course", "Campaign"]
-        ).copy()
-
-        if campaign_unique.empty:
-            st.info("No campaigns with both staff and branch assignments are available yet. Review the assignments above to populate this dashboard.")
-        else:
-            branch_totals = (
-                campaign_unique.groupby("Dashboard branch")["Campaign"]
-                .nunique().sort_values(ascending=False).rename("Unique campaigns").reset_index()
+        campaign_view_rows = []
+        for _source_index, _source_row in all_campaigns_df.iterrows():
+            _campaign_name = str(_source_row.get("Campaign", "") or "").strip()
+            if not _campaign_name:
+                continue
+            _staff, _course, _branch, _status = infer_campaign(_campaign_name, mappings)
+            campaign_view_rows.append({
+                "Campaign": _campaign_name,
+                "Results": int(_source_row.get("Results", 0) or 0),
+                "Spent": float(_source_row.get("Spent", 0) or 0),
+                "Staff": str(_staff or "").strip() or "Unassigned",
+                "Course": str(_course or "").strip() or "Unclassified course",
+                "Branch": str(_branch or "").strip() or "Unassigned",
+                "Mapping status": str(_status or ""),
+                "Source row": int(_source_index) + 1,
+            })
+        campaign_view = pd.DataFrame(campaign_view_rows, columns=[
+            "Campaign", "Results", "Spent", "Staff", "Course", "Branch", "Mapping status", "Source row"
+        ])
+        if not campaign_view.empty:
+            campaign_view["Dashboard branch"] = campaign_view["Branch"].replace(
+                {"Mangaf": "Kuwait", "Salmiya": "Kuwait"}
             )
-            branch_cols = st.columns(min(4, max(1, len(branch_totals))))
-            for _i, _row in enumerate(branch_totals.head(4).itertuples(index=False)):
-                with branch_cols[_i]:
-                    st.metric(str(_row[0]), int(_row[1]), help="Distinct campaign names assigned to this branch.")
-            with st.expander("All branch totals", expanded=False):
-                st.dataframe(branch_totals, use_container_width=True, hide_index=True)
+        else:
+            campaign_view["Dashboard branch"] = pd.Series(dtype=str)
 
-            _branches = sorted(campaign_unique["Dashboard branch"].unique().tolist())
+        if campaign_view.empty:
+            st.info("No nonblank campaign names were found in the uploaded sheet.")
+        else:
+            st.metric("Campaign rows in uploaded sheet", f"{len(campaign_view):,}")
+            st.caption(
+                f"Included: {int((campaign_view['Results'] <= 0).sum()):,} zero-result rows · "
+                f"{int((campaign_view['Spent'] <= 0).sum()):,} zero-spend rows · "
+                f"{int((campaign_view['Staff'] == 'Unassigned').sum()):,} unassigned staff · "
+                f"{int((campaign_view['Branch'] == 'Unassigned').sum()):,} unassigned branches."
+            )
+
+            branch_totals = (
+                campaign_view.groupby("Dashboard branch", dropna=False)
+                .agg(Campaigns=("Campaign", "size"), Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
+                .sort_values(["Campaigns", "Dashboard branch"], ascending=[False, True])
+                .reset_index()
+            )
+            st.markdown("#### Campaigns by branch")
+            st.dataframe(branch_totals.rename(columns={"Dashboard branch": "Branch", "Spend_USD": "Spend (USD)"}), use_container_width=True, hide_index=True)
+
+            _branches = sorted(campaign_view["Dashboard branch"].dropna().unique().tolist())
             _selected_branch = st.selectbox("Branch", _branches, key="campaign_dashboard_branch")
-            _branch_data = campaign_unique[campaign_unique["Dashboard branch"] == _selected_branch].copy()
+            _branch_data = campaign_view[campaign_view["Dashboard branch"] == _selected_branch].copy()
 
             _staff_summary = (
-                _branch_data.groupby("Staff")
-                .agg(
-                    Campaigns=("Campaign", "nunique"),
-                    Courses=("Course", "nunique"),
-                )
+                _branch_data.groupby("Staff", dropna=False)
+                .agg(Campaigns=("Campaign", "size"), Courses=("Course", "nunique"), Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
                 .sort_values(["Campaigns", "Staff"], ascending=[False, True])
                 .reset_index()
             )
             st.markdown("#### Staff workload · " + _selected_branch)
-            st.dataframe(_staff_summary, use_container_width=True, hide_index=True)
+            st.dataframe(_staff_summary.rename(columns={"Spend_USD": "Spend (USD)"}), use_container_width=True, hide_index=True)
 
-            _selected_staff = st.selectbox(
-                "Staff member",
-                sorted(_branch_data["Staff"].unique().tolist()),
-                key="campaign_dashboard_staff",
-            )
+            _staffs = sorted(_branch_data["Staff"].dropna().unique().tolist())
+            _selected_staff = st.selectbox("Staff member", _staffs, key="campaign_dashboard_staff")
             _staff_data = _branch_data[_branch_data["Staff"] == _selected_staff].copy()
             _course_summary = (
-                _staff_data.groupby("Course")["Campaign"]
-                .nunique().sort_values(ascending=False).rename("Campaigns").reset_index()
+                _staff_data.groupby("Course", dropna=False)
+                .agg(Campaigns=("Campaign", "size"), Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
+                .sort_values(["Campaigns", "Course"], ascending=[False, True])
+                .reset_index()
             )
             st.markdown("#### Course breakdown · " + _selected_staff)
-            st.dataframe(_course_summary, use_container_width=True, hide_index=True)
+            st.dataframe(_course_summary.rename(columns={"Spend_USD": "Spend (USD)"}), use_container_width=True, hide_index=True)
 
             _selected_course = st.selectbox(
                 "Course",
-                ["All courses"] + sorted(_staff_data["Course"].unique().tolist()),
+                ["All courses"] + sorted(_staff_data["Course"].dropna().unique().tolist()),
                 key="campaign_dashboard_course",
             )
             _detail = _staff_data if _selected_course == "All courses" else _staff_data[_staff_data["Course"] == _selected_course]
-            _detail = _detail.drop_duplicates(subset=["Campaign"]).copy()
-            _detail_cols = ["Campaign", "Course", "Results", "Spent"]
+            _detail_cols = ["Campaign", "Results", "Spent", "Staff", "Course", "Branch", "Mapping status", "Source row"]
             _detail_display = _detail[_detail_cols].rename(
-                columns={"Campaign": "Campaign name", "Results": "Leads", "Spent": "Spend (USD)"}
-            ).sort_values(["Course", "Campaign name"])
-            st.markdown("#### Campaign details")
-            st.caption(f"{len(_detail_display):,} unique campaign name(s) for {_selected_staff} · {_selected_branch}.")
+                columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
+            ).sort_values(["Course", "Campaign name", "Source row"])
+            st.markdown("#### Complete campaign details")
+            st.caption(f"Showing {len(_detail_display):,} campaign row(s) for {_selected_staff} · {_selected_branch}.")
             st.dataframe(_detail_display, use_container_width=True, hide_index=True)
             st.download_button(
                 "Download this campaign view (CSV)",
@@ -4410,7 +4419,21 @@ def main():
                 "text/csv",
                 key="campaign_dashboard_download",
             )
-            st.caption("Counting rule: a campaign is counted once per branch, staff member and course. Repeated identical names in the same grouping are deduplicated. Campaigns without a mapped staff member or branch remain in the review workflow and are not silently assigned here.")
+
+            st.markdown("#### All campaigns · uploaded sheet")
+            _all_cols = ["Campaign", "Results", "Spent", "Staff", "Course", "Branch", "Mapping status", "Source row"]
+            _all_display = campaign_view[_all_cols].rename(
+                columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
+            ).sort_values(["Branch", "Staff", "Course", "Campaign", "Source row"])
+            st.dataframe(_all_display, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Download ALL campaigns from uploaded sheet (CSV)",
+                _all_display.to_csv(index=False).encode("utf-8-sig"),
+                f"dreamztree_all_campaigns_{date_value.strftime('%Y%m%d')}.csv",
+                "text/csv",
+                key="campaign_dashboard_download_all",
+            )
+            st.caption("This inventory is built from the original uploaded rows before the lead-report filters. Zero-result and unmapped campaigns remain listed. Mangaf and Salmiya are grouped under Kuwait in the branch view; original branch values are retained in the detailed export.")
 
         if st.button("Generate report", type="primary"):
             # Include every positive-result campaign, including brand-new campaigns
