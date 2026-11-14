@@ -4422,9 +4422,11 @@ def main():
 
             st.markdown("#### All campaigns · uploaded sheet")
             _all_cols = ["Campaign", "Results", "Spent", "Staff", "Course", "Branch", "Mapping status", "Source row"]
-            _all_display = campaign_view[_all_cols].rename(
+            _all_display = campaign_view[_all_cols].sort_values(
+                ["Branch", "Staff", "Course", "Campaign", "Source row"]
+            ).rename(
                 columns={"Campaign": "Campaign name", "Results": "Results", "Spent": "Spend (USD)"}
-            ).sort_values(["Branch", "Staff", "Course", "Campaign", "Source row"])
+            )
             st.dataframe(_all_display, use_container_width=True, hide_index=True)
             st.download_button(
                 "Download ALL campaigns from uploaded sheet (CSV)",
