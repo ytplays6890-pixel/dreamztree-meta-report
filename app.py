@@ -4321,6 +4321,97 @@ def main():
             can_include = unresolved[(unresolved["Staff"].astype(str).str.strip() != "") & (unresolved["Branch"].astype(str).str.strip() != "")]
             needs_staff_branch = len(unresolved) - len(can_include)
             st.warning(f"{len(can_include)} campaign(s) with Staff and Branch identified can be included despite a missing course. {needs_staff_branch} campaign(s) still need Staff or Branch review.")
+        # Branch-wise → staff-wise campaign workload dashboard.
+        # Counts distinct campaign names within each branch/staff/course assignment;
+        # it does not count lead rows or results as campaigns.
+        st.markdown("### Campaign workload · Branch-wise and staff-wise")
+        st.caption("Select a branch to inspect each staff member's campaign load, then drill down by course and campaign name. Counts are based on the reviewed assignments above.")
+
+        campaign_view = edited.copy()
+        for _col in ["Campaign", "Staff", "Course", "Branch"]:
+            campaign_view[_col] = campaign_view[_col].fillna("").astype(str).str.strip()
+        campaign_view = campaign_view[
+            (campaign_view["Campaign"] != "") &
+            (campaign_view["Staff"] != "") &
+            (campaign_view["Branch"] != "")
+        ].copy()
+        campaign_view["Course"] = campaign_view["Course"].replace("", "Unclassified course")
+
+        # Mangaf and Salmiya are presented together as Kuwait, without changing
+        # the underlying reviewed assignment values used by the existing report.
+        campaign_view["Dashboard branch"] = campaign_view["Branch"].replace(
+            {"Mangaf": "Kuwait", "Salmiya": "Kuwait"}
+        )
+        campaign_unique = campaign_view.drop_duplicates(
+            subset=["Dashboard branch", "Staff", "Course", "Campaign"]
+        ).copy()
+
+        if campaign_unique.empty:
+            st.info("No campaigns with both staff and branch assignments are available yet. Review the assignments above to populate this dashboard.")
+        else:
+            branch_totals = (
+                campaign_unique.groupby("Dashboard branch")["Campaign"]
+                .nunique().sort_values(ascending=False).rename("Unique campaigns").reset_index()
+            )
+            branch_cols = st.columns(min(4, max(1, len(branch_totals))))
+            for _i, _row in enumerate(branch_totals.head(4).itertuples(index=False)):
+                with branch_cols[_i]:
+                    st.metric(str(_row[0]), int(_row[1]), help="Distinct campaign names assigned to this branch.")
+            with st.expander("All branch totals", expanded=False):
+                st.dataframe(branch_totals, use_container_width=True, hide_index=True)
+
+            _branches = sorted(campaign_unique["Dashboard branch"].unique().tolist())
+            _selected_branch = st.selectbox("Branch", _branches, key="campaign_dashboard_branch")
+            _branch_data = campaign_unique[campaign_unique["Dashboard branch"] == _selected_branch].copy()
+
+            _staff_summary = (
+                _branch_data.groupby("Staff")
+                .agg(
+                    Campaigns=("Campaign", "nunique"),
+                    Courses=("Course", "nunique"),
+                )
+                .sort_values(["Campaigns", "Staff"], ascending=[False, True])
+                .reset_index()
+            )
+            st.markdown("#### Staff workload · " + _selected_branch)
+            st.dataframe(_staff_summary, use_container_width=True, hide_index=True)
+
+            _selected_staff = st.selectbox(
+                "Staff member",
+                sorted(_branch_data["Staff"].unique().tolist()),
+                key="campaign_dashboard_staff",
+            )
+            _staff_data = _branch_data[_branch_data["Staff"] == _selected_staff].copy()
+            _course_summary = (
+                _staff_data.groupby("Course")["Campaign"]
+                .nunique().sort_values(ascending=False).rename("Campaigns").reset_index()
+            )
+            st.markdown("#### Course breakdown · " + _selected_staff)
+            st.dataframe(_course_summary, use_container_width=True, hide_index=True)
+
+            _selected_course = st.selectbox(
+                "Course",
+                ["All courses"] + sorted(_staff_data["Course"].unique().tolist()),
+                key="campaign_dashboard_course",
+            )
+            _detail = _staff_data if _selected_course == "All courses" else _staff_data[_staff_data["Course"] == _selected_course]
+            _detail = _detail.drop_duplicates(subset=["Campaign"]).copy()
+            _detail_cols = ["Campaign", "Course", "Results", "Spent"]
+            _detail_display = _detail[_detail_cols].rename(
+                columns={"Campaign": "Campaign name", "Results": "Leads", "Spent": "Spend (USD)"}
+            ).sort_values(["Course", "Campaign name"])
+            st.markdown("#### Campaign details")
+            st.caption(f"{len(_detail_display):,} unique campaign name(s) for {_selected_staff} · {_selected_branch}.")
+            st.dataframe(_detail_display, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Download this campaign view (CSV)",
+                _detail_display.to_csv(index=False).encode("utf-8-sig"),
+                "dreamztree_campaign_workload.csv",
+                "text/csv",
+                key="campaign_dashboard_download",
+            )
+            st.caption("Counting rule: a campaign is counted once per branch, staff member and course. Repeated identical names in the same grouping are deduplicated. Campaigns without a mapped staff member or branch remain in the review workflow and are not silently assigned here.")
+
         if st.button("Generate report", type="primary"):
             # Include every positive-result campaign, including brand-new campaigns
             # whose staff/branch cannot yet be inferred. Unknown campaigns are listed
