@@ -563,6 +563,7 @@ def infer_campaign(name, mappings):
         (r"\bteacher\s+training\b", "Teacher Training"),
         (r"\blanguage\s+training\b", "Language Training"),
         (r"\bdigital\s+marketing\b|\bdm\b", "Digital Marketing"),
+        (r"\bworkshop\s+safety\b", "Workshop Safety"),
         (r"\bsafety\s+course\b|\bsafety\b", "Safety Course"),
         (r"\bhealthcare\b|\bhealth\s+care\b", "Healthcare"),
         (r"\bcomputer\b", "Computer"), (r"\bgerman\b", "German"),
