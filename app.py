@@ -469,6 +469,7 @@ DEFAULT_MAPPINGS = [
     ("Jincy Influencer Ad new", "Jincy", "Influencer Ad", "Mangaf"),
     ("Hishana All Course", "Hishana", "All Course", "Bahrain"),
     ("Aswathy Kuwait Boost Video", "Aswathy", "Boost Video", "Mangaf"),
+    ("Arya CG Winter Offer 16/11/2026", "Arya", "Caregiving Winter Offer", "Salmiya"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
