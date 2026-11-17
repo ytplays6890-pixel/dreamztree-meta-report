@@ -4383,6 +4383,30 @@ def main():
                 f"{int((campaign_view['Staff'] == 'Unassigned').sum()):,} unassigned staff · "
                 f"{int((campaign_view['Branch'] == 'Unassigned').sum()):,} unassigned branches."
             )
+            # Dedicated exception queue: retain campaigns with any unresolved field.
+            _unmapped_mask = (
+                campaign_view["Staff"].eq("Unassigned")
+                | campaign_view["Course"].eq("Unclassified course")
+                | campaign_view["Branch"].eq("Unassigned")
+            )
+            unmapped_details = campaign_view.loc[_unmapped_mask].copy()
+            if not unmapped_details.empty:
+                def _missing_mapping_fields(row):
+                    missing = []
+                    if row["Staff"] == "Unassigned": missing.append("Staff")
+                    if row["Course"] == "Unclassified course": missing.append("Course")
+                    if row["Branch"] == "Unassigned": missing.append("Branch")
+                    return ", ".join(missing)
+                unmapped_details["Unmapped fields"] = unmapped_details.apply(_missing_mapping_fields, axis=1)
+            with st.expander(f"⚠️ Unmapped campaign details · {len(unmapped_details):,} need attention", expanded=not unmapped_details.empty):
+                st.caption("Every campaign with at least one unidentified field is listed here. Campaign names, results and spend are retained even when all three mapping fields are unknown.")
+                if unmapped_details.empty:
+                    st.success("All campaign rows have Staff, Course and Branch mapped.")
+                else:
+                    _unmapped_cols = ["Campaign", "Unmapped fields", "Staff", "Course", "Branch", "Results", "Spent", "Mapping status", "Source row"]
+                    _unmapped_display = unmapped_details[_unmapped_cols].rename(columns={"Campaign": "Campaign name", "Spent": "Spend (USD)"})
+                    st.dataframe(_unmapped_display, use_container_width=True, hide_index=True)
+                    st.download_button("Download unmapped campaign details (CSV)", _unmapped_display.to_csv(index=False).encode("utf-8-sig"), f"dreamztree_unmapped_campaigns_{date_value.strftime('%Y%m%d')}.csv", "text/csv", key="campaign_dashboard_download_unmapped")
 
             branch_totals = (
                 campaign_view.groupby("Dashboard branch", dropna=False)
