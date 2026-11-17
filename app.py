@@ -589,7 +589,8 @@ def infer_campaign(name, mappings):
         (r"\bspa\b", "Spa"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
         (r"\bcg\b", "Caregiving"), (r"\bdca\b", "DCA"), (r"\bpte\b", "PTE"),
         (r"\bham\b", "HAM"), (r"\bhr\b", "HR"), (r"\bphili(?:pi)?\b", "Philipi"),
-        (r"\binfluencer\s+ad\b", "Influencer Ad"), (r"\bconstruction(?:\s+industrial)?\b", "Construction Industrial"),\n        (r"\bboost\s+video\b", "Boost Video"), (r"\bcomputer\s+course\b", "Computer"),
+        (r"\binfluencer\s+ad\b", "Influencer Ad"), (r"\bconstruction(?:\s+industrial)?\b", "Construction Industrial"),
+        (r"\bboost\s+video\b", "Boost Video"), (r"\bcomputer\s+course\b", "Computer"),
     ]
     if not course:
         for pattern, label in course_aliases:
