@@ -457,7 +457,7 @@ DEFAULT_MAPPINGS = [
     ("Sushma Airline 12/11/2026", "Sushma", "Airline", "Mangaf"),
     ("Sherin Tele Hiring 13/11/2026", "Sherin", "Hiring", "Kerala"),
     ("Nissi TTC 13/11/2026", "Nissi", "TTC", "Mangaf"),
-    ("Arya Workshop 14/11/2026", "Arya", "TTC", "Salmiya"),
+    ("Arya Workshop 14/11/2026", "Arya", "Workshop", "Salmiya"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
