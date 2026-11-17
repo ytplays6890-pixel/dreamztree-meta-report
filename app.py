@@ -471,6 +471,7 @@ DEFAULT_MAPPINGS = [
     ("Aswathy Kuwait Boost Video", "Aswathy", "Boost Video", "Mangaf"),
     ("Arya CG Winter Offer 16/11/2026", "Arya", "Caregiving Winter Offer", "Salmiya"),
     ("Shabna Commerce 05/09/2026", "Shabna", "Commerce", "Bahrain"),
+    ("Shabna French & Computer Sciences Tuition 30/10/2026", "Shabna", "French & Computer Sciences Tuition", "Bahrain"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
