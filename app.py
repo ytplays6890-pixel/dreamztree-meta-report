@@ -452,6 +452,12 @@ DEFAULT_MAPPINGS = [
     ("Arun | Healthcare | 6/11/26", "Arun", "Healthcare", "Salmiya"),
     ("Arun | Digital Marketing | 6/11/26", "Arun", "Digital Marketing", "Salmiya"),
     ("Arun | SPA | 6/11/26", "Arun", "SPA", "Salmiya"),
+    # Campaigns visible in the 17 Nov 2026 review list. Unknown fields stay blank.
+    ("Arya Dental 11/11/2026", "Arya", "", "Salmiya"),
+    ("Sushma Airline 12/11/2026", "Sushma", "", "Mangaf"),
+    ("Sherin Tele Hiring 13/11/2026", "", "Hiring", ""),
+    ("Nissi TTC 13/11/2026", "Nissi", "TTC", "Mangaf"),
+    ("Arya Workshop 14/11/2026", "Arya", "", "Salmiya"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
