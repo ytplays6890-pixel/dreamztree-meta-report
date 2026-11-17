@@ -4506,17 +4506,25 @@ def main():
                 Results=("Results", "sum"), Spent=("Spent", "sum")
             ).reset_index()
             lines = [f"*📋 Leads Count  ·  {date_value.strftime('%d/%m/%Y')}*", ""]
-            for branch in BRANCH_ORDER + [b for b in grouped["Branch"].unique() if b not in BRANCH_ORDER]:
+            _report_branches = list(dict.fromkeys(BRANCH_ORDER + grouped["Branch"].dropna().astype(str).tolist() + hiring_campaigns["Branch"].dropna().astype(str).tolist()))
+            for branch in _report_branches:
                 bd = grouped[grouped["Branch"] == branch]
-                if bd.empty:
+                branch_hiring_rows = hiring_campaigns[hiring_campaigns["Branch"].astype(str).str.strip() == str(branch).strip()]
+                branch_all_rows = all_campaigns[all_campaigns["Branch"].astype(str).str.strip() == str(branch).strip()]
+                if bd.empty and branch_hiring_rows.empty:
                     continue
-                branch_spent = bd["Spent"].sum()
+                # Branch cost includes all ads in that branch, including hiring ads.
+                branch_spent = pd.to_numeric(branch_all_rows["Spent"], errors="coerce").fillna(0).sum()
+                branch_hiring_results = int(pd.to_numeric(branch_hiring_rows["Results"], errors="coerce").fillna(0).sum())
                 lines.extend([f"*{branch}*  —  Cost: {round(branch_spent * factor, 2)} KD", "——————————"])
-                staff_order = STAFF_ORDER.get(branch, [])
-                extras = [s for s in bd["Staff"].unique() if s not in staff_order]
-                for staff in staff_order + extras:
-                    for _, rr in bd[bd["Staff"] == staff].sort_values("Results", ascending=False).iterrows():
-                        lines.append(f"{rr['Staff']}  -  {rr['Course']}  -  {int(rr['Results'])}")
+                if not bd.empty:
+                    staff_order = STAFF_ORDER.get(branch, [])
+                    extras = [s for s in bd["Staff"].unique() if s not in staff_order]
+                    for staff in staff_order + extras:
+                        for _, rr in bd[bd["Staff"] == staff].sort_values("Results", ascending=False).iterrows():
+                            lines.append(f"{rr['Staff']}  -  {rr['Course']}  -  {int(rr['Results'])}")
+                if branch_hiring_results:
+                    lines.append(f"Hiring Results  -  {branch_hiring_results} (separate from leads)")
                 lines.append("")
             if not unassigned.empty:
                 unassigned_spend = float(unassigned["Spent"].sum())
