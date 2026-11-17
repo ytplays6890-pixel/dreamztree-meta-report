@@ -530,7 +530,7 @@ def infer_campaign(name, mappings):
         "Hishana": "Bahrain", "Anakha": "Bahrain", "Seetha": "Bahrain", "Shabna": "Bahrain",
         "Anupama": "Kerala", "Vedhika": "Kerala", "Vipin": "Kerala", "Roshni": "Kerala",
         "Shelbin": "Kerala", "Ajay": "Kerala", "Dani": "Kerala", "Renjith": "Kerala",
-        "Anju": "Kerala", "Biju": "Kerala", "Aswathy": "",
+        "Anju": "Kerala", "Biju": "Kerala", "Febin": "Kerala", "Aswathy": "",
     }
     staff_aliases = {
         "Aswathy": ["aswathy", "awsathy", "aswathi"],
