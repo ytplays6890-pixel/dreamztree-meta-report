@@ -385,7 +385,7 @@ DEFAULT_MAPPINGS = [
     ("sushma teacher 31/07/2026", "Sushma", "Teacher Training", "Mangaf"),
     ("shelbin hr 04/08/2026", "Shelbin", "HR", "Kerala"),
     ("dani | healthcare  | 7/8/26", "Dani", "Healthcare", "Kerala"),
-    ("anupama j&v 11/08/2026", "Anupama", "J&V Video", "Kerala"),
+    ("anupama j&v 11/08/2026", "Anupama", "J&V", "Kerala"),
     ("jincy j&v 12/08/2026", "Jincy", "J&V Video", "Mangaf"),
     ("jincy | logistics | 13/8/26", "Jincy", "Logistics", "Mangaf"),
     ("hishana | ielts | 13/8/26", "Hishana", "IELTS", "Bahrain"),
@@ -459,6 +459,16 @@ DEFAULT_MAPPINGS = [
     ("Nissi TTC 13/11/2026", "Nissi", "TTC", "Mangaf"),
     ("Arya Workshop 14/11/2026", "Arya", "Workshop", "Salmiya"),
     ("Jincy Workshop Safety", "Jincy", "Workshop Safety", "Mangaf"),
+    ("Arya DM 11/11/2026", "Arya", "Digital Marketing", "Salmiya"),
+    ("Shabna Winter Camp 12/11/2026", "Shabna", "Winter Camp", "Bahrain"),
+    ("Sushma Computer 13/11/2026", "Sushma", "Computer", "Mangaf"),
+    ("Sushma Construction 13/11/2026", "Sushma", "Construction Industrial", "Mangaf"),
+    ("Nissi Hiring Tele caller 14/11/2026", "Nissi", "Hiring", "Mangaf"),
+    ("Anupama J&V 11/08/2026", "Anupama", "J&V", "Kerala"),
+    ("Anupama Practical Video", "Anupama", "Healthcare", "Kerala"),
+    ("Jincy Influencer Ad new", "Jincy", "Influencer Ad", "Mangaf"),
+    ("Hishana All Course", "Hishana", "All Course", "Bahrain"),
+    ("Aswathy Kuwait Boost Video", "Aswathy", "Boost Video", "Mangaf"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
@@ -554,7 +564,7 @@ def infer_campaign(name, mappings):
         (r"\bcaregiving\b|\bcaregiver\b", "Caregiving"),
         (r"\ball\s+courses?\b", "All Course"),
         (r"\bpractical\s+video\b", "Practical Video"),
-        (r"\bj\s*&\s*v\b|\bj\s+and\s+v\s+video\b|\bj\s+v\s+video\b", "J&V Video"),
+        (r"\bj\s*&\s*v\b|\bj\s+and\s+v(?:\s+video)?\b|\bj\s+v(?:\s+video)?\b", "J&V"),
         (r"\btestimonial\s+healthcare\b", "Healthcare"),
         (r"\bnursing\s+tutor\b", "Nursing Tutor"),
         (r"\bhospital\s+administration\b|\bhospital\s+admin\b", "Hospital Admin"),
@@ -573,13 +583,13 @@ def infer_campaign(name, mappings):
         (r"\bprometric\b", "Prometric"), (r"\bmontessori\b", "Montessori"),
         (r"\bphonics\b", "Phonics"), (r"\bautocad\b", "Autocad"),
         (r"\blogistics\b", "Logistics"), (r"\bnanny\s+course\b", "Nanny Course"),
-        (r"\bhouse\s+keeping\b", "House Keeping"), (r"\bsummer\s+camp\b", "Summer Camp"),
+        (r"\bhouse\s+keeping\b", "House Keeping"), (r"\bsummer\s+camp\b", "Summer Camp"), (r"\bwinter\s+camp\b", "Winter Camp"),
         (r"\bmedical\s+hiring\b", "Medical Hiring"), (r"\bcoordinator\s+hiring\b", "Coordinator Hiring"),
         (r"\bhiring\b", "Hiring"), (r"\bcommerce\b", "Commerce"),
         (r"\bspa\b", "Spa"), (r"\bgda\b", "GDA"), (r"\bgna\b", "GNA"),
-        (r"\bcg\b", "CG"), (r"\bdca\b", "DCA"), (r"\bpte\b", "PTE"),
+        (r"\bcg\b", "Caregiving"), (r"\bdca\b", "DCA"), (r"\bpte\b", "PTE"),
         (r"\bham\b", "HAM"), (r"\bhr\b", "HR"), (r"\bphili(?:pi)?\b", "Philipi"),
-        (r"\bboost\s+video\b", "Boost Video"), (r"\bcomputer\s+course\b", "Computer"),
+        (r"\binfluencer\s+ad\b", "Influencer Ad"), (r"\bconstruction(?:\s+industrial)?\b", "Construction Industrial"),\n        (r"\bboost\s+video\b", "Boost Video"), (r"\bcomputer\s+course\b", "Computer"),
     ]
     if not course:
         for pattern, label in course_aliases:
@@ -629,7 +639,7 @@ def infer_campaign(name, mappings):
             branch = branch or "Mangaf"
         elif "german" in c:
             branch = branch or "Salmiya"
-        elif any(word in c.split() for word in ["healthcare", "cg"]):
+        elif any(word in c.split() for word in ["healthcare", "cg", "caregiving"]):
             branch = branch or "Kerala"
         elif explicit_branch:
             branch = explicit_branch
