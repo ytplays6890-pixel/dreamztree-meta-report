@@ -472,6 +472,11 @@ DEFAULT_MAPPINGS = [
     ("Arya CG Winter Offer 16/11/2026", "Arya", "Caregiving Winter Offer", "Salmiya"),
     ("Shabna Commerce 05/09/2026", "Shabna", "Commerce", "Bahrain"),
     ("Shabna French & Computer Sciences Tuition 30/10/2026", "Shabna", "French & Computer Sciences Tuition", "Bahrain"),
+    ("montessori | Ligin | 5/6/26", "Ligin", "Montessori", "Salmiya"),
+    ("Awsathy Kerala | Healthcare | 1/10/26", "Aswathy", "Healthcare", "Kerala"),
+    ("Vipin DCA 20/10/2026", "Vipin", "DCA", "Kerala"),
+    ("Nanny Hiring Vipin 07/11/2026", "Vipin", "Hiring", "Kerala"),
+    ("Febin Accountant Hiring 12/11/2026", "Febin", "Hiring", "Kerala"),
 ]
 
 BRANCH_ORDER = ["Mangaf", "Salmiya", "Bahrain", "Kerala"]
