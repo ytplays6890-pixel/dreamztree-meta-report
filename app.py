@@ -919,8 +919,10 @@ def load_campaign_report(upload, mappings):
     df["Campaign"] = df["Campaign"].fillna("").astype(str)
     df["Results"] = pd.to_numeric(df["Results"], errors="coerce").fillna(0).astype(int)
     df["Spent"] = pd.to_numeric(df["Spent"], errors="coerce").fillna(0.0)
-    # Match the main report's inclusion rule: exclude zero and awareness/reach-scale results.
-    df = df[(df["Results"] > 0) & (df["Results"] <= 10000)].reset_index(drop=True)
+    # Keep lead campaigns with blank/zero results when they have spend, so the report
+    # assistant can flag them for review. Exclude rows with neither leads nor spend,
+    # and exclude awareness/reach-scale result counts.
+    df = df[((df["Results"] > 0) & (df["Results"] <= 10000)) | ((df["Results"] == 0) & (df["Spent"] > 0))].reset_index(drop=True)
 
     assignments = []
     for _, row in df.iterrows():
