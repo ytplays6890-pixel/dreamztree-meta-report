@@ -272,7 +272,7 @@ def answer_report_question(metrics, question):
                 f"{float(row.get('Cost_KWD') or 0):.3f} KD"
                 for row in zero_rows
             )
-            return "\\n".join(lines)
+            return "\n".join(lines)
         return "No campaigns with spend and zero leads were found in this report."
     if "total report spend" in q or ("total spend" in q and "total lead" in q):
         return (f"**Report totals**\n\n- Total spend: {money(totals.get('spend_kwd', 0))}\n"
