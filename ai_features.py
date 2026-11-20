@@ -256,13 +256,23 @@ def answer_report_question(metrics, question):
             if result_count <= 0 and cost > 0:
                 zero_rows.append(row)
         if zero_rows:
-            lines = ["**Campaigns with spend but no leads:**", ""]
+            total_usd = sum(float(row.get("Spent") or 0) for row in zero_rows)
+            total_kwd = sum(float(row.get("Cost_KWD") or 0) for row in zero_rows)
+            lines = [
+                f"**Campaigns with spend and no leads recorded: {len(zero_rows)}**",
+                "",
+                f"**Total spend:** ${total_usd:.2f} USD ({total_kwd:.3f} KD)",
+                "",
+                "Blank Results fields are treated as zero leads for this check.",
+                "",
+            ]
             lines.extend(
                 f"- {row.get('Campaign') or 'Unnamed campaign'} — {row.get('Staff') or 'Unassigned'} "
-                f"({row.get('Branch') or 'Unassigned'}): {float(row.get('Cost_KWD') or 0):.3f} KD"
+                f"({row.get('Branch') or 'Unassigned'}): ${float(row.get('Spent') or 0):.2f} USD / "
+                f"{float(row.get('Cost_KWD') or 0):.3f} KD"
                 for row in zero_rows
             )
-            return "\n".join(lines)
+            return "\\n".join(lines)
         return "No campaigns with spend and zero leads were found in this report."
     if "total report spend" in q or ("total spend" in q and "total lead" in q):
         return (f"**Report totals**\n\n- Total spend: {money(totals.get('spend_kwd', 0))}\n"
