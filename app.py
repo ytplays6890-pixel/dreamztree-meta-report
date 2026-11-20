@@ -5169,47 +5169,103 @@ def main():
                                 "<span class='dt-action-title'>✓ Practical Budget Recommendations</span>"
                             )
                             st.markdown(styled_analysis, unsafe_allow_html=True)
-                    st.markdown("#### Chat with your reports")
-                    question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
-                    if st.button("Ask AI", key="dt_ai_ask") and question.strip():
-                        local_answer = answer_report_question(ai_metrics, question)
-                        if local_answer:
-                            st.session_state["_dt_ai_chat_answer"] = local_answer
-                            st.session_state["_dt_ai_chat_is_local"] = True
-                            st.session_state.pop("_dt_ai_chat_error", None)
-                        elif ai_config:
-                            prompt = (
-                                "Answer using only the supplied report data. Show calculations when useful. "
-                                "If the data cannot answer the question, say so. Do not invent metrics. "
-                                "Separate attributed figures from unassigned campaign totals.\\n\\nDATA:\\n"
-                                + json.dumps(ai_metrics, ensure_ascii=False, default=str)
-                                + "\\n\\nQUESTION:\\n" + question.strip()
-                            )
-                            with st.spinner("Checking report data…"):
-                                try:
-                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
-                                    st.session_state["_dt_ai_chat_is_local"] = False
-                                    st.session_state.pop("_dt_ai_chat_error", None)
-                                except Exception as exc:
-                                    st.session_state["_dt_ai_chat_answer"] = build_local_management_summary(ai_metrics)
-                                    st.session_state["_dt_ai_chat_is_local"] = True
-                                    st.session_state["_dt_ai_chat_error"] = str(exc)
-                        else:
-                            st.session_state["_dt_ai_chat_answer"] = (
-                                "I can answer common metric questions locally. Try asking about lowest cost per lead, "
-                                "most leads, total spend, total leads, campaign count, or unassigned campaigns."
-                            )
-                            st.session_state["_dt_ai_chat_is_local"] = True
-                    if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
-                        st.warning("AI providers were unavailable. Showing a local report summary instead.")
-                        st.caption(st.session_state.pop("_dt_ai_chat_error"))
-                    if st.session_state.get("_dt_ai_chat_answer"):
-                        st.markdown(st.session_state["_dt_ai_chat_answer"])
-                        st.caption("Local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "AI-generated answer")
-                    if st.button("Clear AI answers", key="dt_ai_clear"):
-                        for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
-                            st.session_state.pop(key, None)
-                        st.rerun()
+                    # Premium, compact AI report chat presentation. Functionality remains unchanged.
+                    st.markdown(r"""
+                    <style>
+                    .st-key-dt_ai_chat_panel {
+                      border:1px solid rgba(148,163,184,.20)!important;
+                      border-radius:20px!important;
+                      padding:clamp(14px,2vw,22px)!important;
+                      background:linear-gradient(145deg,rgba(25,29,37,.96),rgba(17,20,26,.98))!important;
+                      box-shadow:0 14px 34px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035)!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stMarkdownContainer"] h3 {
+                      letter-spacing:-.025em!important;margin-bottom:.25rem!important;color:#f8fafc!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stTextInput"] input {
+                      border-radius:12px!important;border:1px solid rgba(148,163,184,.24)!important;
+                      background:rgba(31,36,45,.86)!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stButton"] button {
+                      border-radius:11px!important;transition:all .16s ease!important;
+                    }
+                    .st-key-dt_ai_chat_answer {
+                      margin-top:12px!important;padding:16px 18px!important;
+                      border-radius:15px!important;border:1px solid rgba(74,222,128,.20)!important;
+                      background:linear-gradient(140deg,rgba(20,83,45,.18),rgba(15,23,42,.32))!important;
+                    }
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] p,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] li {
+                      line-height:1.65!important;color:#e2e8f0!important;
+                    }
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h1,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h2,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h3 {
+                      color:#f8fafc!important;letter-spacing:-.02em!important;
+                    }
+                    @media(max-width:640px) {
+                      .st-key-dt_ai_chat_panel,.st-key-dt_ai_chat_answer {padding:12px!important;border-radius:14px!important}
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    with st.container(key="dt_ai_chat_panel"):
+                        st.markdown("### Report Assistant")
+                        st.caption("Ask questions about leads, campaign performance, staff, branches or spending. Answers are grounded in the uploaded report.")
+                        suggested_questions = [
+                            ("Staff with most leads", "Which staff member generated the most leads?"),
+                            ("Campaigns with no leads", "Which campaigns spent money but generated no leads?"),
+                            ("Lowest CPL", "Which branch has the lowest cost per lead?"),
+                            ("Total report spend", "What is the total spend and total leads?")
+                        ]
+                        suggestion_cols = st.columns(4)
+                        for suggestion_index, (button_label, query_text) in enumerate(suggested_questions):
+                            if suggestion_cols[suggestion_index].button(button_label, key=f"dt_ai_suggest_{suggestion_index}"):
+                                st.session_state["dt_ai_question"] = query_text
+                                st.rerun()
+                        question = st.text_input("Ask about this report", key="dt_ai_question", placeholder="e.g. Who has the Spa leads?")
+                        if st.button("Ask AI", key="dt_ai_ask", type="primary") and question.strip():
+                            local_answer = answer_report_question(ai_metrics, question)
+                            if local_answer:
+                                st.session_state["_dt_ai_chat_answer"] = local_answer
+                                st.session_state["_dt_ai_chat_is_local"] = True
+                                st.session_state.pop("_dt_ai_chat_error", None)
+                            elif ai_config:
+                                prompt = (
+                                    "You are the Dreamztree report assistant. Respond professionally and accurately, using only the data below. "
+                                    "Lead with the direct answer. For questions about a course, show the matching course/campaign, staff and branch, "
+                                    "verified lead count, and exact campaign name(s) as evidence. For multiple matching rows, sum Results only and show "
+                                    "each row. Never invent missing data, attribution, dates, or explanations. If data is incomplete or ambiguous, state it. "
+                                    "Use concise headings and bullets; avoid filler. Show calculations only when helpful. "
+                                    "Keep assigned and unassigned figures clearly distinguished.\\n\\nREPORT DATA:\\n"
+                                    + json.dumps(ai_metrics, ensure_ascii=False, default=str)
+                                    + "\\n\\nUSER QUESTION:\\n" + question.strip()
+                                )
+                                with st.spinner("Reviewing report data…"):
+                                    try:
+                                        st.session_state["_dt_ai_chat_answer"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                        st.session_state["_dt_ai_chat_is_local"] = False
+                                        st.session_state.pop("_dt_ai_chat_error", None)
+                                    except Exception as exc:
+                                        st.session_state["_dt_ai_chat_answer"] = build_local_management_summary(ai_metrics)
+                                        st.session_state["_dt_ai_chat_is_local"] = True
+                                        st.session_state["_dt_ai_chat_error"] = str(exc)
+                            else:
+                                st.session_state["_dt_ai_chat_answer"] = (
+                                    "I can calculate common report metrics locally. Try questions about staff lead totals, course leads, "
+                                    "branch CPL, campaign performance, total spend, or unassigned campaigns."
+                                )
+                                st.session_state["_dt_ai_chat_is_local"] = True
+                        if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
+                            st.warning("AI service unavailable. Displaying a locally calculated summary.")
+                            st.caption(st.session_state.pop("_dt_ai_chat_error"))
+                        if st.session_state.get("_dt_ai_chat_answer"):
+                            with st.container(key="dt_ai_chat_answer"):
+                                st.markdown(st.session_state["_dt_ai_chat_answer"])
+                                st.caption("Verified local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "AI-generated answer · Based on uploaded report")
+                        if st.button("Clear AI answers", key="dt_ai_clear"):
+                            for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
+                                st.session_state.pop(key, None)
+                            st.rerun()
 
 
     except Exception as e:
