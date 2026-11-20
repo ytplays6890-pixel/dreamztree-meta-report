@@ -245,6 +245,29 @@ def answer_report_question(metrics, question):
     campaigns = metrics.get("campaigns", [])
     hiring = metrics.get("hiring", [])
     money = lambda x: f"{float(x):.3f} KD"
+    if "no lead" in q or "zero result" in q or "zero leads" in q:
+        zero_rows = []
+        for row in campaigns:
+            try:
+                result_count = float(row.get("Results") or 0)
+                cost = float(row.get("Cost_KWD") or 0)
+            except (TypeError, ValueError):
+                continue
+            if result_count <= 0 and cost > 0:
+                zero_rows.append(row)
+        if zero_rows:
+            lines = ["**Campaigns with spend but no leads:**", ""]
+            lines.extend(
+                f"- {row.get('Campaign') or 'Unnamed campaign'} — {row.get('Staff') or 'Unassigned'} "
+                f"({row.get('Branch') or 'Unassigned'}): {float(row.get('Cost_KWD') or 0):.3f} KD"
+                for row in zero_rows
+            )
+            return "\n".join(lines)
+        return "No campaigns with spend and zero leads were found in this report."
+    if "total report spend" in q or ("total spend" in q and "total lead" in q):
+        return (f"**Report totals**\n\n- Total spend: {money(totals.get('spend_kwd', 0))}\n"
+                f"- Total leads: {int(totals.get('leads', 0)):,}\n"
+                f"- Campaigns included: {int(totals.get('campaign_count', 0)):,}")
     if "hir" in q or "recruit" in q or "staff currently" in q:
         if hiring:
             assigned_hiring = [
