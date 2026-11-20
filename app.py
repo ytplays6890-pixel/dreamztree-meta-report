@@ -90,6 +90,45 @@ def build_daily_report_files(report_date, leads, spend_kwd, market_rows, hiring,
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
+
+# ── Dreamztree Premium Analytics UI ───────────────────────────────────────
+st.markdown(r"""
+<style>
+:root { --dt-green:#27d99a; --dt-green-soft:#14a878; --dt-bg:#0b1017; --dt-card:#141c26; --dt-border:rgba(148,163,184,.18); }
+.stApp { background:radial-gradient(ellipse at 12% 0%,rgba(16,120,83,.12),transparent 34%),#0b1017; }
+[data-testid="stHeader"] { background:transparent; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#0e151e,#101821)!important; border-right:1px solid rgba(148,163,184,.12); }
+[data-testid="stSidebar"] > div:first-child { padding-top:1.1rem; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 { letter-spacing:-.025em; }
+[data-testid="stMain"] .block-container { padding-top:1.35rem; padding-bottom:2.2rem; max-width:1680px; }
+h1,h2,h3 { letter-spacing:-.035em!important; color:#f3f7fb!important; }
+h1 { font-weight:750!important; }
+h2,h3 { font-weight:650!important; }
+[data-testid="stMetric"] { background:linear-gradient(145deg,rgba(23,33,45,.96),rgba(15,22,31,.98)); border:1px solid var(--dt-border); border-radius:16px; padding:15px 17px; box-shadow:0 10px 24px rgba(0,0,0,.14); }
+[data-testid="stMetricLabel"] { color:#a8b4c4!important; }
+[data-testid="stMetricValue"] { color:#f3f8fc!important; font-weight:750!important; letter-spacing:-.03em; }
+[data-testid="stMetricDelta"] { font-weight:600!important; }
+[data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--dt-border)!important; border-radius:17px!important; }
+[data-testid="stDataFrame"],[data-testid="stTable"] { border:1px solid var(--dt-border); border-radius:12px; overflow:hidden; }
+[data-testid="stTabs"] button { font-weight:600!important; }
+[data-testid="stButton"] button, [data-testid="stDownloadButton"] button { border-radius:11px!important; border:1px solid rgba(148,163,184,.22)!important; transition:all .16s ease!important; font-weight:600!important; }
+[data-testid="stButton"] button:hover, [data-testid="stDownloadButton"] button:hover { border-color:rgba(39,217,154,.65)!important; transform:translateY(-1px); }
+[data-testid="stButton"] button[kind="primary"] { background:linear-gradient(135deg,#22d58f,#14a878)!important; color:#07130e!important; border:0!important; }
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] div[data-baseweb="select"] { border-radius:11px!important; }
+[data-testid="stFileUploader"] { border:1px dashed rgba(39,217,154,.3); border-radius:14px; background:rgba(18,29,39,.38); padding:5px; }
+[data-testid="stExpander"] { border:1px solid var(--dt-border)!important; border-radius:13px!important; background:rgba(18,26,36,.5)!important; }
+hr { border-color:rgba(148,163,184,.14)!important; }
+[data-testid="stAlert"] { border-radius:13px!important; }
+[data-testid="stPlotlyChart"] { border:1px solid rgba(148,163,184,.10); border-radius:15px; padding:4px; background:rgba(16,22,30,.38); }
+@media(max-width:900px) {
+ [data-testid="stMain"] .block-container { padding-left:1rem; padding-right:1rem; }
+ [data-testid="stMetric"] { padding:12px; border-radius:13px; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # Encrypted browser cookie used only to restore authentication after a reload.
 _AUTH_COOKIE_NAME = "dt_auth_session_v1"
 _AUTH_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days; Supabase refresh token rules still apply.
