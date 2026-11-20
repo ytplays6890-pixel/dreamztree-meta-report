@@ -5194,9 +5194,11 @@ def main():
                         for suggestion_index, (button_label, query_text) in enumerate(suggested_questions):
                             if suggestion_cols[suggestion_index].button(button_label, key=f"dt_ai_suggest_{suggestion_index}"):
                                 st.session_state["dt_ai_question"] = query_text
+                                st.session_state["_dt_ai_submit_question"] = True
                                 st.rerun()
                         question = st.text_input("Ask about this report", key="dt_ai_question", placeholder="e.g. Who has the Spa leads?")
-                        if st.button("Ask AI", key="dt_ai_ask", type="primary") and question.strip():
+                        submit_question = st.button("Ask AI", key="dt_ai_ask", type="primary") or st.session_state.pop("_dt_ai_submit_question", False)
+                        if submit_question and question.strip():
                             local_answer = answer_report_question(ai_metrics, question)
                             if local_answer:
                                 st.session_state["_dt_ai_chat_answer"] = local_answer
