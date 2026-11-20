@@ -5197,7 +5197,8 @@ def main():
                                 st.session_state["_dt_ai_submit_question"] = True
                                 st.rerun()
                         question = st.text_input("Ask about this report", key="dt_ai_question", placeholder="e.g. Who has the Spa leads?")
-                        submit_question = st.button("Ask AI", key="dt_ai_ask", type="primary") or st.session_state.pop("_dt_ai_submit_question", False)
+                        quick_submit = st.session_state.pop("_dt_ai_submit_question", False)
+                        submit_question = st.button("Ask AI", key="dt_ai_ask", type="primary") or quick_submit
                         if submit_question and question.strip():
                             local_answer = answer_report_question(ai_metrics, question)
                             if local_answer:
