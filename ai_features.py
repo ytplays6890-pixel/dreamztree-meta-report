@@ -281,7 +281,12 @@ def answer_report_question(metrics, question):
             course_label = str(row.get("Course") or "").strip()
             campaign_label = str(row.get("Campaign") or "").strip()
             label = course_label or campaign_label
-            tokens = set(re.findall(r"[a-z0-9]+", label.lower())) - stop_words
+            # Match query terms against both the mapped course and campaign title,
+            # because campaign naming may carry more specific course information.
+            tokens = (
+                set(re.findall(r"[a-z0-9]+", course_label.lower()))
+                | set(re.findall(r"[a-z0-9]+", campaign_label.lower()))
+            ) - stop_words
             overlap = tokens & q_tokens
             if overlap:
                 course_rows.append((row, label, len(overlap)))
