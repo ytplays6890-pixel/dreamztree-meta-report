@@ -1,5 +1,5 @@
 """AI and decision-support helpers for Dreamztree Meta Report."""
-import os, statistics, requests, time
+import os, re, statistics, requests, time
 import pandas as pd
 import streamlit as st
 
@@ -32,8 +32,12 @@ def get_ai_config():
 def _generate_openai_compatible(api_key, prompt, model, base_url, provider_label):
     is_gpt_oss = "gpt-oss" in str(model).lower()
     system_instruction = (
-        "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics. "
-        "Answer the user's question directly and concisely."
+        "You are Dreamztree's professional marketing-report assistant. Use only the supplied report data; "
+        "never invent, estimate, or assume staff names, campaign names, leads, spend, branches, courses, dates, or causes. "
+        "Answer the question directly in a concise, management-ready tone. For course-specific questions, identify the matching "
+        "course/campaign, list the responsible staff and branch when present, state the verified lead total, and show the exact "
+        "campaign names as evidence. If multiple rows match, sum only their numeric Results values and list them separately. "
+        "If data is missing or ambiguous, say so explicitly. Use short headings and bullets; avoid generic filler."
     )
     if is_gpt_oss:
         # Groq's GPT-OSS models use max_completion_tokens and an explicit
@@ -99,7 +103,7 @@ def _generate_gemini(api_key, prompt, model):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
     payload = {
-        "systemInstruction": {"parts": [{"text": "You are a precise marketing analytics assistant. Use only supplied data; never invent metrics."}]},
+        "systemInstruction": {"parts": [{"text": "You are Dreamztree's professional marketing-report assistant. Use only supplied report data; never invent staff, campaigns, metrics, courses, branches, dates or causes. Answer directly and concisely. For course-specific lead questions, identify matching campaigns, responsible staff and branch, calculate lead totals only from Results, and show exact campaign names. State when data is missing or ambiguous."}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 900}
     }
@@ -262,6 +266,61 @@ def answer_report_question(metrics, question):
                 return "\n".join(lines)
             return "No hiring campaigns with both staff and branch assigned were found in this report."
         return "No hiring campaign data is available in this report. Check that the campaign course is mapped to a name containing 'Hiring'."
+    # Course-specific lead questions are resolved from the uploaded rows first,
+    # so simple questions such as "Who has the Spa leads?" do not depend on an LLM.
+    if any(term in q for term in ["lead", "result", "who has", "who got", "course"]):
+        stop_words = {
+            "who", "has", "have", "had", "the", "for", "from", "with", "and", "or",
+            "course", "courses", "lead", "leads", "result", "results", "got", "get",
+            "show", "tell", "give", "list", "total", "how", "many", "which", "what",
+            "is", "are", "was", "were", "me", "about", "in", "on", "by", "to"
+        }
+        q_tokens = set(re.findall(r"[a-z0-9]+", q)) - stop_words
+        course_rows = []
+        for row in campaigns:
+            course_label = str(row.get("Course") or "").strip()
+            campaign_label = str(row.get("Campaign") or "").strip()
+            label = course_label or campaign_label
+            tokens = set(re.findall(r"[a-z0-9]+", label.lower())) - stop_words
+            overlap = tokens & q_tokens
+            if overlap:
+                course_rows.append((row, label, len(overlap)))
+        if course_rows:
+            best_overlap = max(item[2] for item in course_rows)
+            matched = [(row, label) for row, label, score in course_rows if score == best_overlap]
+            labels = sorted({label for _, label in matched}, key=str.casefold)
+            matched_rows = [row for row, label in matched if label in labels]
+            lead_rows = []
+            for row in matched_rows:
+                try:
+                    count = int(float(row.get("Results") or 0))
+                except (TypeError, ValueError):
+                    count = 0
+                if count > 0:
+                    lead_rows.append((row, count))
+            if lead_rows:
+                total_course_leads = sum(count for _, count in lead_rows)
+                lines = [f"### {', '.join(labels)} — Lead Report", "",
+                         f"**Total leads:** {total_course_leads:,}", "",
+                         "**Staff breakdown:**"]
+                staff_totals = {}
+                for row, count in lead_rows:
+                    staff = str(row.get("Staff") or "Unassigned").strip()
+                    branch = str(row.get("Branch") or "Unassigned").strip()
+                    key = (staff, branch)
+                    staff_totals[key] = staff_totals.get(key, 0) + count
+                lines.extend(
+                    f"- **{staff}** — {branch}: {count:,} lead(s)"
+                    for (staff, branch), count in sorted(staff_totals.items(), key=lambda item: item[1], reverse=True)
+                )
+                lines.extend(["", "**Matching campaigns:**"])
+                lines.extend(
+                    f"- {row.get('Campaign') or 'Unnamed campaign'} — {row.get('Staff') or 'Unassigned'} "
+                    f"({row.get('Branch') or 'Unassigned'}): {count:,} lead(s)"
+                    for row, count in lead_rows
+                )
+                return "\n".join(lines)
+            return f"No leads were recorded for the matching course(s): {', '.join(labels)}."
     # Staff lead questions are calculated locally from numeric campaign results.
     # This avoids sending a simple arithmetic question to an LLM that may echo
     # values as text such as 1+1+1 instead of returning their sum.
