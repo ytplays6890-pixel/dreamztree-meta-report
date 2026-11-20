@@ -90,6 +90,45 @@ def build_daily_report_files(report_date, leads, spend_kwd, market_rows, hiring,
 
 st.set_page_config(page_title="Dreamztree Meta Report", page_icon="D", layout="wide")
 
+
+# ── Dreamztree Premium Analytics UI ───────────────────────────────────────
+st.markdown(r"""
+<style>
+:root { --dt-green:#27d99a; --dt-green-soft:#14a878; --dt-bg:#0b1017; --dt-card:#141c26; --dt-border:rgba(148,163,184,.18); }
+.stApp { background:radial-gradient(ellipse at 12% 0%,rgba(16,120,83,.12),transparent 34%),#0b1017; }
+[data-testid="stHeader"] { background:transparent; }
+[data-testid="stSidebar"] { background:linear-gradient(180deg,#0e151e,#101821)!important; border-right:1px solid rgba(148,163,184,.12); }
+[data-testid="stSidebar"] > div:first-child { padding-top:1.1rem; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h1,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 { letter-spacing:-.025em; }
+[data-testid="stMain"] .block-container { padding-top:1.35rem; padding-bottom:2.2rem; max-width:1680px; }
+h1,h2,h3 { letter-spacing:-.035em!important; color:#f3f7fb!important; }
+h1 { font-weight:750!important; }
+h2,h3 { font-weight:650!important; }
+[data-testid="stMetric"] { background:linear-gradient(145deg,rgba(23,33,45,.96),rgba(15,22,31,.98)); border:1px solid var(--dt-border); border-radius:16px; padding:15px 17px; box-shadow:0 10px 24px rgba(0,0,0,.14); }
+[data-testid="stMetricLabel"] { color:#a8b4c4!important; }
+[data-testid="stMetricValue"] { color:#f3f8fc!important; font-weight:750!important; letter-spacing:-.03em; }
+[data-testid="stMetricDelta"] { font-weight:600!important; }
+[data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--dt-border)!important; border-radius:17px!important; }
+[data-testid="stDataFrame"],[data-testid="stTable"] { border:1px solid var(--dt-border); border-radius:12px; overflow:hidden; }
+[data-testid="stTabs"] button { font-weight:600!important; }
+[data-testid="stButton"] button, [data-testid="stDownloadButton"] button { border-radius:11px!important; border:1px solid rgba(148,163,184,.22)!important; transition:all .16s ease!important; font-weight:600!important; }
+[data-testid="stButton"] button:hover, [data-testid="stDownloadButton"] button:hover { border-color:rgba(39,217,154,.65)!important; transform:translateY(-1px); }
+[data-testid="stButton"] button[kind="primary"] { background:linear-gradient(135deg,#22d58f,#14a878)!important; color:#07130e!important; border:0!important; }
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] div[data-baseweb="select"] { border-radius:11px!important; }
+[data-testid="stFileUploader"] { border:1px dashed rgba(39,217,154,.3); border-radius:14px; background:rgba(18,29,39,.38); padding:5px; }
+[data-testid="stExpander"] { border:1px solid var(--dt-border)!important; border-radius:13px!important; background:rgba(18,26,36,.5)!important; }
+hr { border-color:rgba(148,163,184,.14)!important; }
+[data-testid="stAlert"] { border-radius:13px!important; }
+[data-testid="stPlotlyChart"] { border:1px solid rgba(148,163,184,.10); border-radius:15px; padding:4px; background:rgba(16,22,30,.38); }
+@media(max-width:900px) {
+ [data-testid="stMain"] .block-container { padding-left:1rem; padding-right:1rem; }
+ [data-testid="stMetric"] { padding:12px; border-radius:13px; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # Encrypted browser cookie used only to restore authentication after a reload.
 _AUTH_COOKIE_NAME = "dt_auth_session_v1"
 _AUTH_COOKIE_TTL_SECONDS = 60 * 60 * 24 * 7  # 7 days; Supabase refresh token rules still apply.
@@ -4690,72 +4729,6 @@ def main():
                 st.download_button("Download Daily Report (.pdf)",_pdf_bytes,f"dreamztree_daily_leads_{date_value.strftime('%Y%m%d')}.pdf","application/pdf",use_container_width=True)
             st.download_button("Download report (.txt)", report.encode("utf-8"), f"dreamztree_leads_{date_value.strftime('%Y%m%d')}.txt", "text/plain")
             st.download_button("Download reviewed mappings (.csv)", edited[["Campaign", "Staff", "Course", "Branch"]].to_csv(index=False).encode("utf-8-sig"), "dreamztree_campaign_mapping_updated.csv", "text/csv")
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Total leads included", f"{grand_leads:,}")
-            m2.metric("Total cost", f"{round(grand_spent * factor, 2):.2f} KD")
-            m3.metric("Campaigns included", f"{len(all_campaigns):,}")
-            st.subheader("Performance analytics")
-            # Build charts from the same complete campaign set used by the report.
-            # The former "valid" variable belonged to a separate helper and was
-            # undefined in this scope, causing a NameError after report generation.
-            analytics_data = all_campaigns.copy()
-            analytics_data["Branch"] = analytics_data["Branch"].fillna("").astype(str).str.strip().replace("", "Unassigned")
-            analytics_data["Course"] = analytics_data["Course"].fillna("").astype(str).str.strip().replace("", "Unclassified course")
-            analytics_data["Results"] = pd.to_numeric(analytics_data["Results"], errors="coerce").fillna(0)
-            analytics_data["Spent"] = pd.to_numeric(analytics_data["Spent"], errors="coerce").fillna(0.0)
-            branch_chart = analytics_data.groupby("Branch", as_index=False).agg(Leads=("Results", "sum"), Spend_USD=("Spent", "sum"))
-            branch_chart["Spend_KWD"] = branch_chart["Spend_USD"] * factor
-            course_chart = analytics_data.groupby("Course", as_index=False)["Results"].sum().sort_values("Results", ascending=False).head(12)
-            chart_left, chart_right = st.columns(2, gap="large")
-            with chart_left:
-                st.markdown("#### Leads by branch")
-                branch_leads_plot = branch_chart.sort_values("Leads", ascending=True)
-                fig_leads = px.bar(
-                    branch_leads_plot, x="Leads", y="Branch", orientation="h",
-                    text="Leads", color_discrete_sequence=["#3dd6b3"],
-                    template="plotly_dark",
-                )
-                fig_leads.update_layout(
-                    height=300, margin=dict(l=12, r=20, t=12, b=12),
-                    showlegend=False, xaxis_title="Leads", yaxis_title="",
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#E8EEF7", size=12),
-                )
-                fig_leads.update_traces(textposition="outside", cliponaxis=False)
-                st.plotly_chart(fig_leads, use_container_width=True, config={"displayModeBar": False, "responsive": True})
-            with chart_right:
-                st.markdown("#### Cost by branch · KWD")
-                branch_cost_plot = branch_chart.sort_values("Spend_KWD", ascending=True)
-                fig_cost = px.bar(
-                    branch_cost_plot, x="Spend_KWD", y="Branch", orientation="h",
-                    text=branch_cost_plot["Spend_KWD"].map(lambda x: f"{x:.3f}"),
-                    color_discrete_sequence=["#6ea8fe"], template="plotly_dark",
-                )
-                fig_cost.update_layout(
-                    height=300, margin=dict(l=12, r=28, t=12, b=12),
-                    showlegend=False, xaxis_title="Cost (KWD)", yaxis_title="",
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#E8EEF7", size=12),
-                )
-                fig_cost.update_traces(textposition="outside", cliponaxis=False)
-                st.plotly_chart(fig_cost, use_container_width=True, config={"displayModeBar": False, "responsive": True})
-            st.markdown("#### Top courses by leads")
-            course_plot = course_chart.sort_values("Results", ascending=True)
-            fig_courses = px.bar(
-                course_plot, x="Results", y="Course", orientation="h",
-                text="Results", color_discrete_sequence=["#f7bd60"],
-                template="plotly_dark",
-            )
-            fig_courses.update_layout(
-                height=max(360, 36 * len(course_plot) + 70),
-                margin=dict(l=18, r=28, t=12, b=24),
-                showlegend=False, xaxis_title="Leads", yaxis_title="",
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#E8EEF7", size=12),
-                yaxis=dict(automargin=True, tickfont=dict(size=12)),
-            )
-            fig_courses.update_traces(textposition="outside", cliponaxis=False)
-            st.plotly_chart(fig_courses, use_container_width=True, config={"displayModeBar": False, "responsive": True})
             st.caption(f"{len(unresolved)} campaign(s) require review if left incomplete.")
             st.caption(f"Exchange rate used: 1 USD = {factor:.6f} KWD · {rate_source_label} · Rate date: {rate_date_label}.")
 
@@ -5169,47 +5142,103 @@ def main():
                                 "<span class='dt-action-title'>✓ Practical Budget Recommendations</span>"
                             )
                             st.markdown(styled_analysis, unsafe_allow_html=True)
-                    st.markdown("#### Chat with your reports")
-                    question = st.text_input("Ask a question about this report", key="dt_ai_question", placeholder="Which branch has the lowest cost per lead?")
-                    if st.button("Ask AI", key="dt_ai_ask") and question.strip():
-                        local_answer = answer_report_question(ai_metrics, question)
-                        if local_answer:
-                            st.session_state["_dt_ai_chat_answer"] = local_answer
-                            st.session_state["_dt_ai_chat_is_local"] = True
-                            st.session_state.pop("_dt_ai_chat_error", None)
-                        elif ai_config:
-                            prompt = (
-                                "Answer using only the supplied report data. Show calculations when useful. "
-                                "If the data cannot answer the question, say so. Do not invent metrics. "
-                                "Separate attributed figures from unassigned campaign totals.\\n\\nDATA:\\n"
-                                + json.dumps(ai_metrics, ensure_ascii=False, default=str)
-                                + "\\n\\nQUESTION:\\n" + question.strip()
-                            )
-                            with st.spinner("Checking report data…"):
-                                try:
-                                    st.session_state["_dt_ai_chat_answer"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
-                                    st.session_state["_dt_ai_chat_is_local"] = False
-                                    st.session_state.pop("_dt_ai_chat_error", None)
-                                except Exception as exc:
-                                    st.session_state["_dt_ai_chat_answer"] = build_local_management_summary(ai_metrics)
-                                    st.session_state["_dt_ai_chat_is_local"] = True
-                                    st.session_state["_dt_ai_chat_error"] = str(exc)
-                        else:
-                            st.session_state["_dt_ai_chat_answer"] = (
-                                "I can answer common metric questions locally. Try asking about lowest cost per lead, "
-                                "most leads, total spend, total leads, campaign count, or unassigned campaigns."
-                            )
-                            st.session_state["_dt_ai_chat_is_local"] = True
-                    if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
-                        st.warning("AI providers were unavailable. Showing a local report summary instead.")
-                        st.caption(st.session_state.pop("_dt_ai_chat_error"))
-                    if st.session_state.get("_dt_ai_chat_answer"):
-                        st.markdown(st.session_state["_dt_ai_chat_answer"])
-                        st.caption("Local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "AI-generated answer")
-                    if st.button("Clear AI answers", key="dt_ai_clear"):
-                        for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
-                            st.session_state.pop(key, None)
-                        st.rerun()
+                    # Premium, compact AI report chat presentation. Functionality remains unchanged.
+                    st.markdown(r"""
+                    <style>
+                    .st-key-dt_ai_chat_panel {
+                      border:1px solid rgba(148,163,184,.20)!important;
+                      border-radius:20px!important;
+                      padding:clamp(14px,2vw,22px)!important;
+                      background:linear-gradient(145deg,rgba(25,29,37,.96),rgba(17,20,26,.98))!important;
+                      box-shadow:0 14px 34px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035)!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stMarkdownContainer"] h3 {
+                      letter-spacing:-.025em!important;margin-bottom:.25rem!important;color:#f8fafc!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stTextInput"] input {
+                      border-radius:12px!important;border:1px solid rgba(148,163,184,.24)!important;
+                      background:rgba(31,36,45,.86)!important;
+                    }
+                    .st-key-dt_ai_chat_panel [data-testid="stButton"] button {
+                      border-radius:11px!important;transition:all .16s ease!important;
+                    }
+                    .st-key-dt_ai_chat_answer {
+                      margin-top:12px!important;padding:16px 18px!important;
+                      border-radius:15px!important;border:1px solid rgba(74,222,128,.20)!important;
+                      background:linear-gradient(140deg,rgba(20,83,45,.18),rgba(15,23,42,.32))!important;
+                    }
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] p,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] li {
+                      line-height:1.65!important;color:#e2e8f0!important;
+                    }
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h1,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h2,
+                    .st-key-dt_ai_chat_answer [data-testid="stMarkdownContainer"] h3 {
+                      color:#f8fafc!important;letter-spacing:-.02em!important;
+                    }
+                    @media(max-width:640px) {
+                      .st-key-dt_ai_chat_panel,.st-key-dt_ai_chat_answer {padding:12px!important;border-radius:14px!important}
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    with st.container(key="dt_ai_chat_panel"):
+                        st.markdown("### Report Assistant")
+                        st.caption("Ask questions about leads, campaign performance, staff, branches or spending. Answers are grounded in the uploaded report.")
+                        suggested_questions = [
+                            ("Staff with most leads", "Which staff member generated the most leads?"),
+                            ("Campaigns with no leads", "Which campaigns spent money but generated no leads?"),
+                            ("Lowest CPL", "Which branch has the lowest cost per lead?"),
+                            ("Total report spend", "What is the total spend and total leads?")
+                        ]
+                        suggestion_cols = st.columns(4)
+                        for suggestion_index, (button_label, query_text) in enumerate(suggested_questions):
+                            if suggestion_cols[suggestion_index].button(button_label, key=f"dt_ai_suggest_{suggestion_index}"):
+                                st.session_state["dt_ai_question"] = query_text
+                                st.rerun()
+                        question = st.text_input("Ask about this report", key="dt_ai_question", placeholder="e.g. Who has the Spa leads?")
+                        if st.button("Ask AI", key="dt_ai_ask", type="primary") and question.strip():
+                            local_answer = answer_report_question(ai_metrics, question)
+                            if local_answer:
+                                st.session_state["_dt_ai_chat_answer"] = local_answer
+                                st.session_state["_dt_ai_chat_is_local"] = True
+                                st.session_state.pop("_dt_ai_chat_error", None)
+                            elif ai_config:
+                                prompt = (
+                                    "You are the Dreamztree report assistant. Respond professionally and accurately, using only the data below. "
+                                    "Lead with the direct answer. For questions about a course, show the matching course/campaign, staff and branch, "
+                                    "verified lead count, and exact campaign name(s) as evidence. For multiple matching rows, sum Results only and show "
+                                    "each row. Never invent missing data, attribution, dates, or explanations. If data is incomplete or ambiguous, state it. "
+                                    "Use concise headings and bullets; avoid filler. Show calculations only when helpful. "
+                                    "Keep assigned and unassigned figures clearly distinguished.\\n\\nREPORT DATA:\\n"
+                                    + json.dumps(ai_metrics, ensure_ascii=False, default=str)
+                                    + "\\n\\nUSER QUESTION:\\n" + question.strip()
+                                )
+                                with st.spinner("Reviewing report data…"):
+                                    try:
+                                        st.session_state["_dt_ai_chat_answer"] = generate_ai_response(ai_config['api_key'], prompt, model=ai_config['model'], provider=ai_config['provider'])
+                                        st.session_state["_dt_ai_chat_is_local"] = False
+                                        st.session_state.pop("_dt_ai_chat_error", None)
+                                    except Exception as exc:
+                                        st.session_state["_dt_ai_chat_answer"] = build_local_management_summary(ai_metrics)
+                                        st.session_state["_dt_ai_chat_is_local"] = True
+                                        st.session_state["_dt_ai_chat_error"] = str(exc)
+                            else:
+                                st.session_state["_dt_ai_chat_answer"] = (
+                                    "I can calculate common report metrics locally. Try questions about staff lead totals, course leads, "
+                                    "branch CPL, campaign performance, total spend, or unassigned campaigns."
+                                )
+                                st.session_state["_dt_ai_chat_is_local"] = True
+                        if st.session_state.get("_dt_ai_chat_error") and st.session_state.get("_dt_ai_chat_is_local"):
+                            st.warning("AI service unavailable. Displaying a locally calculated summary.")
+                            st.caption(st.session_state.pop("_dt_ai_chat_error"))
+                        if st.session_state.get("_dt_ai_chat_answer"):
+                            with st.container(key="dt_ai_chat_answer"):
+                                st.markdown(st.session_state["_dt_ai_chat_answer"])
+                                st.caption("Verified local calculation" if st.session_state.get("_dt_ai_chat_is_local") else "AI-generated answer · Based on uploaded report")
+                        if st.button("Clear AI answers", key="dt_ai_clear"):
+                            for key in ["_dt_ai_analysis_result", "_dt_ai_chat_answer", "_dt_ai_analysis_error", "_dt_ai_chat_error"]:
+                                st.session_state.pop(key, None)
+                            st.rerun()
 
 
     except Exception as e:
